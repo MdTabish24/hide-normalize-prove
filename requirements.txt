@@ -1,0 +1,4 @@
+cryptography>=43
+matplotlib>=3.9
+scikit-learn>=1.5
+openai>=2

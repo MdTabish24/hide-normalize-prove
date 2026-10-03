@@ -1,0 +1,340 @@
+{
+  "label": "simulated, local PoC",
+  "seed": 7391,
+  "no_api_calls": true,
+  "headline_metric": "Accuracy on unseen runs only; pooled accuracy is diagnostic only.",
+  "timing_policy": "3/6/9s ceiling buckets; above 9s release at actual time (unbounded timing disclosure).",
+  "response_policy": "Identical pending envelope; no per-prompt safety result; range only after completion.",
+  "timing_experiment": [
+    {
+      "label": "simulated, local PoC",
+      "cohort": "ordinary",
+      "mode": "raw",
+      "train": {
+        "accuracy": 1.0,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.9811539940816791,
+          1.0
+        ]
+      },
+      "unseen_test": {
+        "accuracy": 1.0,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.9811539940816791,
+          1.0
+        ]
+      },
+      "train_plus_unseen_diagnostic_only": {
+        "accuracy": 1.0,
+        "n_runs": 400,
+        "wilson_95_interval": [
+          0.9904873594003194,
+          1.0
+        ]
+      },
+      "train_test_gap": 0.0,
+      "mean_added_seconds": 0,
+      "timeout_rate": 0,
+      "overrun_rate_past_3s": 0.0,
+      "overflow_rate_past_9s": 0.0
+    },
+    {
+      "label": "simulated, local PoC",
+      "cohort": "ordinary",
+      "mode": "buckets",
+      "train": {
+        "accuracy": 0.5,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.43135962209034523,
+          0.5686403779096547
+        ]
+      },
+      "unseen_test": {
+        "accuracy": 0.5,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.43135962209034523,
+          0.5686403779096547
+        ]
+      },
+      "train_plus_unseen_diagnostic_only": {
+        "accuracy": 0.5,
+        "n_runs": 400,
+        "wilson_95_interval": [
+          0.4512336165999552,
+          0.5487663834000448
+        ]
+      },
+      "train_test_gap": 0.0,
+      "mean_added_seconds": 1.645946942502001,
+      "timeout_rate": 0,
+      "overrun_rate_past_3s": 0.0,
+      "overflow_rate_past_9s": 0.0
+    },
+    {
+      "label": "simulated, local PoC",
+      "cohort": "boundary",
+      "mode": "raw",
+      "train": {
+        "accuracy": 0.985,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.9568335194437211,
+          0.9948858548155076
+        ]
+      },
+      "unseen_test": {
+        "accuracy": 0.93,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.8859442178331628,
+          0.9578482170770813
+        ]
+      },
+      "train_plus_unseen_diagnostic_only": {
+        "accuracy": 0.9575,
+        "n_runs": 400,
+        "wilson_95_interval": [
+          0.9329974034029175,
+          0.9732985304483749
+        ]
+      },
+      "train_test_gap": 0.05499999999999994,
+      "mean_added_seconds": 0,
+      "timeout_rate": 0,
+      "overrun_rate_past_3s": 0.49666666666666665,
+      "overflow_rate_past_9s": 0.0
+    },
+    {
+      "label": "simulated, local PoC",
+      "cohort": "boundary",
+      "mode": "buckets",
+      "train": {
+        "accuracy": 0.955,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.9167024063390322,
+          0.9761477282752958
+        ]
+      },
+      "unseen_test": {
+        "accuracy": 0.95,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.9104209437021562,
+          0.9726176509713551
+        ]
+      },
+      "train_plus_unseen_diagnostic_only": {
+        "accuracy": 0.9525,
+        "n_runs": 400,
+        "wilson_95_interval": [
+          0.9270078923649577,
+          0.9693831678923314
+        ]
+      },
+      "train_test_gap": 0.0050000000000000044,
+      "mean_added_seconds": 1.4922267117600998,
+      "timeout_rate": 0,
+      "overrun_rate_past_3s": 0.49666666666666665,
+      "overflow_rate_past_9s": 0.0
+    },
+    {
+      "label": "simulated, local PoC",
+      "cohort": "overflow",
+      "mode": "raw",
+      "train": {
+        "accuracy": 1.0,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.9811539940816791,
+          1.0
+        ]
+      },
+      "unseen_test": {
+        "accuracy": 1.0,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.9811539940816791,
+          1.0
+        ]
+      },
+      "train_plus_unseen_diagnostic_only": {
+        "accuracy": 1.0,
+        "n_runs": 400,
+        "wilson_95_interval": [
+          0.9904873594003194,
+          1.0
+        ]
+      },
+      "train_test_gap": 0.0,
+      "mean_added_seconds": 0,
+      "timeout_rate": 0,
+      "overrun_rate_past_3s": 1.0,
+      "overflow_rate_past_9s": 1.0
+    },
+    {
+      "label": "simulated, local PoC",
+      "cohort": "overflow",
+      "mode": "buckets",
+      "train": {
+        "accuracy": 1.0,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.9811539940816791,
+          1.0
+        ]
+      },
+      "unseen_test": {
+        "accuracy": 1.0,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.9811539940816791,
+          1.0
+        ]
+      },
+      "train_plus_unseen_diagnostic_only": {
+        "accuracy": 1.0,
+        "n_runs": 400,
+        "wilson_95_interval": [
+          0.9904873594003194,
+          1.0
+        ]
+      },
+      "train_test_gap": 0.0,
+      "mean_added_seconds": 0.0,
+      "timeout_rate": 0,
+      "overrun_rate_past_3s": 1.0,
+      "overflow_rate_past_9s": 1.0
+    }
+  ],
+  "feedback_demo": {
+    "pending": {
+      "status_code": 202,
+      "headers": {
+        "Content-Type": "application/json",
+        "Content-Length": "64"
+      },
+      "body": "{\"status\":\"pending\"}                                            ",
+      "streaming": false
+    },
+    "final": {
+      "status": "complete",
+      "safe_range": [
+        9,
+        21
+      ]
+    },
+    "repeat_same_range": true,
+    "third_unique_batch": {
+      "status": "unavailable"
+    },
+    "extreme_count_limit": "With width 12, count 0 yields [0,12] and count 100 yields [88,100]; trivially distinguishable.",
+    "guarantee": "Heuristic obfuscation only; no differential privacy guarantee."
+  },
+  "overflow_comparison": {
+    "actual_time_after_9s": {
+      "label": "simulated, local PoC",
+      "cohort": "overflow",
+      "mode": "buckets",
+      "train": {
+        "accuracy": 1.0,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.9811539940816791,
+          1.0
+        ]
+      },
+      "unseen_test": {
+        "accuracy": 1.0,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.9811539940816791,
+          1.0
+        ]
+      },
+      "train_plus_unseen_diagnostic_only": {
+        "accuracy": 1.0,
+        "n_runs": 400,
+        "wilson_95_interval": [
+          0.9904873594003194,
+          1.0
+        ]
+      },
+      "train_test_gap": 0.0,
+      "mean_added_seconds": 0.0,
+      "timeout_rate": 0,
+      "overrun_rate_past_3s": 1.0,
+      "overflow_rate_past_9s": 1.0
+    },
+    "hard_timeout": {
+      "label": "simulated, local PoC",
+      "cohort": "overflow",
+      "mode": "hard_timeout",
+      "train": {
+        "accuracy": 0.5,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.43135962209034523,
+          0.5686403779096547
+        ]
+      },
+      "unseen_test": {
+        "accuracy": 0.5,
+        "n_runs": 200,
+        "wilson_95_interval": [
+          0.43135962209034523,
+          0.5686403779096547
+        ]
+      },
+      "train_plus_unseen_diagnostic_only": {
+        "accuracy": 0.5,
+        "n_runs": 400,
+        "wilson_95_interval": [
+          0.4512336165999552,
+          0.5487663834000448
+        ]
+      },
+      "train_test_gap": 0.0,
+      "mean_added_seconds": 0,
+      "timeout_rate": 1.0,
+      "overrun_rate_past_3s": 1.0,
+      "overflow_rate_past_9s": 1.0
+    },
+    "timeout_response": {
+      "status_code": 202,
+      "headers": {
+        "Content-Type": "application/json",
+        "Content-Length": "64"
+      },
+      "body": "{\"status\":\"pending\"}                                            ",
+      "streaming": false
+    },
+    "max_output_tokens": 256,
+    "limitation": "Deadline and token cap are modeled only. A token cap does not bound runtime. Live model cancellation and fixed network release are not implemented. All overflow observations in this cohort time out, so timeout utility is zero."
+  },
+  "cache_demo": {
+    "mock_role_isolation": true,
+    "mock_session_reset": true,
+    "hosted_deepseek_internal_cache_reset": "Unavailable to this client; not tested."
+  },
+  "audit_demo": {
+    "intact": true,
+    "edited": false,
+    "tail_deleted": false,
+    "reordered": false,
+    "wrong_run_replay": false,
+    "tail_and_count_changed": false
+  },
+  "limitations": [
+    "Synthetic latency model and simulated HTTP envelope, not a live sandbox.",
+    "Random-range feedback is heuristic and can still reveal a defense through repeated/adaptive batches.",
+    "SQLite budget requires protected storage and trusted principal/defense identities.",
+    "Mock cache isolation is not evidence about hosted DeepSeek or a real vLLM cache.",
+    "Checkpoint and public key are local demo files, not an independent audit witness.",
+    "Audit integrity is separate from a leakage pass; no universal VALID security verdict is issued."
+  ]
+}

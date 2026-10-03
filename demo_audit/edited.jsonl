@@ -1,0 +1,3 @@
+{"event":{"type":"start"},"hash":"cd8275a30c49013f7c5c04802096f9e020591fe8f6ae6002661d1a8a8e5dc329","previous_hash":"0000000000000000000000000000000000000000000000000000000000000000","run_id":"demo-run","sequence":1}
+{"event":{"observation":"changed","type":"request"},"hash":"71ce1df4c8357f0758664db4a82e69a9d9e9af5049b8326d8102e62b0f63474a","previous_hash":"cd8275a30c49013f7c5c04802096f9e020591fe8f6ae6002661d1a8a8e5dc329","run_id":"demo-run","sequence":2}
+{"event":{"events_before_complete":2,"type":"complete"},"hash":"12a7b1af998e3660c4cba2c7905d16594122fbb28cc6af26dc2b961d202c0cba","previous_hash":"71ce1df4c8357f0758664db4a82e69a9d9e9af5049b8326d8102e62b0f63474a","run_id":"demo-run","sequence":3}

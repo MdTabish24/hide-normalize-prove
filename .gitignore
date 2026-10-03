@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.env.*
+*.sqlite
+*.sqlite-*
+.ppt-build/
+.codex-finalizer/
+output/*checked*.pptx
+output/*revision*.pptx
+pompt.txt
+
+.chart-data-*/
+demo_audit/manual_edit.jsonl
