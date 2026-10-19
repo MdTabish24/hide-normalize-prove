@@ -1,0 +1,126 @@
+name: hide-normalize-prove
+
+x-hardened: &hardened
+  build: .
+  image: hide-normalize-prove:local
+  user: "10001:10001"
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  tmpfs: ["/tmp:rw,noexec,nosuid,size=16m"]
+  pids_limit: 96
+  mem_limit: 256m
+  cpus: 1
+
+services:
+  gateway:
+    <<: *hardened
+    command: ["uvicorn", "gateway:factory", "--factory", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--no-access-log", "--no-server-header", "--no-date-header", "--log-level", "critical"]
+    environment:
+      RED_TOKEN: ${RED_TOKEN:?Generate prototype/.env with init_env.py}
+      BLUE_TOKEN: ${BLUE_TOKEN:?Generate prototype/.env with init_env.py}
+      EVALUATOR_TOKEN: ${EVALUATOR_TOKEN:?Generate prototype/.env with init_env.py}
+      GATEWAY_KEY: ${GATEWAY_KEY:?Generate prototype/.env with init_env.py}
+      BLUE_SERVICE_TOKEN: ${BLUE_SERVICE_TOKEN:?Generate prototype/.env with init_env.py}
+      MODEL_SERVICE_TOKEN: ${MODEL_SERVICE_TOKEN:?Generate prototype/.env with init_env.py}
+      AUDIT_URL: http://audit-collector:8000
+      AUDIT_TOKEN: ${AUDIT_TOKEN:?Run python init_env.py --add-audit}
+      BUCKETS: ${BUCKETS:-3,6,9}
+      DATA_DIR: /data
+      POLICY_MODE: ${POLICY_MODE:-bucket_hard}
+      RANGE_SEED_MODE: ${RANGE_SEED_MODE:-run}
+      EVAL_MODE: ${EVAL_MODE:-0}
+    volumes: ["gateway-data:/data"]
+    ports: ["127.0.0.1:8000:8000"]
+    networks:
+      blue-net:
+        priority: 100
+      red-net: {}
+      model-net: {}
+      audit-net: {}
+    depends_on:
+      blue-defense:
+        condition: service_started
+      model-mock:
+        condition: service_started
+      audit-collector:
+        condition: service_healthy
+  red-client:
+    <<: *hardened
+    command: ["python", "-c", "import time; time.sleep(1000000)"]
+    environment:
+      RED_TOKEN: ${RED_TOKEN:?Generate prototype/.env with init_env.py}
+      GATEWAY_URL: http://gateway:8000
+    # Docker's embedded DNS still resolves peer service names. No upstream DNS.
+    dns: ["127.0.0.1"]
+    networks: [red-net]
+  blue-defense:
+    <<: *hardened
+    command: ["uvicorn", "blue:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log", "--no-server-header", "--log-level", "critical"]
+    environment:
+      SERVICE_TOKEN: ${BLUE_SERVICE_TOKEN:?Generate prototype/.env with init_env.py}
+    networks: [blue-net]
+  model-mock:
+    <<: *hardened
+    command: ["uvicorn", "model:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log", "--no-server-header", "--log-level", "critical"]
+    environment:
+      SERVICE_TOKEN: ${MODEL_SERVICE_TOKEN:?Generate prototype/.env with init_env.py}
+      HIT_SECONDS: ${HIT_SECONDS:-0.3}
+      MISS_SECONDS: ${MISS_SECONDS:-2.0}
+      JITTER_SECONDS: ${JITTER_SECONDS:-0.02}
+      EVAL_MODE: ${EVAL_MODE:-0}
+    networks: [model-net]
+  audit-collector:
+    <<: *hardened
+    command: ["uvicorn", "audit_collector:factory", "--factory", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--no-access-log", "--no-server-header", "--log-level", "critical"]
+    environment:
+      AUDIT_TOKEN: ${AUDIT_TOKEN:?Run python init_env.py --add-audit}
+      AUDIT_LOG_DIR: /audit-logs
+      AUDIT_KEY_DIR: /audit-keys
+      CHECKPOINT_DIR: /checkpoints
+    volumes:
+      - audit-logs:/audit-logs
+      - audit-keys:/audit-keys
+      - checkpoints:/checkpoints
+    networks: [audit-net]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1',8000),1); s.close()"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+      start_period: 3s
+  verifier:
+    <<: *hardened
+    # Optional full-suite process tests launch private localhost mock servers.
+    mem_limit: 512m
+    profiles: [tools]
+    network_mode: none
+    entrypoint: ["python", "verify_audit.py"]
+    command: ["--help"]
+    volumes:
+      - audit-logs:/audit-logs:ro
+      - checkpoints:/checkpoints:ro
+      - gateway-data:/gateway-data:ro
+
+networks:
+  red-net:
+    driver: bridge
+    internal: true
+    driver_opts:
+      # internal alone can expose host services via the bridge gateway address.
+      com.docker.network.bridge.gateway_mode_ipv4: isolated
+  blue-net:
+    driver: bridge
+    internal: true
+  model-net:
+    driver: bridge
+    internal: true
+  audit-net:
+    driver: bridge
+    internal: true
+
+volumes:
+  gateway-data:
+  audit-logs:
+  audit-keys:
+  checkpoints:

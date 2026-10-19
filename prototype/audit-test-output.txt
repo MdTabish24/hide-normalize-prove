@@ -1,0 +1,57 @@
+..........Case                             Result   First failing reason / index
+unmodified                       VALID    VALID / 0
+edit one event                   INVALID  event hash mismatch / 1
+delete middle event              INVALID  sequence discontinuity or replay / 3
+delete last 3 events             INVALID  missing terminal complete record / 5
+reorder two events               INVALID  sequence discontinuity or replay / 1
+duplicate/replay event           INVALID  sequence discontinuity or replay / 3
+rehash without signing key       INVALID  checkpoint signature invalid / 0
+edit log and stored count        INVALID  event hash mismatch / 1
+Local integrity demo only. Publication also requires clean gateway audit status.
+A replayed checkpoint plus matching old log needs an independent freshness witness.
+Events omitted before collection are undetectable; the collector is trusted.
+...{"event": "release", "run_id": null, "role": "blue", "bucket": 0.15, "timestamp": 1792343548.0519361, "prompt_hash": null}
+{"event": "release", "run_id": "r", "role": "red", "bucket": 0.15, "timestamp": 1792343548.24574, "prompt_hash": "bf9a943937df24812a3e637afed22bd6abe0b91d854bac00333145938a3ce2e3"}
+{"event": "release", "run_id": "r", "role": "evaluator", "bucket": 0.15, "timestamp": 1792343548.3963227, "prompt_hash": null}
+{"event": "release", "run_id": "r", "role": "red", "bucket": 0.15, "timestamp": 1792343548.646444, "prompt_hash": null}
+.{"event": "release", "run_id": null, "role": "blue", "bucket": 0.15, "timestamp": 1792343549.061346, "prompt_hash": null}
+{"event": "release", "run_id": "r", "role": "red", "bucket": 0.15, "timestamp": 1792343549.2522619, "prompt_hash": "bf9a943937df24812a3e637afed22bd6abe0b91d854bac00333145938a3ce2e3"}
+{"event": "release", "run_id": "r", "role": "evaluator", "bucket": 0.15, "timestamp": 1792343549.395878, "prompt_hash": null}
+{"event": "release", "run_id": "r", "role": "red", "bucket": 0.15, "timestamp": 1792343549.6998162, "prompt_hash": null}
+{"event": "release", "run_id": "r", "role": "red", "bucket": 0.15, "timestamp": 1792343550.0270462, "prompt_hash": null}
+.{"event": "release", "run_id": null, "role": "blue", "bucket": 0.15, "timestamp": 1792343550.3092358, "prompt_hash": null}
+{"event": "release", "run_id": "r", "role": "red", "bucket": 0.15, "timestamp": 1792343550.5283866, "prompt_hash": "bf9a943937df24812a3e637afed22bd6abe0b91d854bac00333145938a3ce2e3"}
+{"event": "release", "run_id": "r", "role": "evaluator", "bucket": 0.15, "timestamp": 1792343550.694718, "prompt_hash": null}
+.{"event": "release", "run_id": null, "role": "blue", "bucket": 0.15, "timestamp": 1792343551.166396, "prompt_hash": null}
+{"event": "release", "run_id": "r", "role": "red", "bucket": 0.15, "timestamp": 1792343551.3598123, "prompt_hash": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"}
+.AUDIT LIVE HTTP PASS: separate collector key, signed checkpoint VALID; collector restart preserves key; outage keeps API unchanged and verifier INVALID.
+.{"event": "release", "run_id": null, "role": "blue", "bucket": 0.15, "timestamp": 1792343559.4258084, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792343559.6803908, "prompt_hash": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792343559.7896495, "prompt_hash": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792343559.9354327, "prompt_hash": "b0fef621727ff82a7d334d9f1f047dc662ed0e27e05aa8fd1aefd19b0fff312c"}
+{"event": "release", "run_id": null, "role": null, "bucket": 0.45, "timestamp": 1792343560.0774896, "prompt_hash": null}
+{"event": "release", "run_id": null, "role": "red", "bucket": 0.45, "timestamp": 1792343560.548883, "prompt_hash": null}
+.{"event": "release", "run_id": null, "role": "blue", "bucket": 0.15, "timestamp": 1792343561.103498, "prompt_hash": null}
+{"event": "release", "run_id": null, "role": null, "bucket": 0.45, "timestamp": 1792343561.2736337, "prompt_hash": null}
+{"event": "release", "run_id": null, "role": null, "bucket": 0.45, "timestamp": 1792343561.7619987, "prompt_hash": null}
+{"event": "release", "run_id": "r", "role": "red", "bucket": 0.45, "timestamp": 1792343562.2646317, "prompt_hash": "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4"}
+{"event": "release", "run_id": null, "role": "red", "bucket": 0.45, "timestamp": 1792343562.6827455, "prompt_hash": null}
+.{"event": "release", "run_id": null, "role": "blue", "bucket": 0.15, "timestamp": 1792343563.2923155, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792343563.5327766, "prompt_hash": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792343563.611796, "prompt_hash": null}
+{"event": "release", "run_id": null, "role": "red", "bucket": 0.45, "timestamp": 1792343563.7651134, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792343564.237621, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "evaluator", "bucket": 0.15, "timestamp": 1792343564.4260561, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792343564.5716996, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792343564.760362, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792343564.9299755, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792343565.1013756, "prompt_hash": null}
+.{"event": "release", "run_id": null, "role": "blue", "bucket": 0.15, "timestamp": 1792343565.3464534, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792343565.5588572, "prompt_hash": "b0fef621727ff82a7d334d9f1f047dc662ed0e27e05aa8fd1aefd19b0fff312c"}
+.{"event": "release", "run_id": null, "role": "blue", "bucket": 0.15, "timestamp": 1792343565.7607238, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.45, "timestamp": 1792343566.4045293, "prompt_hash": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"}
+.{"event": "release", "run_id": null, "role": null, "bucket": 0.45, "timestamp": 1792343566.4832397, "prompt_hash": null}
+{"event": "release", "run_id": null, "role": "blue", "bucket": 0.45, "timestamp": 1792343566.9477904, "prompt_hash": null}
+...LIVE HTTP PASS: allowed/blocked/hit/miss ~0.3s; generic error/overflow ~0.9s; persistent report budget after process restart.
+.
+27 passed in 31.90s

@@ -1,0 +1,63 @@
+live gateway with mock model, local run: collecting ordinary/raw, train=200, unseen=200
+live gateway with mock model, local run: ordinary/raw 100/400 runs
+live gateway with mock model, local run: ordinary/raw 200/400 runs
+live gateway with mock model, local run: ordinary/raw 300/400 runs
+live gateway with mock model, local run: ordinary/raw 400/400 runs
+live gateway with mock model, local run: ordinary/raw unseen=98.0%
+live gateway with mock model, local run: collecting boundary/raw, train=200, unseen=200
+live gateway with mock model, local run: boundary/raw 100/400 runs
+live gateway with mock model, local run: boundary/raw 200/400 runs
+live gateway with mock model, local run: boundary/raw 300/400 runs
+live gateway with mock model, local run: boundary/raw 400/400 runs
+live gateway with mock model, local run: boundary/raw unseen=99.5%
+live gateway with mock model, local run: collecting overflow/raw, train=200, unseen=200
+live gateway with mock model, local run: overflow/raw 100/400 runs
+live gateway with mock model, local run: overflow/raw 200/400 runs
+live gateway with mock model, local run: overflow/raw 300/400 runs
+live gateway with mock model, local run: overflow/raw 400/400 runs
+live gateway with mock model, local run: overflow/raw unseen=100.0%
+live gateway with mock model, local run: collecting ordinary/bucket, train=200, unseen=200
+live gateway with mock model, local run: ordinary/bucket 100/400 runs
+live gateway with mock model, local run: ordinary/bucket 200/400 runs
+live gateway with mock model, local run: ordinary/bucket 300/400 runs
+live gateway with mock model, local run: ordinary/bucket 400/400 runs
+live gateway with mock model, local run: ordinary/bucket unseen=68.5%
+live gateway with mock model, local run: collecting boundary/bucket, train=200, unseen=200
+live gateway with mock model, local run: boundary/bucket 100/400 runs
+live gateway with mock model, local run: boundary/bucket 200/400 runs
+live gateway with mock model, local run: boundary/bucket 300/400 runs
+live gateway with mock model, local run: boundary/bucket 400/400 runs
+live gateway with mock model, local run: boundary/bucket unseen=98.5%
+live gateway with mock model, local run: collecting overflow/bucket, train=200, unseen=200
+live gateway with mock model, local run: overflow/bucket 100/400 runs
+live gateway with mock model, local run: overflow/bucket 200/400 runs
+live gateway with mock model, local run: overflow/bucket 300/400 runs
+live gateway with mock model, local run: overflow/bucket 400/400 runs
+live gateway with mock model, local run: overflow/bucket unseen=100.0%
+live gateway with mock model, local run: collecting ordinary/bucket_hard, train=200, unseen=200
+live gateway with mock model, local run: ordinary/bucket_hard 100/400 runs
+live gateway with mock model, local run: ordinary/bucket_hard 200/400 runs
+live gateway with mock model, local run: ordinary/bucket_hard 300/400 runs
+live gateway with mock model, local run: ordinary/bucket_hard 400/400 runs
+live gateway with mock model, local run: ordinary/bucket_hard unseen=59.5%
+live gateway with mock model, local run: collecting boundary/bucket_hard, train=200, unseen=200
+live gateway with mock model, local run: boundary/bucket_hard 100/400 runs
+live gateway with mock model, local run: boundary/bucket_hard 200/400 runs
+live gateway with mock model, local run: boundary/bucket_hard 300/400 runs
+live gateway with mock model, local run: boundary/bucket_hard 400/400 runs
+live gateway with mock model, local run: boundary/bucket_hard unseen=100.0%
+live gateway with mock model, local run: collecting overflow/bucket_hard, train=200, unseen=200
+live gateway with mock model, local run: overflow/bucket_hard 100/400 runs
+live gateway with mock model, local run: overflow/bucket_hard 200/400 runs
+live gateway with mock model, local run: overflow/bucket_hard 300/400 runs
+live gateway with mock model, local run: overflow/bucket_hard 400/400 runs
+live gateway with mock model, local run: overflow/bucket_hard unseen=100.0%
+live gateway, small subset: verifying feedback and restart
+simulated feedback analysis (production range logic, Monte Carlo): 200 probe sets per K/mode
+simulated feedback analysis (production range logic, Monte Carlo): run 50/200 sets
+simulated feedback analysis (production range logic, Monte Carlo): run 100/200 sets
+simulated feedback analysis (production range logic, Monte Carlo): run 150/200 sets
+simulated feedback analysis (production range logic, Monte Carlo): run 200/200 sets
+simulated feedback analysis (production range logic, Monte Carlo): probeset 50/200 sets
+simulated feedback analysis (production range logic, Monte Carlo): probeset 100/200 sets
+simulated feedback analysis (production range logic, Monte Carlo): probeset 150/200 sets

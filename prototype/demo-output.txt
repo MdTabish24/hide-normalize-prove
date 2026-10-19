@@ -1,0 +1,14 @@
+Container isolation demo: NOT RUN / NOT VERIFIED
+
+Docker CLI and Compose are installed; Compose configuration validation passed.
+Docker Desktop could not start its engine on this machine:
+
+starting services: initializing Inference manager:
+.../Docker/run/dockerInference: The file cannot be accessed by the system.
+
+No Docker reset, settings change or removal of host files was attempted.
+After repairing/restarting Docker Desktop, use the README commands to build and
+run demo_isolation.py INSIDE red-client. Do not interpret the localhost HTTP test
+as evidence of container network isolation.
+
+Actual local HTTP/ASGI tests are recorded separately in test-output.txt.

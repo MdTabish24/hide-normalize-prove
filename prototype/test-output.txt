@@ -1,0 +1,30 @@
+{"event": "release", "run_id": null, "role": "blue", "bucket": 0.15, "timestamp": 1792341614.375558, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792341614.5935335, "prompt_hash": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792341614.7266967, "prompt_hash": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792341614.8722868, "prompt_hash": "b0fef621727ff82a7d334d9f1f047dc662ed0e27e05aa8fd1aefd19b0fff312c"}
+{"event": "release", "run_id": null, "role": null, "bucket": 0.45, "timestamp": 1792341615.0239134, "prompt_hash": null}
+{"event": "release", "run_id": null, "role": "red", "bucket": 0.45, "timestamp": 1792341615.4755712, "prompt_hash": null}
+.{"event": "release", "run_id": null, "role": "blue", "bucket": 0.15, "timestamp": 1792341615.9642355, "prompt_hash": null}
+{"event": "release", "run_id": null, "role": null, "bucket": 0.45, "timestamp": 1792341616.1208203, "prompt_hash": null}
+{"event": "release", "run_id": null, "role": null, "bucket": 0.45, "timestamp": 1792341616.588661, "prompt_hash": null}
+{"event": "release", "run_id": "r", "role": "red", "bucket": 0.45, "timestamp": 1792341617.0745177, "prompt_hash": "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4"}
+{"event": "release", "run_id": null, "role": "red", "bucket": 0.45, "timestamp": 1792341617.5227678, "prompt_hash": null}
+.{"event": "release", "run_id": null, "role": "blue", "bucket": 0.15, "timestamp": 1792341618.0264215, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792341618.2500706, "prompt_hash": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792341618.3387277, "prompt_hash": null}
+{"event": "release", "run_id": null, "role": "red", "bucket": 0.45, "timestamp": 1792341618.4938698, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792341618.9616227, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "evaluator", "bucket": 0.15, "timestamp": 1792341619.126706, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792341619.2872303, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792341619.4738474, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792341619.6359627, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792341619.7944548, "prompt_hash": null}
+.{"event": "release", "run_id": null, "role": "blue", "bucket": 0.15, "timestamp": 1792341620.0169146, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.15, "timestamp": 1792341620.2132876, "prompt_hash": "b0fef621727ff82a7d334d9f1f047dc662ed0e27e05aa8fd1aefd19b0fff312c"}
+.{"event": "release", "run_id": null, "role": "blue", "bucket": 0.15, "timestamp": 1792341620.390129, "prompt_hash": null}
+{"event": "release", "run_id": "test-run", "role": "red", "bucket": 0.45, "timestamp": 1792341621.0129337, "prompt_hash": "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"}
+.{"event": "release", "run_id": null, "role": null, "bucket": 0.45, "timestamp": 1792341621.0359373, "prompt_hash": null}
+{"event": "release", "run_id": null, "role": "blue", "bucket": 0.45, "timestamp": 1792341621.5023568, "prompt_hash": null}
+...LIVE HTTP PASS: allowed/blocked/hit/miss ~0.3s; generic error/overflow ~0.9s; persistent report budget after process restart.
+.
+9 passed in 19.24s

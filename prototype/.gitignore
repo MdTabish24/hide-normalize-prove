@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+data/
+*.sqlite*
+*.enc
+__pycache__/
+.pytest_cache/
+.venv/
+audit-logs/
+audit-keys/
+checkpoints/
+*.bin
+.agent_redteam_state/

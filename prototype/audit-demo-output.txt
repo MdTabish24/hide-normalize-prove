@@ -1,0 +1,14 @@
+Case                             Result   First failing reason / index
+unmodified                       VALID    VALID / 0
+edit one event                   INVALID  event hash mismatch / 1
+delete middle event              INVALID  sequence discontinuity or replay / 3
+delete last 3 events             INVALID  missing terminal complete record / 5
+reorder two events               INVALID  sequence discontinuity or replay / 1
+duplicate/replay event           INVALID  sequence discontinuity or replay / 3
+rehash without signing key       INVALID  checkpoint signature invalid / 0
+edit log and stored count        INVALID  event hash mismatch / 1
+Local integrity demo only. Publication also requires clean gateway audit status.
+A replayed checkpoint plus matching old log needs an independent freshness witness.
+Events omitted before collection are undetectable; the collector is trusted.
+.
+1 passed in 0.82s
