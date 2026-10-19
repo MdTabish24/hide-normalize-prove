@@ -13,6 +13,42 @@ x-hardened: &hardened
   cpus: 1
 
 services:
+  dashboard:
+    profiles: [dashboard]
+    build: ./dashboard
+    image: hide-normalize-prove-dashboard:local
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=16m"]
+    pids_limit: 64
+    mem_limit: 192m
+    cpus: 0.5
+    environment:
+      DASHBOARD_SAVED: /saved
+      DASHBOARD_AUDIT: /audit-logs
+      DASHBOARD_REQUESTS: /control
+      DASHBOARD_OBSERVATIONS: /observations
+      # This flag affects only the operator UI; not the main gateway.
+      EVAL_MODE: ${DASHBOARD_EVAL_MODE:-0}
+    volumes:
+      - ./eval/output:/saved/eval/output:ro
+      - ./evidence:/saved/evidence:ro
+      - audit-logs:/audit-logs:ro
+      - ./dashboard/runtime/requests:/control
+      - ./dashboard/runtime/observations:/observations:ro
+    networks: [dash-net]
+  dashboard-proxy:
+    <<: *hardened
+    profiles: [dashboard]
+    # Same Desktop host-binding workaround as operator-proxy. No credentials.
+    command: ["python", "tcp_proxy.py"]
+    environment:
+      PROXY_TARGET: dashboard:8000
+    ports: ["127.0.0.1:${DASHBOARD_PORT:-8090}:8000"]
+    networks: [operator-net, dash-net]
+    depends_on: [dashboard]
   gateway:
     <<: *hardened
     command: ["uvicorn", "gateway:factory", "--factory", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--no-access-log", "--no-server-header", "--no-date-header", "--log-level", "critical"]
@@ -124,6 +160,9 @@ services:
       - gateway-data:/gateway-data:ro
 
 networks:
+  dash-net:
+    driver: bridge
+    internal: true
   operator-net:
     # Non-internal so Docker can publish the host port; only operator-proxy.
     driver: bridge

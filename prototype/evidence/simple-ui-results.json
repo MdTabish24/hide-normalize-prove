@@ -1,0 +1,18 @@
+{
+  "label": "live gateway with mock model, local run; explanatory recorded playback",
+  "browser": {
+    "active": "gateway",
+    "after": "56.5%",
+    "before": "98.5%",
+    "button": "↻ Phir dekho",
+    "dimBlue": "0.18",
+    "petals": 22,
+    "resultClass": "narrator success",
+    "step": "8/8",
+    "title": "Jawab bacha!"
+  },
+  "python_tests": 32,
+  "javascript_tests": 4,
+  "shake_verified": true,
+  "prior_collector_timing_failure": "unresolved"
+}

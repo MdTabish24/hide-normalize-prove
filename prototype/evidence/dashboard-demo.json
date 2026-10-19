@@ -1,0 +1,687 @@
+{
+  "label": "live gateway, mock model, local run",
+  "observations": {
+    "status": "complete",
+    "events": [
+      {
+        "id": "1792401572.936529-1",
+        "request": 1,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-2",
+        "request": 1,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-3",
+        "request": 2,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-4",
+        "request": 2,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-5",
+        "request": 1,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-6",
+        "request": 2,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-7",
+        "request": 3,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-8",
+        "request": 3,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-9",
+        "request": 4,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-10",
+        "request": 4,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-11",
+        "request": 3,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-12",
+        "request": 4,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-13",
+        "request": 5,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-14",
+        "request": 5,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-15",
+        "request": 6,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-16",
+        "request": 6,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-17",
+        "request": 5,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-18",
+        "request": 6,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-19",
+        "request": 7,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-20",
+        "request": 7,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-21",
+        "request": 8,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-22",
+        "request": 8,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-23",
+        "request": 7,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-24",
+        "request": 8,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-25",
+        "request": 9,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-26",
+        "request": 9,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-27",
+        "request": 10,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-28",
+        "request": 10,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-29",
+        "request": 9,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-30",
+        "request": 10,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-31",
+        "request": 11,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-32",
+        "request": 11,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-33",
+        "request": 12,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-34",
+        "request": 12,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-35",
+        "request": 11,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-36",
+        "request": 12,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-37",
+        "request": 13,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-38",
+        "request": 13,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-39",
+        "request": 14,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-40",
+        "request": 14,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-41",
+        "request": 13,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-42",
+        "request": 14,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-43",
+        "request": 15,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-44",
+        "request": 15,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-45",
+        "request": 16,
+        "lane": "RED",
+        "text": "Red sent request",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-46",
+        "request": 16,
+        "lane": "ENVIRONMENT",
+        "text": "Red received HTTP response",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-47",
+        "request": 15,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-48",
+        "request": 16,
+        "lane": "BLUE",
+        "text": "Evaluator read gateway outcome",
+        "source": "operator observed HTTP / DB"
+      },
+      {
+        "id": "1792401572.936529-49",
+        "request": null,
+        "lane": "ENVIRONMENT",
+        "text": "Audit verification finished",
+        "source": "operator observed HTTP / DB"
+      }
+    ],
+    "requests": [
+      {
+        "index": 1,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.9179835999984789,
+        "total": 0.9249628999987181,
+        "allowed": 0,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter A",
+        "split": "train",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 2,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.9541119999994407,
+        "total": 0.9631329000003461,
+        "allowed": 1,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter A",
+        "split": "train",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 3,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.9247828000006848,
+        "total": 0.932752700000492,
+        "allowed": 1,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter B",
+        "split": "train",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 4,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.949547000000166,
+        "total": 0.9575598999999784,
+        "allowed": 1,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter B",
+        "split": "train",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 5,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.9540659000012965,
+        "total": 0.9603860000006534,
+        "allowed": 1,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter B",
+        "split": "train",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 6,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.9610895000005257,
+        "total": 0.9664998999996897,
+        "allowed": 1,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter B",
+        "split": "train",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 7,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.9653066999999282,
+        "total": 0.9719490000006772,
+        "allowed": 0,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter A",
+        "split": "train",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 8,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.9530329999997775,
+        "total": 0.9593136000003142,
+        "allowed": 1,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter A",
+        "split": "train",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 9,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.9356845999991492,
+        "total": 0.9451343999990058,
+        "allowed": 0,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter B",
+        "split": "test",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 10,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.9281112999997276,
+        "total": 0.9396154999994906,
+        "allowed": 1,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter B",
+        "split": "test",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 11,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.9555538999993587,
+        "total": 0.9629669999994803,
+        "allowed": 1,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter B",
+        "split": "test",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 12,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.9618336000003183,
+        "total": 0.9665860000004614,
+        "allowed": 1,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter B",
+        "split": "test",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 13,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.9395783999989362,
+        "total": 0.9451345999987097,
+        "allowed": 0,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter A",
+        "split": "test",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 14,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.9501132999994297,
+        "total": 0.9577821000002587,
+        "allowed": 1,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter A",
+        "split": "test",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 15,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.943305999999211,
+        "total": 0.9505521999999473,
+        "allowed": 0,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter A",
+        "split": "test",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      },
+      {
+        "index": 16,
+        "status": 202,
+        "body_length": 64,
+        "ttfb": 0.9519674999992276,
+        "total": 0.9585719000006065,
+        "allowed": 1,
+        "cancelled": 0,
+        "response": "pending",
+        "world": "keyword filter A",
+        "split": "test",
+        "compute": "NOT RUN",
+        "headers": {
+          "content-length": "64",
+          "content-type": "application/json"
+        }
+      }
+    ],
+    "scenarios": {
+      "isolation": {
+        "status": "NOT RUN",
+        "rows": []
+      },
+      "audit": {
+        "status": "PASS",
+        "rows": [
+          {
+            "name": "unmodified",
+            "result": "VALID"
+          },
+          {
+            "name": "edit one event",
+            "result": "INVALID"
+          },
+          {
+            "name": "delete middle event",
+            "result": "INVALID"
+          },
+          {
+            "name": "delete last 3 events",
+            "result": "INVALID"
+          },
+          {
+            "name": "reorder two events",
+            "result": "INVALID"
+          },
+          {
+            "name": "duplicate/replay event",
+            "result": "INVALID"
+          },
+          {
+            "name": "rehash without signing key",
+            "result": "INVALID"
+          },
+          {
+            "name": "edit log and stored count",
+            "result": "INVALID"
+          }
+        ]
+      }
+    },
+    "accuracy": {
+      "correct": 2,
+      "n": 4,
+      "train_n": 4,
+      "train_accuracy": 1.0,
+      "gap": 0.5,
+      "interval": [
+        0.15003898915214947,
+        0.8499610108478506
+      ]
+    },
+    "heartbeat": 0,
+    "matrix_active": false,
+    "policy": "window_hard",
+    "report": null,
+    "audit_verified": {
+      "runs": 16,
+      "valid": 16
+    }
+  }
+}

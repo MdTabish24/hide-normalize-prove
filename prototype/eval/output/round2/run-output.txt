@@ -24,3 +24,14 @@ live gateway with mock model, local run: ordinary/bucket 400/400 runs
 live gateway, mock model, local run: ordinary/bucket unseen=56.5% timeouts=0.0% (126.1 s)
 live gateway, mock model, local run: boundary/bucket train=200 unseen=200
 live gateway with mock model, local run: boundary/bucket 100/400 runs
+live gateway with mock model, local run: boundary/bucket 200/400 runs
+live gateway with mock model, local run: boundary/bucket 300/400 runs
+live gateway with mock model, local run: boundary/bucket 400/400 runs
+live gateway, mock model, local run: boundary/bucket unseen=100.0% timeouts=0.0% (150.7 s)
+live gateway, mock model, local run: overflow/bucket train=200 unseen=200
+live gateway with mock model, local run: overflow/bucket 100/400 runs
+live gateway with mock model, local run: overflow/bucket 200/400 runs
+live gateway with mock model, local run: overflow/bucket 300/400 runs
+live gateway with mock model, local run: overflow/bucket 400/400 runs
+live gateway, mock model, local run: overflow/bucket unseen=100.0% timeouts=0.0% (214.4 s)
+exit=4

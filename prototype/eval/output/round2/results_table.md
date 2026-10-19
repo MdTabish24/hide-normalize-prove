@@ -10,6 +10,8 @@ Unseen-run accuracy of the predeclared depth-3 decision tree (same attacker as R
 | boundary | raw | 100.0% (98.1%–100.0%) | +0.0% | 99.5% | 0.0% | 0.220 s | 1 | 200 |
 | overflow | raw | 99.0% (96.4%–99.7%) | +1.0% | 100.0% | 0.0% | 0.502 s | 1 | 200 |
 | ordinary | bucket | 56.5% (49.6%–63.2%) | +9.5% | 68.5% | 0.0% | 0.358 s | 1 | 200 |
+| boundary | bucket | 100.0% (98.1%–100.0%) | +0.0% | 98.5% | 0.0% | 0.442 s | 1 | 200 |
+| overflow | bucket | 100.0% (98.1%–100.0%) | +0.0% | 100.0% | 0.0% | 0.649 s | 1 | 200 |
 
 ## Audit status after each policy
 

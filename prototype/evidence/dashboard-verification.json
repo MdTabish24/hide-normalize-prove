@@ -1,0 +1,15 @@
+{
+  "label": "live gateway, mock model, local run",
+  "backend": {"status": "PASS", "passed": 10},
+  "selected": {"status": "PASS", "passed": 29, "deselected_timing": 1},
+  "collector_timing": {
+    "status": "FAIL",
+    "isolated_rerun": true,
+    "healthy_median_seconds": 0.1631455000006099,
+    "slow_median_seconds": 0.17891579999923124,
+    "allowed_median_gap_seconds": 0.01,
+    "note": "Existing test failed both with other demo activity and in a standalone rerun. Cause unresolved; no gateway or existing test changes."
+  },
+  "compose": {"status": "PASS", "note": "Validated without loading .env using --env-file NUL --no-interpolate --quiet."},
+  "docker_runtime": {"status": "NOT RUN", "note": "Docker Engine unavailable; no live dashboard container or network-isolation claim."}
+}

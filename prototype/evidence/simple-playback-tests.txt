@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: a stopped request never highlights a model call
+ok 1 - a stopped request never highlights a model call
+  ---
+  duration_ms: 1.0508
+  ...
+# Subtest: an allowed request does not invent a model answer
+ok 2 - an allowed request does not invent a model answer
+  ---
+  duration_ms: 0.2093
+  ...
+# Subtest: failed or missing envelope evidence never celebrates
+ok 3 - failed or missing envelope evidence never celebrates
+  ---
+  duration_ms: 0.229
+  ...
+# Subtest: comparison uses recorded ordinary raw versus original bucket only
+ok 4 - comparison uses recorded ordinary raw versus original bucket only
+  ---
+  duration_ms: 0.1799
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 75.615

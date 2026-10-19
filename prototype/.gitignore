@@ -12,3 +12,4 @@ audit-keys/
 checkpoints/
 *.bin
 .agent_redteam_state/
+dashboard/runtime/

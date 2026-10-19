@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Red ki chaal, Blue ka bachav · Bayora</title><link rel="stylesheet" href="/static/story.css"><link rel="stylesheet" href="/static/stage.css"><link rel="stylesheet" href="/static/simple.css"><script src="/static/stage.js" defer></script><script src="/static/report.js" defer></script><script src="/static/story.js" defer></script></head>
+<body><main>
+<div class="simple-header"><a class="brand" href="/">BAYORA / HIDE · NORMALIZE · PROVE</a><span id="connection">Saved demo</span></div>
+<section class="simple-heading"><h1>Red ki chaal. <em>Blue ka bachav.</em></h1><p>Red clue maangega. Dekho usko kya milta hai.</p><button id="play" disabled>▶ Demo dekho</button><p class="playback-label" id="playback-label">Ek recorded request ka samjhane wala playback · model abhi mock hai</p></section>
+<section class="simple-stage" aria-label="Red robot, Blue robot, LLM and environment">
+<div class="arena" id="arena" data-active="red">
+<svg class="arena-map" viewBox="0 0 1200 570" role="img" aria-label="Red reaches the gateway. Only the gateway reaches Blue, the model and audit.">
+<defs>
+<symbol id="robot" viewBox="0 0 130 155"><path d="M65 25V12" stroke="currentColor" stroke-width="6"/><circle cx="65" cy="9" r="7" fill="currentColor"/><rect x="17" y="29" width="96" height="64" rx="20" fill="currentColor"/><rect x="27" y="39" width="76" height="43" rx="13" fill="#0e1725"/><circle cx="48" cy="56" r="7" fill="#f3f6fa"/><circle cx="82" cy="56" r="7" fill="#f3f6fa"/><path d="M49 72h32" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><rect x="31" y="101" width="68" height="35" rx="12" fill="currentColor"/><path d="M22 108 10 125m98-17 12 17M47 139v10m36-10v10" stroke="currentColor" stroke-width="10" stroke-linecap="round"/><path d="m57 109 8 14 8-14" fill="none" stroke="#0e1725" stroke-width="4"/></symbol>
+<marker id="arrow-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10" fill="#6d829b"/></marker>
+</defs>
+<rect x="307" y="24" width="864" height="520" rx="30" class="environment-wall"/>
+<text x="335" y="57" class="map-label">ENVIRONMENT · TRUSTED MEDIATOR + PRIVATE SERVICES</text>
+<rect x="28" y="98" width="225" height="337" rx="23" class="red-zone"/>
+<text x="64" y="128" class="map-label">RED'S SIDE</text>
+<path d="M231 245H473" class="route route-red" marker-end="url(#arrow-neutral)"/>
+<path d="M480 296H238" class="route route-return" marker-end="url(#arrow-neutral)"/>
+<text x="280" y="227" class="route-label">probe →</text><text x="282" y="320" class="route-label">← pending only</text>
+<path d="M640 216Q720 216 821 150" class="route route-blue" marker-end="url(#arrow-neutral)"/>
+<text x="680" y="158" class="route-label">ask Blue</text>
+<path d="M641 273Q750 273 840 363" class="route route-model" marker-end="url(#arrow-neutral)"/>
+<text x="704" y="323" class="route-label">if allowed</text>
+<path d="M560 330V435" class="route route-audit" marker-end="url(#arrow-neutral)"/>
+<text x="578" y="405" class="route-label">record + verify</text>
+<g class="actor actor-red"><use href="#robot" x="77" y="164" width="126" height="150" class="red-robot"/></g>
+<g class="actor actor-blue"><use href="#robot" x="846" y="76" width="102" height="122" class="blue-robot"/></g>
+<g class="gateway-art actor actor-gateway"><rect x="477" y="166" width="165" height="166" rx="25"/><path d="M560 193 602 210v33c0 31-42 49-42 49s-42-18-42-49v-33Z"/><path d="m542 242 13 13 25-29"/></g>
+<g class="llm-art actor actor-model"><circle cx="907" cy="380" r="57"/><circle cx="883" cy="368" r="8"/><circle cx="928" cy="368" r="8"/><path d="M886 396q21 16 42 0M907 322v-14m-58 70h-15m130 0h15"/></g>
+<g class="audit-art actor actor-audit"><rect x="482" y="442" width="156" height="65" rx="15"/><path d="m501 474 9 9 18-22"/><text x="541" y="481">AUDIT</text></g>
+<circle r="7" class="packet packet-send"><animateMotion id="motion-send" path="M231 245H473" dur=".9s" begin="indefinite"/></circle>
+<circle r="7" class="packet packet-return"><animateMotion id="motion-return" path="M480 296H238" dur=".9s" begin="indefinite"/></circle>
+</svg>
+<div class="actor-bubble bubble-red actor actor-red"><strong>Red · attacker robot</strong><p id="speech-red">“Mujhe secret ka clue chahiye!”</p></div>
+<div class="actor-bubble bubble-gateway actor actor-gateway"><strong>Gateway · traffic controller</strong><p id="speech-gateway">“Pehle guard se check karunga.”</p></div>
+<div class="actor-bubble bubble-blue actor actor-blue"><strong>Blue · guard robot</strong><p id="speech-blue">“Main private defense hoon.”</p></div>
+<div class="actor-bubble bubble-model actor actor-model"><strong>Client LLM · mock backend</strong><p id="speech-model">“Mera fixed setup: Dummy answer.”</p></div>
+<div class="audit-speech actor actor-audit" id="speech-audit">Audit · record ki jaanch</div>
+<div class="arena-environment">Recorded flow · exact internal timing trace nahi</div>
+</div>
+<div class="petals" id="petals" aria-hidden="true"></div>
+<div class="narrator" id="narrator" role="status"><span class="step-number" id="step-number">▶</span><div><h2 id="narration-title">Bas ek button dabao.</h2><p id="narration-copy">Jo character kaam karega, sirf wahi bright dikhega.</p></div></div>
+</section>
+<section class="full-report" aria-labelledby="report-title">
+<div class="report-heading"><span class="eyebrow">HIDE · NORMALIZE · PROVE</span><h2 id="report-title">Saare tests. Saaf hisaab.</h2><p>Kahan Red jeeta, kahan ruka, aur kahan abhi jaanch baaki hai.</p></div>
+<div class="report-legend"><span class="result-pill good">PASS / BLOCKED</span><span>Check ka expected result mila</span><span class="result-pill bad">FAIL / LEAKED</span><span>Problem mili</span><span class="result-pill waiting">NOT RUN</span><span>Proof abhi nahi</span></div>
+<article class="report-section"><div class="report-section-title"><span>01</span><div><h3>Timing se secret ka andaza laga?</h3><p>Same attack, bina solution aur har release policy ke saath. Number = Red ke sahi guesses; balanced task mein 50% chance hai.</p></div></div>
+<p class="report-context" id="matrix-summary">Timing results load ho rahe hain…</p>
+<div class="table-scroll"><table class="evidence-table timing-table"><caption>Live gateway with mock model, local run · saved unseen-run accuracy</caption><thead><tr><th scope="col">Attack / traffic</th><th scope="col">Bina protection<small>raw time</small></th><th scope="col">Buckets<small>3 / 6 / 9s; actual overflow</small></th><th scope="col">Hard timeout<small>bucket_hard; max 9s</small></th><th scope="col">Fixed window<small>window_hard; one release window</small></th></tr></thead><tbody id="timing-results"></tbody></table></div>
+<p class="report-context">Scale 0.1 in saved local tests. CI = 95% Wilson interval; train/test runs separate. 56.5% is uncertain, not proof of zero leak. Ordinary traffic ka result boundary/overflow par apply nahi hota.</p></article>
+<article class="report-section"><div class="report-section-title"><span>02</span><div><h3>Model ke jawab se kya nikla?</h3><p id="real-scope">Real model run, small sample · saved outputs.</p></div></div>
+<div class="table-scroll"><table class="evidence-table"><caption>Real-model output disclosure and latency cost</caption><thead><tr><th scope="col">Check</th><th scope="col">Bina gateway / measured raw</th><th scope="col">Gateway / offline padding</th><th scope="col">Iska matlab</th></tr></thead><tbody id="real-results"></tbody></table></div></article>
+<article class="report-section"><div class="report-section-title"><span>03</span><div><h3>Isolation, audit aur baaki saare checks</h3><p>Har saved check yahan hai, failure bhi. Historical PASS abhi ke deployment ko certify nahi karta. Bina-protection baseline jahan measure nahi hua, comparison claim nahi hai.</p></div></div>
+<div class="table-scroll"><table class="evidence-table"><caption>Saved evidence register, including unresolved failures and incomplete work</caption><thead><tr><th scope="col">Test / kya check kiya</th><th scope="col">Result</th><th scope="col">Saved evidence</th><th scope="col">Scope</th></tr></thead><tbody id="check-results"></tbody></table></div></article>
+<article class="report-section"><div class="report-section-title"><span>04</span><div><h3>Ek-ek isolation aur log-tamper attempt</h3><p>Red kahan connect kar saka? Log mein badlav pakda gaya? Tampered log ka INVALID aana yahan PASS hai.</p></div></div>
+<div class="table-scroll"><table class="evidence-table"><caption>Individual cases from saved Docker isolation and audit demo logs</caption><thead><tr><th scope="col">Attempt</th><th scope="col">Expected</th><th scope="col">Actual</th><th scope="col">Check result</th></tr></thead><tbody id="case-results"></tbody></table></div></article>
+<article class="report-section"><div class="report-section-title"><span>05</span><div><h3>Upar wale demo mein exactly kya hua?</h3><p>Har recorded request, final report repeat, third-read budget aur matched audit. Raw LLM output aur compute duration record nahi hue. Tiny demo privacy ya timing ka full proof nahi.</p></div></div>
+<div class="table-scroll"><table class="evidence-table"><caption>Current saved story · live HTTP gateway with mock model, local run</caption><thead><tr><th scope="col">Request / check</th><th scope="col">Private outcome / report</th><th scope="col">Red ko kya mila / evidence</th><th scope="col">Result</th></tr></thead><tbody id="story-results"></tbody></table></div></article>
+</section>
+<details class="simple-proof"><summary>Asli numbers aur proof</summary><p>Recorded request replay: Red → gateway → Blue → response → audit. Allowed requests can take the model path. Animation ki speed actual compute time nahi hai. Actual model output record nahi hua.</p><div class="proof-grid"><div>Selected request<strong id="proof-request">NOT RUN</strong></div><div>Actual Red response<strong id="proof-response">NOT RUN</strong></div><div>Matched audit<strong id="proof-audit">NOT RUN</strong></div><div>Red ka final report<strong id="proof-report">NOT RUN</strong></div></div><p id="proof-scope">Isolation and timing certification: INCOMPLETE.</p><p id="record-status">Fresh recording is optional; playback makes no model/API calls.</p><button id="record">Naya 4-request test record karo</button><p id="event-proof">event trail: NOT RUN</p><p><a href="/">Full operator dashboard ↗</a></p><p>Limits: mock model, localhost jitter, small samples, trusted gateway. Boundary/overflow timings can still leak. Range is heuristic, not differential privacy. Host/kernel and hardware attacks are not proved safe here.</p></details>
+<p class="simple-footer">Animation ka PASS sirf is reply ke output gate ka hai. Timing comparison ek alag saved test hai.</p>
+</main></body></html>
