@@ -7,6 +7,7 @@ import secrets
 import time
 
 import httpx
+import pytest
 
 from audit_collector import create_app as collector_app
 from common import PENDING
@@ -20,7 +21,10 @@ def config_for(tmp_path):
         "BLUE_SERVICE_TOKEN", "MODEL_SERVICE_TOKEN", "AUDIT_TOKEN")}
     config.update(DATA_DIR=str(tmp_path / "gateway"), BUCKETS="0.15,0.3,0.45",
                   AUDIT_URL="http://audit-collector", AUDIT_LOG_DIR=str(tmp_path / "logs"),
-                  AUDIT_KEY_DIR=str(tmp_path / "keys"), CHECKPOINT_DIR=str(tmp_path / "cp"))
+                  AUDIT_KEY_DIR=str(tmp_path / "keys"), CHECKPOINT_DIR=str(tmp_path / "cp"),
+                  # Round 2: failed deliveries are retried (not dropped) for this
+                  # outage window before a run is flagged; keep outage tests short.
+                  AUDIT_GIVE_UP_SECONDS="1")
     return config
 
 
@@ -39,7 +43,11 @@ async def audited(config, failure):
                     await asyncio.sleep(0.8)
                 if failure.get("down") or (failure.get("type") and payload.get("type") == failure["type"]):
                     raise httpx.ConnectError("collector unavailable", request=request)
-                return await sink.post(str(request.url), content=request.content, headers=request.headers)
+                response = await sink.post(str(request.url), content=request.content, headers=request.headers)
+                if failure.pop("lose_ack_once", False):
+                    # Collector stored the event but the acknowledgement is lost.
+                    raise httpx.ReadTimeout("acknowledgement lost", request=request)
+                return response
             return httpx.Response(200, json={"allowed": True} if request.url.host == "blue-defense" else {"answer": "dummy"})
         app = create_app(config, httpx.MockTransport(dispatch))
         async with app.router.lifespan_context(app), httpx.AsyncClient(
@@ -67,6 +75,7 @@ def verified(config, collector, gateway_status=True):
                   collector.logs.parent / "gateway" / "runs.sqlite" if gateway_status else None)
 
 
+@pytest.mark.timing
 def test_all_required_events_and_report_snapshot_refresh(tmp_path):
     config = config_for(tmp_path)
     async def scenario():
@@ -117,6 +126,7 @@ def test_partial_outage_is_signed_into_complete_record(tmp_path):
     asyncio.run(scenario())
 
 
+@pytest.mark.timing
 def test_slow_collector_cannot_delay_pending_envelope(tmp_path):
     config = config_for(tmp_path)
     async def scenario():

@@ -67,6 +67,7 @@ def generic(response):
     assert dict(response.headers) == HEADERS
 
 
+@pytest.mark.timing
 def test_envelope_and_first_bucket_for_blocked_allowed_hit_miss(settings):
     async def scenario():
         async with client_for(settings) as (_, client):
@@ -83,6 +84,7 @@ def test_envelope_and_first_bucket_for_blocked_allowed_hit_miss(settings):
     asyncio.run(scenario())
 
 
+@pytest.mark.timing
 def test_errors_use_same_fixed_last_bucket(settings):
     async def scenario():
         async with client_for(settings, fail=True) as (_, client):
@@ -138,6 +140,7 @@ def test_defense_encrypted_at_rest_and_loaded_after_restart(settings, tmp_path):
     asyncio.run(scenario())
 
 
+@pytest.mark.timing
 def test_hard_timeout_same_envelope_and_count_finishes(settings, monkeypatch):
     monkeypatch.setenv("MISS_SECONDS", "0.9")
     async def scenario():
@@ -165,6 +168,7 @@ def test_role_is_derived_only_from_token(settings):
     asyncio.run(scenario())
 
 
+@pytest.mark.timing
 def test_cache_miss_hit_and_role_run_namespace(settings):
     async def scenario():
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=model.app), base_url="http://model-mock") as client:

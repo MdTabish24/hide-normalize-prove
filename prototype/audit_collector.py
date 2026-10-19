@@ -17,6 +17,8 @@ class Event(BaseModel):
     bucket: float | None = Field(ge=0)
     timestamp: float = Field(ge=0)
     prompt_hash: str | None = Field(pattern="^[0-9a-f]{64}$")
+    # Gateway per-run sequence number: dedupes retries, exposes gaps.
+    gw_seq: int | None = Field(default=None, ge=1)
 
 
 class Finish(BaseModel):

@@ -25,6 +25,10 @@ services:
       MODEL_SERVICE_TOKEN: ${MODEL_SERVICE_TOKEN:?Generate prototype/.env with init_env.py}
       AUDIT_URL: http://audit-collector:8000
       AUDIT_TOKEN: ${AUDIT_TOKEN:?Run python init_env.py --add-audit}
+      # Retry window before undeliverable audit entries flag a run incomplete.
+      AUDIT_GIVE_UP_SECONDS: ${AUDIT_GIVE_UP_SECONDS:-30}
+      AUDIT_TIMEOUT_SECONDS: ${AUDIT_TIMEOUT_SECONDS:-1}
+      AUDIT_QUEUE_MAX: ${AUDIT_QUEUE_MAX:-10000}
       BUCKETS: ${BUCKETS:-3,6,9}
       DATA_DIR: /data
       POLICY_MODE: ${POLICY_MODE:-bucket_hard}

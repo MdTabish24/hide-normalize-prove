@@ -8,12 +8,14 @@ from pathlib import Path
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
+from audit_queue import AuditQueue
 from common import MAX_ATTEMPTS_PER_RUN, RANGE_WIDTH, REPORT_BUDGET
 from range_feedback import generate_range, probe_digest
 
 
 class Store:
-    def __init__(self, directory, key, *, range_seed_mode="run", range_generator=generate_range, range_randbelow=None):
+    def __init__(self, directory, key, *, range_seed_mode="run", range_generator=generate_range, range_randbelow=None,
+                 audit_queue_max=10000):
         if range_seed_mode not in {"run", "probeset"}:
             raise ValueError("Invalid RANGE_SEED_MODE")
         self.range_seed_mode, self.range_generator = range_seed_mode, range_generator
@@ -36,22 +38,15 @@ class Store:
                     owner TEXT, run_id TEXT, used INTEGER NOT NULL,
                     PRIMARY KEY(owner, run_id)
                 );
-                CREATE TABLE IF NOT EXISTS audit_state (
-                    run_id TEXT PRIMARY KEY, unavailable INTEGER NOT NULL DEFAULT 0
-                );
-                CREATE TABLE IF NOT EXISTS audit_outbox (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL,
-                    path TEXT NOT NULL, payload TEXT NOT NULL
-                );
             """)
             for table, column in (("runs", "defense_version"), ("attempts", "prompt_hash")):
                 if column not in {row[1] for row in db.execute(f"PRAGMA table_info({table})")}:
                     db.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
             # One worker only: abandoned work after a restart is never replayed.
             db.execute("UPDATE attempts SET done=1 WHERE done=0")
-            # A crash can leave an unacknowledged delivery. Preserve the outbox,
-            # but do not claim complete audit coverage after ambiguous replay.
-            db.execute("UPDATE audit_state SET unavailable=1 WHERE run_id IN (SELECT run_id FROM audit_outbox)")
+        # Separate file: audit enqueue/ack never waits on run/budget locks.
+        # Replay after a crash is safe: the collector drops duplicates by gw_seq.
+        self.audit_queue = AuditQueue(self.directory / "audit_queue.sqlite", audit_queue_max)
 
     @contextmanager
     def connect(self):
@@ -81,29 +76,11 @@ class Store:
                 return bool(changed)
             return False
 
-    def audit_enqueue(self, run_id, path, payload, enabled):
-        with self.connect() as db:
-            db.execute("INSERT OR IGNORE INTO audit_state(run_id) VALUES (?)", (run_id,))
-            if enabled:
-                db.execute("INSERT INTO audit_outbox(run_id,path,payload) VALUES (?,?,?)",
-                           (run_id, path, json.dumps(payload, separators=(",", ":"))))
-            else:
-                db.execute("UPDATE audit_state SET unavailable=1 WHERE run_id=?", (run_id,))
-
     def audit_next(self):
-        with self.connect() as db:
-            return db.execute("SELECT id,run_id,path,payload FROM audit_outbox ORDER BY id LIMIT 1").fetchone()
-
-    def audit_ack(self, delivery_id, run_id, failed=False):
-        with self.connect() as db:
-            if failed:
-                db.execute("UPDATE audit_state SET unavailable=1 WHERE run_id=?", (run_id,))
-            db.execute("DELETE FROM audit_outbox WHERE id=?", (delivery_id,))
+        return self.audit_queue.head()
 
     def audit_failed(self, run_id):
-        with self.connect() as db:
-            row = db.execute("SELECT unavailable FROM audit_state WHERE run_id=?", (run_id,)).fetchone()
-            return bool(row and row[0])
+        return self.audit_queue.failed(run_id)
 
     def report(self, run_id, owner):
         with self.connect() as db:

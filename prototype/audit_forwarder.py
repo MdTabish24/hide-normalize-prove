@@ -1,66 +1,98 @@
-"""Ordered, durable audit outbox. HTTP delivery never gates Red's release timer."""
+"""Background audit shipper. HTTP delivery never gates Red's release timer.
+
+Ordered (FIFO) at-least-once delivery with retry and exponential backoff. The
+collector drops duplicates by gw_seq, so a lost acknowledgement is harmless.
+Only entries that stayed undeliverable for AUDIT_GIVE_UP_SECONDS (counted from
+when THIS process first saw them, so a restart gets a fresh window) move to the
+dead-letter table and flag their run audit_incomplete. Nothing is dropped silently.
+"""
 import asyncio
 import json
 import time
 
+import httpx
+
 
 class Forwarder:
-    def __init__(self, store, config, client):
-        self.store, self.client = store, client
+    def __init__(self, queue, config, transport=None):
+        self.queue, self.transport = queue, transport
         self.url = config.get("AUDIT_URL", "").rstrip("/")
         self.token = config.get("AUDIT_TOKEN", "")
         self.enabled = bool(self.url and self.token)
+        self.timeout = float(config.get("AUDIT_TIMEOUT_SECONDS", "0.3"))
+        self.give_up = float(config.get("AUDIT_GIVE_UP_SECONDS", "2"))
+        self.first_seen = {}  # row id -> monotonic time this process first saw it
         self.wakeup = asyncio.Event()
-        self.task = None
+        self.task = self.client = None
 
     def start(self):
         if self.enabled:
+            # Own connection pool: audit traffic cannot starve Blue/model calls.
+            self.client = httpx.AsyncClient(transport=self.transport, trust_env=False,
+                                            limits=httpx.Limits(max_connections=1))
             self.wakeup.set()  # Resume persisted deliveries on startup.
             self.task = asyncio.create_task(self.worker())
 
-    def emit(self, event_type, run_id, role=None, bucket=None, prompt_hash=None):
-        payload = {"type": event_type, "run_id": run_id, "role": role,
-                   "bucket": bucket, "timestamp": time.time(), "prompt_hash": prompt_hash}
-        self.store.audit_enqueue(run_id, "/append", payload, self.enabled)
+    def _enqueue(self, run_id, path, payload):
+        row = self.queue.enqueue(run_id, path, payload, self.enabled)
+        if row is not None:
+            self.first_seen[row] = time.monotonic()
         self.wakeup.set()
+
+    def emit(self, event_type, run_id, role=None, bucket=None, prompt_hash=None):
+        self._enqueue(run_id, "/append", {"type": event_type, "run_id": run_id, "role": role,
+                                          "bucket": bucket, "timestamp": time.time(), "prompt_hash": prompt_hash})
 
     def finish(self, run_id):
-        self.store.audit_enqueue(run_id, "/finish", {"run_id": run_id}, self.enabled)
-        self.wakeup.set()
+        self._enqueue(run_id, "/finish", {"run_id": run_id})
+
+    async def deliver(self, run_id, path, payload):
+        if path == "/finish":
+            payload["audit_unavailable"] = await asyncio.to_thread(self.queue.failed, run_id)
+        try:
+            async with asyncio.timeout(self.timeout + 0.1):
+                response = await self.client.post(self.url + path, json=payload, timeout=self.timeout,
+                                                  headers={"authorization": "Bearer " + self.token})
+            response.raise_for_status()
+            return response.json() == {"ok": True}
+        except Exception:
+            # No exception details, credentials or payloads are logged or returned.
+            return False
 
     async def worker(self):
+        backoff = 0.05
         while True:
             await self.wakeup.wait()
             self.wakeup.clear()
-            while (row := self.store.audit_next()) is not None:
-                delivery_id, run_id, path, encoded = row
-                payload = json.loads(encoded)
-                if path == "/finish":
-                    payload["audit_unavailable"] = self.store.audit_failed(run_id)
-                failed = False
-                try:
-                    async with asyncio.timeout(0.2):
-                        response = await self.client.post(self.url + path, json=payload,
-                                                          headers={"authorization": "Bearer " + self.token}, timeout=0.2)
-                    response.raise_for_status()
-                    if response.json() != {"ok": True}:
-                        raise ValueError("Audit acknowledgement invalid")
-                except Exception:
-                    # Sticky flag survives restarts. No new response or logging
-                    # of exception details, credentials or payloads to Red.
-                    failed = True
-                self.store.audit_ack(delivery_id, run_id, failed)
+            while (row := await asyncio.to_thread(self.queue.head)) is not None:
+                row_id, run_id, path, encoded = row
+                self.first_seen.setdefault(row_id, time.monotonic())
+                if await self.deliver(run_id, path, json.loads(encoded)):
+                    await asyncio.to_thread(self.queue.ack, row_id)
+                    self.first_seen.pop(row_id, None)
+                    backoff = 0.05
+                    continue
+                # Only the entry that was actually attempted can expire. The next
+                # entry gets its own attempt (it may be deliverable).
+                if time.monotonic() - self.first_seen[row_id] >= self.give_up:
+                    await asyncio.to_thread(self.queue.dead_letter, [row_id], "collector unreachable")
+                    self.first_seen.pop(row_id, None)
+                    continue
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, 0.5)
 
     async def close(self):
         if self.task is not None:
             try:
                 async with asyncio.timeout(0.5):
-                    while self.store.audit_next() is not None:
+                    while await asyncio.to_thread(self.queue.head) is not None:
                         await asyncio.sleep(0.01)
             except TimeoutError:
-                pass
+                pass  # Undelivered entries stay queued and resume after restart.
             self.task.cancel()
             try:
                 await self.task
             except asyncio.CancelledError:
                 pass
+        if self.client is not None:
+            await self.client.aclose()

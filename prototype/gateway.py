@@ -5,6 +5,7 @@ import json
 import math
 import os
 import secrets
+import sys
 import time
 from contextlib import asynccontextmanager
 from typing import Annotated
@@ -46,6 +47,22 @@ def metadata(event, run_id=None, role=None, bucket=None, prompt_hash=None):
     # No exception objects, URL/query strings, credentials, payloads or rules.
     print(json.dumps({"event": event, "run_id": run_id, "role": role,
                       "bucket": bucket, "timestamp": time.time(), "prompt_hash": prompt_hash}), flush=True)
+
+
+SPIN_SECONDS = 0.003
+
+
+async def release_at(deadline):
+    """Never release early; release as close to the deadline as the loop allows.
+
+    Timer wake-ups are coarse and their lateness depends on unrelated event-loop
+    activity (for example audit shipping). Sleep to just before the deadline,
+    then yield in a tight loop, so lateness no longer varies with that activity.
+    """
+    while (remaining := deadline - time.perf_counter()) > SPIN_SECONDS:
+        await asyncio.sleep(remaining - SPIN_SECONDS)
+    while time.perf_counter() < deadline:
+        await asyncio.sleep(0)
 
 
 class Boundary:
@@ -97,10 +114,7 @@ class Boundary:
         if error:
             metadata("rejected", state.get("run_id"), state.get("role"), bucket, state.get("prompt_hash"))
         metadata("release", state.get("run_id"), state.get("role"), bucket, state.get("prompt_hash"))
-        # Some event loops wake a sleep slightly early. Keep the original
-        # perf_counter deadline rather than releasing before the chosen bucket.
-        while (remaining := start + bucket - time.perf_counter()) > 0:
-            await asyncio.sleep(remaining)
+        await release_at(start + bucket)
         await send({"type": "http.response.start", "status": 202,
                     "headers": [(key.encode(), value.encode()) for key, value in HEADERS.items()]})
         await send({"type": "http.response.body", "body": body})
@@ -119,8 +133,18 @@ class Boundary:
                 audit.finish(run_id)
 
 
+def fine_timer():
+    """Windows wakes asyncio timers on a 15.6 ms tick by default, so release
+    precision would depend on unrelated event-loop activity. Ask for 1 ms
+    (process-scoped on Windows 10 2004+). Linux containers need nothing."""
+    if sys.platform == "win32":
+        import ctypes
+        ctypes.WinDLL("winmm").timeBeginPeriod(1)
+
+
 def create_app(settings=None, transport=None):
     config = dict(os.environ if settings is None else settings)
+    fine_timer()
     buckets = parse_buckets(config.get("BUCKETS", "3,6,9"))
     policy = config.get("POLICY_MODE", "bucket_hard")
     if policy not in {"raw", "bucket", "bucket_hard"}:
@@ -132,7 +156,8 @@ def create_app(settings=None, transport=None):
     if len(key) != 32:
         raise ValueError("GATEWAY_KEY must be a 32-byte hex key")
     store = Store(config.get("DATA_DIR", "/data"), key,
-                  range_seed_mode=config.get("RANGE_SEED_MODE", "run"), range_generator=generate_range)
+                  range_seed_mode=config.get("RANGE_SEED_MODE", "run"), range_generator=generate_range,
+                  audit_queue_max=int(config.get("AUDIT_QUEUE_MAX", "10000")))
     # Fail closed if a persisted key/config is corrupt. No silent key rotation.
     defense = store.unseal()
 
@@ -141,7 +166,7 @@ def create_app(settings=None, transport=None):
         async with httpx.AsyncClient(transport=transport, trust_env=False,
                                      timeout=buckets[-1] if policy == "bucket_hard" else 60) as client:
             api.state.client = client
-            api.state.audit = Forwarder(store, config, client)
+            api.state.audit = Forwarder(store.audit_queue, config, transport)
             api.state.audit.start()
             try:
                 yield

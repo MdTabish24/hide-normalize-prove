@@ -4,6 +4,8 @@ import json
 
 ZERO_HASH = "0" * 64
 META = {"type", "run_id", "role", "bucket", "timestamp", "prompt_hash"}
+# Records written since Round 2 also carry gw_seq; older logs stay verifiable.
+SEQUENCED = META | {"gw_seq"}
 
 
 def canonical(value):
@@ -33,10 +35,10 @@ def inspect_chain(data, run_id):
     for index, raw in enumerate(data.splitlines(keepends=True), 1):
         try:
             value = json.loads(raw)
-            required = META | {"seq", "prev_hash", "current_hash"}
+            required = (SEQUENCED if "gw_seq" in value else META) | {"seq", "prev_hash", "current_hash"}
             if value.get("type") == "complete":
                 required |= {"count", "bytes", "audit_unavailable"}
-            if set(value) != required:
+            if set(value) != required or (value.get("gw_seq") is not None and type(value["gw_seq"]) is not int):
                 raise InvalidAudit("record fields", index)
             if raw != line(value):
                 raise InvalidAudit("noncanonical record or missing newline", index)

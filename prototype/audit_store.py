@@ -17,6 +17,7 @@ class Collector:
         for directory in (self.logs, self.keys, self.checkpoints):
             directory.mkdir(parents=True, exist_ok=True)
         self.lock = threading.Lock()
+        self.heads = {}  # run_id -> verified tail state (incremental appends)
         key_file = self.keys / "signing_key.bin"
         if key_file.exists():
             self.key = Ed25519PrivateKey.from_private_bytes(key_file.read_bytes())
@@ -70,20 +71,52 @@ class Collector:
             file.flush()
             os.fsync(file.fileno())
 
-    def seal(self, run_id, data, records, unavailable):
+    def state(self, run_id):
+        """Full chain + checkpoint check once per stream per process, then incremental.
+
+        Later appends extend the cached, already-verified head instead of
+        re-reading and re-hashing the whole log on every event. A file whose size
+        no longer matches the cache is fully re-checked. Complete verification of
+        published runs is the verifier's job, not the hot path's.
+        """
+        log, _ = self.paths(run_id)
+        size = log.stat().st_size if log.exists() else 0
+        cached = self.heads.get(run_id)
+        if cached and cached["bytes"] == size:
+            return cached
+        data, records = self.read(run_id)
+        seqs = [r["gw_seq"] for r in records if r.get("gw_seq") is not None]
+        completes = [r for r in records if r["type"] == "complete"]
+        cached = {"bytes": len(data), "count": len(records),
+                  "head": records[-1]["current_hash"] if records else ZERO_HASH,
+                  "finished": bool(completes), "last_flag": completes[-1]["audit_unavailable"] if completes else None,
+                  "sealed_at": len(records) if records and records[-1]["type"] == "complete" else None,
+                  "unavailable": any(r["audit_unavailable"] for r in completes),
+                  "gap": seqs != list(range(1, len(seqs) + 1)), "last_gw_seq": max(seqs, default=0)}
+        self.heads[run_id] = cached
+        return cached
+
+    def _write(self, run_id, state, value):
+        self.write_line(run_id, value)
+        state["bytes"] += len(line(value))
+        state["count"] += 1
+        state["head"] = value["current_hash"]
+
+    def seal(self, run_id, state, unavailable):
         event = {"type": "complete", "run_id": run_id, "role": "evaluator",
-                 "bucket": None, "timestamp": time.time(), "prompt_hash": None,
-                 "count": len(records) + 1, "bytes": 0, "audit_unavailable": bool(unavailable)}
-        previous = records[-1]["current_hash"] if records else ZERO_HASH
+                 "bucket": None, "timestamp": time.time(), "prompt_hash": None, "gw_seq": None,
+                 "count": state["count"] + 1, "bytes": 0, "audit_unavailable": bool(unavailable)}
         # Byte length includes this complete line. Hash length is fixed; the
         # decimal byte count stabilizes in a few iterations (no hash fixed point).
         while True:
-            value = record(event, len(records) + 1, previous)
-            size = len(data) + len(line(value))
+            value = record(event, state["count"] + 1, state["head"])
+            size = state["bytes"] + len(line(value))
             if event["bytes"] == size:
                 break
             event["bytes"] = size
-        self.write_line(run_id, value)
+        self._write(run_id, state, value)
+        state.update(finished=True, last_flag=bool(unavailable), sealed_at=state["count"])
+        state["unavailable"] |= bool(unavailable)
         checkpoint = {"run_id": run_id, "count": value["count"], "bytes": size,
                       "head_hash": value["current_hash"]}
         checkpoint["signature"] = self.key.sign(canonical(checkpoint)).hex()
@@ -97,21 +130,27 @@ class Collector:
 
     def append(self, event):
         run_id = event["run_id"]
+        event = dict(event)
+        event.setdefault("gw_seq", None)
         with self.lock:
-            data, records = self.read(run_id)
-            was_finished = bool(records and records[-1]["type"] == "complete")
-            unavailable = any(r.get("audit_unavailable", False) for r in records)
-            value = record(event, len(records) + 1, records[-1]["current_hash"] if records else ZERO_HASH)
-            self.write_line(run_id, value)
-            if was_finished:
+            state = self.state(run_id)
+            seq = event["gw_seq"]
+            if seq is not None and seq <= state["last_gw_seq"]:
+                return  # Retried delivery already stored (lost acknowledgement).
+            if seq is not None:
+                state["gap"] |= seq != state["last_gw_seq"] + 1
+                state["last_gw_seq"] = seq
+            self._write(run_id, state, record(event, state["count"] + 1, state["head"]))
+            if state["finished"]:
                 # Reports happen after finish: extend the chain and sign a new
                 # complete snapshot. Previous checkpoints require freshness pinning.
-                self.seal(run_id, data + line(value), records + [value], unavailable)
+                self.seal(run_id, state, state["unavailable"] or state["gap"])
 
     def finish(self, run_id, unavailable=False):
         with self.lock:
-            data, records = self.read(run_id)
-            unavailable |= any(r.get("audit_unavailable", False) for r in records)
-            if records and records[-1]["type"] == "complete" and records[-1]["audit_unavailable"] == unavailable:
-                return  # Idempotent finish with unchanged state.
-            self.seal(run_id, data, records, unavailable)
+            state = self.state(run_id)
+            # A gateway sequence gap means events are missing: never VALID.
+            unavailable = bool(unavailable or state["unavailable"] or state["gap"])
+            if state["last_flag"] == unavailable and state["sealed_at"] == state["count"]:
+                return  # Idempotent: nothing appended and no status change since the last seal.
+            self.seal(run_id, state, unavailable)

@@ -40,3 +40,47 @@ Results (saved in `evidence/`)
 - `tests-in-docker.txt`: **27 passed** inside the verifier container (pre-Phase-1 code).
 
 Next: Phase 1 (audit off the request path).
+
+## Phase 1: audit off the critical path (DONE)
+
+What changed
+- `audit_queue.py` (new): durable queue in its own SQLite file
+  (`DATA_DIR/audit_queue.sqlite`), per-run `gw_seq` assigned at enqueue, bounded
+  (`AUDIT_QUEUE_MAX`, default 10000; overflow flags the run `queue full`, never
+  waits), dead-letter table instead of deletion. One process lock around queue
+  transactions: without it the event loop and the shipper thread collided in
+  SQLite busy-wait (measured a 2.5 s release stall).
+- `audit_forwarder.py`: background shipper with its OWN HTTP pool (audit can no
+  longer starve Blue/model calls), FIFO retry with exponential backoff
+  (0.05 s to 0.5 s), per-attempt timeout `AUDIT_TIMEOUT_SECONDS` (0.3 s; 1 s in
+  compose); only the attempted head entry can expire after `AUDIT_GIVE_UP_SECONDS`
+  (2 s code default, 30 s in compose, 1 s in audit test fixtures), counted from
+  when this process first saw it (restart = fresh window). Expired entries go to
+  `audit_dead` and the run is flagged audit_incomplete.
+- Collector (`audit_store.py`): full chain + checkpoint check once per stream per
+  process, then incremental appends from the cached verified head (no re-read,
+  no re-hash, no full verify on every event). Drops duplicate `gw_seq` (lost ack),
+  seals a gap as `audit_unavailable`. Format: records carry `gw_seq`; old logs
+  without it still verify.
+- Verifier reads gateway status from `audit_queue.sqlite` next to `runs.sqlite`.
+  Old conservative rule "restart with queued entries => unavailable" removed,
+  because replay is now deduplicated.
+- Gateway release: `release_at()` sleeps to 3 ms before the deadline, then yields
+  until it; Windows host processes request 1 ms timer resolution (`fine_timer`).
+  Before this, Windows' 15.6 ms timer tick made release lateness (~28 ms median
+  over a 150 ms bucket) depend on event-loop activity. Linux containers: no-op.
+- `stats.py` (new): Wilson, two-sample KS (checked against scipy), percentiles.
+- `pytest.ini`: `timing` marker; 8 timing-sensitive tests tagged (logic unchanged).
+
+Tests: host `pytest tests eval/tests` = **41 passed** (34 old + 7 new in
+`tests/test_audit_queue.py`). Existing-test change: audit fixture sets
+`AUDIT_GIVE_UP_SECONDS=1` (outage window) and gained a `lose_ack_once` mode;
+no assertion was weakened.
+
+Key result (in-process ASGI, Windows host, 0.15 s bucket, 45 submits per
+collector condition, interleaved blocks, 4 runs): medians within ~2 ms, p95
+within ~2 ms, KS p between 0.01 and 0.61. No consistent health signal, but a
+shift of 2 ms or less is NOT excluded. Live separate-process measurement: Phase 4.
+
+NOT RUN yet: Docker image rebuild with Phase 1 code (do with Phase 2).
+Next: Phase 2 (window_hard).

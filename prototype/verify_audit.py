@@ -40,8 +40,10 @@ def verify(log, checkpoint, public_key, run_id, gateway_db=None):
         if any(r.get("audit_unavailable", False) for r in records):
             raise InvalidAudit("audit_unavailable recorded", len(records))
         if gateway_db is not None:
+            # The gateway's audit queue lives next to its run database.
             # Read-only mode does not create a missing database or update it.
-            uri = Path(gateway_db).resolve().as_uri() + "?mode=ro"
+            queue = Path(gateway_db).with_name("audit_queue.sqlite")
+            uri = queue.resolve().as_uri() + "?mode=ro"
             with closing(sqlite3.connect(uri, uri=True)) as db:
                 status = db.execute("SELECT unavailable FROM audit_state WHERE run_id=?", (run_id,)).fetchone()
                 pending = db.execute("SELECT COUNT(*) FROM audit_outbox WHERE run_id=?", (run_id,)).fetchone()[0]

@@ -8,6 +8,7 @@ import sys
 import time
 
 import httpx
+import pytest
 
 from common import HEADERS, PENDING
 
@@ -53,6 +54,7 @@ def stop(process):
             process.wait(timeout=5)
 
 
+@pytest.mark.timing
 def test_real_http_envelope_timing_and_restart_budget(tmp_path):
     env = dict(os.environ)
     env.update({name: secrets.token_hex(32) for name in (
