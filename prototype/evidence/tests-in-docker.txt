@@ -1,0 +1,6 @@
+# docker compose run --rm --no-deps --entrypoint python verifier -m pytest tests -q -p no:cacheprovider  (2026-10-19T03:08:07Z)
+ Container hide-normalize-prove-verifier-run-744ac88d7c9e Creating 
+ Container hide-normalize-prove-verifier-run-744ac88d7c9e Created 
+...........................                                              [100%]
+27 passed in 26.99s
+exit=0

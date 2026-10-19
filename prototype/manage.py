@@ -1,5 +1,6 @@
 """Trusted operator helper, run on the host. Never copy evaluator/Blue tokens to Red."""
 import argparse
+import os
 from pathlib import Path
 
 import httpx
@@ -18,7 +19,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     config = env_file()
     role = {"configure": "BLUE", "finish": "EVALUATOR", "report": "RED"}[args.action]
-    with httpx.Client(base_url="http://127.0.0.1:8000", trust_env=False, timeout=15,
+    port = os.getenv("GATEWAY_PORT", "8000")
+    with httpx.Client(base_url=f"http://127.0.0.1:{port}", trust_env=False, timeout=15,
                       headers={"authorization": "Bearer " + config[role + "_TOKEN"]}) as client:
         if args.action == "configure":
             response = client.post("/v1/defense", json={"trigger": args.trigger})

@@ -1,0 +1,7 @@
+SERVICE           STATUS                    PORTS
+audit-collector   Up 11 seconds (healthy)   
+blue-defense      Up 11 seconds             
+gateway           Up 5 seconds              
+model-mock        Up 11 seconds             
+operator-proxy    Up 5 seconds              127.0.0.1:8088->8000/tcp
+red-client        Up 11 seconds             

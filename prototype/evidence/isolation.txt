@@ -1,0 +1,28 @@
+# docker compose exec -T red-client python demo_isolation.py --blue-ip 172.26.0.2 --model-ip 172.22.0.2   (2026-10-19T03:07:38Z)
+PASS  Direct blue-defense blocked
+PASS  Direct model-mock blocked
+PASS  Direct Blue IP blocked
+PASS  Direct model IP blocked
+PASS  Host aliases do not resolve
+PASS  Host TCP probes blocked (80/443/8000)
+PASS  External DNS lookup blocked
+PASS  Internet IP probes blocked
+PASS  Docker socket absent
+PASS  Red defense request is generic
+PASS  Gateway submit is 202 pending
+
+Isolation probe summary (local Docker prototype)
+Check                                          Result
+Direct blue-defense blocked                    PASS
+Direct model-mock blocked                      PASS
+Direct Blue IP blocked                         PASS
+Direct model IP blocked                        PASS
+Host aliases do not resolve                    PASS
+Host TCP probes blocked (80/443/8000)          PASS
+External DNS lookup blocked                    PASS
+Internet IP probes blocked                     PASS
+Docker socket absent                           PASS
+Red defense request is generic                 PASS
+Gateway submit is 202 pending                  PASS
+{"passed": 11, "total": 11, "run_id": "isolation-a2dd1b8f051e"}
+exit=0

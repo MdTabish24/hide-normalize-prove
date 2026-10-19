@@ -1,0 +1,40 @@
+#19 DONE 0.6s
+
+#20 [gateway] resolving provenance for metadata file
+#20 DONE 0.1s
+
+#21 [red-client] resolving provenance for metadata file
+#21 DONE 0.2s
+
+#22 [blue-defense] resolving provenance for metadata file
+#22 DONE 0.5s
+
+#23 [audit-collector] resolving provenance for metadata file
+#23 DONE 0.4s
+ Image hide-normalize-prove:local Built 
+ Image hide-normalize-prove:local Built 
+ Image hide-normalize-prove:local Built 
+ Image hide-normalize-prove:local Built 
+ Image hide-normalize-prove:local Built 
+ Container hide-normalize-prove-audit-collector-1 Recreate 
+ Container hide-normalize-prove-model-mock-1 Recreate 
+ Container hide-normalize-prove-red-client-1 Recreate 
+ Container hide-normalize-prove-blue-defense-1 Recreate 
+ Container hide-normalize-prove-blue-defense-1 Recreated 
+ Container hide-normalize-prove-red-client-1 Recreated 
+ Container hide-normalize-prove-audit-collector-1 Recreated 
+ Container hide-normalize-prove-model-mock-1 Recreated 
+ Container hide-normalize-prove-gateway-1 Recreate 
+ Container hide-normalize-prove-gateway-1 Recreated 
+ Container hide-normalize-prove-blue-defense-1 Starting 
+ Container hide-normalize-prove-model-mock-1 Starting 
+ Container hide-normalize-prove-red-client-1 Starting 
+ Container hide-normalize-prove-audit-collector-1 Starting 
+ Container hide-normalize-prove-audit-collector-1 Started 
+ Container hide-normalize-prove-blue-defense-1 Started 
+ Container hide-normalize-prove-red-client-1 Started 
+ Container hide-normalize-prove-model-mock-1 Started 
+ Container hide-normalize-prove-audit-collector-1 Waiting 
+ Container hide-normalize-prove-audit-collector-1 Healthy 
+ Container hide-normalize-prove-gateway-1 Starting 
+Error response from daemon: ports are not available: exposing port TCP 127.0.0.1:8000 -> 127.0.0.1:0: listen tcp4 127.0.0.1:8000: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted.

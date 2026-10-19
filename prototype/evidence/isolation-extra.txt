@@ -1,0 +1,12 @@
+# extra probes 2026-10-19T03:07:40Z
+## from red-client: audit collector IP/name, operator-proxy IP/name
+172.24.0.2:8000 -> blocked (OSError)
+audit-collector:8000 -> blocked (gaierror)
+172.23.0.2:8000 -> blocked (OSError)
+operator-proxy:8000 -> blocked (gaierror)
+## from gateway: internet egress (expected blocked)
+1.1.1.1:443 -> blocked (OSError)
+8.8.8.8:53 -> blocked (OSError)
+## from blue-defense and model-mock: internet egress (expected blocked)
+1.1.1.1:443 -> blocked (OSError)
+1.1.1.1:443 -> blocked (OSError)

@@ -31,10 +31,11 @@ services:
       RANGE_SEED_MODE: ${RANGE_SEED_MODE:-run}
       EVAL_MODE: ${EVAL_MODE:-0}
     volumes: ["gateway-data:/data"]
-    ports: ["127.0.0.1:8000:8000"]
+    # No published port: every gateway network is internal (no egress).
+    # operator-proxy owns the host binding.
     networks:
-      blue-net:
-        priority: 100
+      ops-net: {}
+      blue-net: {}
       red-net: {}
       model-net: {}
       audit-net: {}
@@ -45,6 +46,17 @@ services:
         condition: service_started
       audit-collector:
         condition: service_healthy
+  operator-proxy:
+    <<: *hardened
+    # Plain TCP forwarder with no tokens/keys. Docker publishes no ports for a
+    # container that is only on internal networks, so the binding lives here.
+    command: ["python", "tcp_proxy.py"]
+    environment:
+      PROXY_TARGET: gateway:8000
+    # Host port only; set GATEWAY_PORT if 8000 is busy on the host.
+    ports: ["127.0.0.1:${GATEWAY_PORT:-8000}:8000"]
+    networks: [operator-net, ops-net]
+    depends_on: [gateway]
   red-client:
     <<: *hardened
     command: ["python", "-c", "import time; time.sleep(1000000)"]
@@ -103,6 +115,12 @@ services:
       - gateway-data:/gateway-data:ro
 
 networks:
+  operator-net:
+    # Non-internal so Docker can publish the host port; only operator-proxy.
+    driver: bridge
+  ops-net:
+    driver: bridge
+    internal: true
   red-net:
     driver: bridge
     internal: true
