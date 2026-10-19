@@ -12,7 +12,7 @@ import uuid
 from controller import ROOT, STATE, compose, docker_available, private_json, supported_policies, utc_now
 
 
-def launch(policy, workspace, port=8000, budget=100, audit=False):
+def launch(policy, workspace, port=8000, budget=100, audit=True):
     if policy not in supported_policies():
         raise ValueError(f"NOT RUN: policy {policy} is not implemented; no fallback used")
     workspace = Path(workspace).resolve()
@@ -32,7 +32,12 @@ def launch(policy, workspace, port=8000, budget=100, audit=False):
     os.chmod(env_file, 0o600)
     override = directory / "compose.yml"
     # !override requires Compose 2.24.4+; config validation below fails clearly.
-    override.write_text(f'services:\n  gateway:\n    ports: !override ["127.0.0.1:{port}:8000"]\n    environment:\n      POLICY_MODE: {policy}\n      EVAL_MODE: "0"\n' + ('      AUDIT_URL: ""\n' if not audit else ''), encoding="utf-8")
+    # raw is an evaluation-only baseline: the gateway honors it only with
+    # EVAL_MODE=1. The model keeps EVAL_MODE=0, so the sim_delay hook stays inert.
+    gateway_eval = "1" if policy == "raw" else "0"
+    override.write_text(f'services:\n  operator-proxy:\n    ports: !override ["127.0.0.1:{port}:8000"]\n'
+                        f'  gateway:\n    environment:\n      POLICY_MODE: {policy}\n      EVAL_MODE: "{gateway_eval}"\n'
+                        + ('' if audit else '      AUDIT_MODE: "off"\n'), encoding="utf-8")
     meta = dict(session_id=session_id, project="hnp-red-" + session_id[:12], policy=policy,
                 workspace=str(workspace), env_file=str(env_file), override_file=str(override),
                 gateway_url=f"http://127.0.0.1:{port}", request_budget=budget,
@@ -89,7 +94,8 @@ def main():
     parser.add_argument("--workspace", required=True, type=Path)
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--requests", type=int, default=100)
-    parser.add_argument("--audit", action="store_true")
+    parser.add_argument("--audit", action=argparse.BooleanOptionalAction, default=True,
+                        help="Audit delivery (default on). --no-audit is honored only for raw (EVAL_MODE=1).")
     args = parser.parse_args()
     if not 1 <= args.port <= 65535 or args.requests < 1:
         parser.error("Valid port and positive request budget required")

@@ -102,8 +102,8 @@ The local checkpoint/public-key files simulate an independent witness; they
 are not independently protected by ACLs or separate infrastructure. A real
 verifier must pin its key and checkpoint outside attacker-controlled storage.
 Replay of an old valid checkpoint for the same run still needs freshness/version
-protection. Events never recorded cannot be recovered/proven by a hash chain.
-This proves integrity of the recorded sequence, not truth or completeness of
+protection. Events never recorded cannot be recovered or detected by a hash chain.
+It lets a verifier detect changes to the recorded sequence; it says nothing about the truth or completeness of
 every real action. API/encryption key length is unrelated to log integrity.
 
 ## 6. Separate training/testing, plus overall diagnostic

@@ -62,17 +62,20 @@ def save(output, data):
              "Unseen-run accuracy of the predeclared depth-3 decision tree (same attacker as Round 1). "
              "50% = this attacker could not tell A from B; it is not proof of no leak. "
              "Old = Round 1 matrix (audit OFF, before the Phase 1 release changes).", "",
-             "| Cohort | Policy | Unseen accuracy (95% Wilson) | Train-test gap | Old (audit off) | Timeout rate of allowed | Mean latency | Response shapes | Test runs |",
-             "|---|---|---:|---:|---:|---:|---:|---:|---:|"]
+             "| Cohort | Policy | Unseen accuracy (95% Wilson) | Train-test gap | Old (audit off) | Timeout rate of allowed | Mean latency | Added vs raw | Response shapes | Test runs |",
+             "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|"]
+    raw_latency = {c["cohort"]: c["mean_latency_seconds"] for c in data["cells"] if c["policy"] == "raw"}
     for cell in data["cells"]:
         low, high = cell["wilson_95"]
         previous = old.get((cell["cohort"], cell["policy"]))
         old_text = f"{previous['test_accuracy']:.1%}" if previous else "n/a"
+        base = raw_latency.get(cell["cohort"])
+        added = f"{cell['mean_latency_seconds'] - base:+.3f} s" if base is not None else "n/a"
         lines.append(f"| {cell['cohort']} | {cell['policy']} | {cell['test_accuracy']:.1%} ({low:.1%}–{high:.1%}) | "
                      f"{cell['train_test_gap']:+.1%} | {old_text} | {cell['timeout_rate_of_allowed']:.1%} | "
-                     f"{cell['mean_latency_seconds']:.3f} s | {cell['distinct_response_shapes']} | {cell['test_runs']} |")
+                     f"{cell['mean_latency_seconds']:.3f} s | {added} | {cell['distinct_response_shapes']} | {cell['test_runs']} |")
     for cohort, policy in data["not_run"]:
-        lines.append(f"| {cohort} | {policy} | NOT RUN (runtime cap) | | | | | | |")
+        lines.append(f"| {cohort} | {policy} | NOT RUN (runtime cap) | | | | | | | |")
     lines += ["", "## Audit status after each policy", "",
               "| Policy | Runs verified | VALID | Not valid (reasons) | Queue after drain |", "|---|---:|---:|---|---|"]
     for policy, audit in data["audit_checks"].items():
@@ -138,7 +141,10 @@ def main():
     parser.add_argument("--audit", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--policies", nargs="+", choices=POLICIES, default=list(POLICIES))
     parser.add_argument("--max-minutes", type=float, default=120)
+    parser.add_argument("--render-only", action="store_true", help="Rebuild tables from saved results.json")
     args = parser.parse_args()
+    if args.render_only:
+        return save(args.output, json.loads((args.output / "results.json").read_text(encoding="utf-8")))
     if any(v < 2 or v % 2 for v in (args.n, args.train_n)):
         parser.error("Even n/train-n >= 2 required")
     args.output.mkdir(parents=True, exist_ok=True)

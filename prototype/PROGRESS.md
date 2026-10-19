@@ -123,3 +123,28 @@ Windows host.
 Phase 3 harness prepared: `eval/matrix.py` (smoke N=4: audit ON, 128/128 runs VALID).
 
 Next: Phase 3 (live matrix with audit ON, 4 policies + deadline probes).
+
+## Phase 3: live matrix with audit ON (RUNNING at time of writing)
+
+- Command: `.venv/Scripts/python.exe -m eval.matrix --n 200 --train-n 200 --scale 0.1
+  --concurrency 8 --seed 7391 --audit --max-minutes 120 --output eval/output/round2`
+- Log: `eval/output/round2/run-output.txt`; partial results are saved after every
+  cell in `eval/output/round2/results.json` (status field says in_progress/complete).
+- If cut off: re-run the same command (it restarts from scratch), or keep the
+  saved partial and label it partial. `python -m eval.matrix --render-only` rebuilds tables.
+- Early cells: raw 98.5/100/99.0 % (ordinary/boundary/overflow); raw audit check
+  1200/1200 runs VALID, 0 dead letters; ordinary/bucket 56.5 % (Round 1: 68.5 %).
+
+## Code written while Phase 3 runs (NOT yet run; tests NOT yet re-run)
+
+- `attack_suite.py` (Phase 4), `tests/test_attack_controls.py`, model
+  `CACHE_NAMESPACE=off` control (EVAL_MODE only).
+- `eval/feedback_run.py` (Phase 5 runner; saves `eval/output/feedback/`).
+- `run_all_evidence.py` rewritten (Phase 6); `--cached` already builds a partial EVIDENCE.md.
+- `agent_redteam/`: policies read from `gateway.POLICIES`, override now targets
+  operator-proxy, raw sessions set gateway EVAL_MODE=1 (model stays 0), audit on
+  by default, new `agent_redteam/README.md` protocol. Sessions NOT RUN.
+- DESIGN_NOTES.md: softened one affirmative "proves" sentence.
+
+Next after the matrix: run full tests, commit Phase 3, run attack suite (needs
+idle machine; attack 9b loads all CPU cores), then feedback, evidence, README.

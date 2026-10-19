@@ -26,14 +26,11 @@ def read_json(path):
 
 
 def supported_policies():
+    """Read gateway.POLICIES without importing service code into this helper."""
     tree = ast.parse((ROOT / "gateway.py").read_text(encoding="utf-8"))
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Compare) and isinstance(node.left, ast.Name) and node.left.id == "policy":
-            for comparison in node.comparators:
-                if isinstance(comparison, ast.Set):
-                    values = {n.value for n in comparison.elts if isinstance(n, ast.Constant) and isinstance(n.value, str)}
-                    if "raw" in values:
-                        return values
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(getattr(t, "id", None) == "POLICIES" for t in node.targets):
+            return {n.value for n in node.value.elts if isinstance(n, ast.Constant)}
     return set()
 
 

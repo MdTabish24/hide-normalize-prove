@@ -27,16 +27,19 @@ def free_port():
 
 
 class Server:
-    def __init__(self, module, env):
+    def __init__(self, module, env, log=None):
         self.module, self.env, self.port, self.process = module, env, free_port(), None
+        self.log = log  # Optional file for the server's stdout metadata (log scans).
 
     def start(self):
         command = [sys.executable, "-m", "uvicorn", self.module, "--host", "127.0.0.1", "--port", str(self.port),
                    "--no-access-log", "--no-date-header", "--no-server-header", "--log-level", "critical"]
         if self.module.endswith("factory"):
             command.append("--factory")
-        self.process = subprocess.Popen(command, cwd=ROOT, env=self.env,
-                                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        stdout = open(self.log, "ab") if self.log else subprocess.DEVNULL
+        self.process = subprocess.Popen(command, cwd=ROOT, env=self.env, stdout=stdout, stderr=subprocess.DEVNULL)
+        if self.log:
+            stdout.close()  # The child keeps its own handle.
         deadline = time.perf_counter() + 20
         while time.perf_counter() < deadline:
             if self.process.poll() is not None:

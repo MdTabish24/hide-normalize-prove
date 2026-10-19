@@ -28,6 +28,8 @@ async def generate(body: Generate):
     # Hash the first 32 characters as a deliberately simple simulated prefix.
     prefix = hashlib.sha256(body.prompt[:32].encode()).digest()
     key = (body.role, body.run_id, prefix)
+    if os.getenv("EVAL_MODE") == "1" and os.getenv("CACHE_NAMESPACE") == "off":
+        key = (prefix,)  # Evaluation-only negative control: one cache shared by all runs.
     hit = key in cache
     delay = float(os.getenv("HIT_SECONDS", "0.3") if hit else os.getenv("MISS_SECONDS", "2.0"))
     if os.getenv("EVAL_MODE") == "1" and body.sim_delay is not None:
