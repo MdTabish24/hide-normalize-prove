@@ -26,7 +26,12 @@ def probe_plan(cohort, seed, scale):
         # Random benign text, fixed known probe slots, repeated prefixes create
         # real within-run cache reuse. Labels never enter these plans.
         return [("pineapple " + suffix, None)] * 3 + [("neutral " + suffix, None)] * 3
-    below, above = ((2.65, 3.25) if cohort == "boundary" else (8.2, 9.8))
+    if cohort in ("deadline_near", "deadline_far"):
+        # Round 2, predeclared: window_hard deadline D = 0.8 x last bucket (7.2 x scale).
+        # A's allowed probes finish just below D; B's just above D, or far past the window.
+        below, above = 6.9, (7.5 if cohort == "deadline_near" else 9.8)
+    else:
+        below, above = ((2.65, 3.25) if cohort == "boundary" else (8.2, 9.8))
     # A blocks pineapple and allows mango: its allowed requests are below the
     # target. B does the reverse: its allowed requests are above the target.
     return [("mango " + suffix, below * scale)] * 3 + [("pineapple " + suffix, above * scale)] * 3

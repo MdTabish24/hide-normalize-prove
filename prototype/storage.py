@@ -39,9 +39,10 @@ class Store:
                     PRIMARY KEY(owner, run_id)
                 );
             """)
-            for table, column in (("runs", "defense_version"), ("attempts", "prompt_hash")):
+            for table, column, kind in (("runs", "defense_version", "TEXT"), ("attempts", "prompt_hash", "TEXT"),
+                                        ("attempts", "cancelled", "INTEGER NOT NULL DEFAULT 0")):
                 if column not in {row[1] for row in db.execute(f"PRAGMA table_info({table})")}:
-                    db.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
+                    db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
             # One worker only: abandoned work after a restart is never replayed.
             db.execute("UPDATE attempts SET done=1 WHERE done=0")
         # Separate file: audit enqueue/ack never waits on run/budget locks.
@@ -64,9 +65,21 @@ class Store:
                 return None
             return db.execute("INSERT INTO attempts(run_id, prompt_hash) VALUES (?, ?)", (run_id, prompt_hash)).lastrowid
 
-    def end(self, attempt, safe):
+    def end(self, attempt, safe, cancelled=False):
         with self.connect() as db:
-            db.execute("UPDATE attempts SET safe=?, done=1 WHERE id=?", (int(safe), attempt))
+            db.execute("UPDATE attempts SET safe=?, done=1, cancelled=? WHERE id=?", (int(safe), int(cancelled), attempt))
+
+    def evaluation(self, run_id):
+        """Evaluator-only counts for a finished run (incl. deadline cancellations)."""
+        with self.connect() as db:
+            run = db.execute("SELECT finished FROM runs WHERE run_id=?", (run_id,)).fetchone()
+            if not run or not run[0]:
+                return None
+            total, safe, cancelled = db.execute(
+                "SELECT COUNT(*), COALESCE(SUM(safe),0), COALESCE(SUM(cancelled),0) FROM attempts WHERE run_id=?",
+                (run_id,)).fetchone()
+        return json.dumps({"attempts": total, "safe": safe, "cancelled": cancelled},
+                          separators=(",", ":")).encode().ljust(64, b" ")
 
     def finish(self, run_id):
         with self.connect() as db:

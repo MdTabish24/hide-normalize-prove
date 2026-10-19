@@ -48,6 +48,8 @@ async def audited(config, failure):
                     # Collector stored the event but the acknowledgement is lost.
                     raise httpx.ReadTimeout("acknowledgement lost", request=request)
                 return response
+            if request.url.host == "model-mock" and failure.get("model_delay"):
+                await asyncio.sleep(failure["model_delay"])
             return httpx.Response(200, json={"allowed": True} if request.url.host == "blue-defense" else {"answer": "dummy"})
         app = create_app(config, httpx.MockTransport(dispatch))
         async with app.router.lifespan_context(app), httpx.AsyncClient(

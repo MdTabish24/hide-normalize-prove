@@ -1,6 +1,8 @@
-# docker compose run --rm --no-deps --entrypoint python verifier -m pytest tests -q -p no:cacheprovider  (2026-10-19T03:08:07Z)
- Container hide-normalize-prove-verifier-run-744ac88d7c9e Creating 
- Container hide-normalize-prove-verifier-run-744ac88d7c9e Created 
-...........................                                              [100%]
-27 passed in 26.99s
+# docker compose run --rm --no-deps --entrypoint python verifier -m pytest tests -q -p no:cacheprovider  (2026-10-19T03:39:50Z, Phase 1+2 image)
+..................
+healthy {'n': 45, 'median': 0.15199182600008498, 'p95': 0.1526328885998737, 'max': 0.15331303699986165, 'min': 0.1511115449998215}
+slow {'n': 45, 'median': 0.15213452799980587, 'p95': 0.15294430839976486, 'max': 0.15395185599982142, 'min': 0.15091692700025305} KS D=0.178 p=0.437
+down {'n': 45, 'median': 0.1523016880000796, 'p95': 0.15380024520000007, 'max': 0.1551685780000298, 'min': 0.15099517099997684} KS D=0.244 p=0.115
+.....................                                  [100%]
+39 passed in 68.53s (0:01:08)
 exit=0

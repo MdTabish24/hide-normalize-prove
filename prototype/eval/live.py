@@ -6,11 +6,15 @@ import os
 from pathlib import Path
 import secrets
 import socket
+import sqlite3
 import subprocess
 import sys
 import time
+from contextlib import closing
 
 import httpx
+
+from verify_audit import verify
 
 ROOT = Path(__file__).resolve().parents[1]
 LABEL = "live gateway with mock model, local run"
@@ -125,7 +129,8 @@ class Lab:
     async def __aenter__(self):
         self.directory.mkdir(parents=True, exist_ok=True)
         base = {k: v for k, v in os.environ.items() if not (k.endswith("_TOKEN") or k.endswith("_API_KEY") or
-                k in {"GATEWAY_KEY", "AUDIT_URL", "POLICY_MODE", "RANGE_SEED_MODE", "EVAL_MODE"})}
+                k in {"GATEWAY_KEY", "AUDIT_URL", "AUDIT_MODE", "POLICY_MODE", "RANGE_SEED_MODE", "EVAL_MODE",
+                      "WINDOW_SECONDS", "DEADLINE_FRACTION", "MAX_INFLIGHT_PER_IDENTITY"})}
         credentials = {name: secrets.token_hex(32) for name in (
             "RED_TOKEN", "BLUE_TOKEN", "EVALUATOR_TOKEN", "BLUE_SERVICE_TOKEN", "MODEL_SERVICE_TOKEN", "AUDIT_TOKEN")}
         def start(module, env):
@@ -137,18 +142,19 @@ class Lab:
             model = start("model:app", dict(base, SERVICE_TOKEN=credentials["MODEL_SERVICE_TOKEN"], EVAL_MODE="1",
                                           MISS_SECONDS=str(2 * self.scale), HIT_SECONDS=str(0.3 * self.scale),
                                           JITTER_SECONDS=str(0.02 * self.scale)))
-            audit_url = ""
-            if self.audit_enabled:
-                collector = start("audit_collector:factory", dict(base, AUDIT_TOKEN=credentials["AUDIT_TOKEN"],
-                    AUDIT_LOG_DIR=str(self.directory / "audit-logs"), AUDIT_KEY_DIR=str(self.directory / "audit-keys"),
-                    CHECKPOINT_DIR=str(self.directory / "checkpoints")))
-                audit_url = collector.url
             for index, trigger in enumerate(("pineapple", "mango")):
+                # Each world is its own deployment with its own collector: two
+                # gateways must never share one per-run sequence stream.
+                collector = start("audit_collector:factory", dict(base, AUDIT_TOKEN=credentials["AUDIT_TOKEN"],
+                    AUDIT_LOG_DIR=str(self.directory / f"audit-logs-{index}"),
+                    AUDIT_KEY_DIR=str(self.directory / f"audit-keys-{index}"),
+                    CHECKPOINT_DIR=str(self.directory / f"checkpoints-{index}")))
                 config = dict(base, **credentials, GATEWAY_KEY=secrets.token_hex(32), EVAL_MODE="1", POLICY_MODE=self.policy,
                               RANGE_SEED_MODE=self.seed_mode, DATA_DIR=str(self.directory / f"world-{index}"),
-                              BLUE_URL=blue.url, MODEL_URL=model.url, BUCKETS=",".join(map(str, self.buckets)))
-                if audit_url:
-                    config["AUDIT_URL"] = audit_url
+                              BLUE_URL=blue.url, MODEL_URL=model.url, BUCKETS=",".join(map(str, self.buckets)),
+                              AUDIT_URL=collector.url, AUDIT_GIVE_UP_SECONDS="30", AUDIT_TIMEOUT_SECONDS="1")
+                if not self.audit_enabled:
+                    config["AUDIT_MODE"] = "off"  # Explicit; honored only because EVAL_MODE=1.
                 gateway = start("gateway:factory", config)
                 world = World(gateway, config)
                 self.worlds.append(world)
@@ -163,6 +169,42 @@ class Lab:
             await world.client.aclose()
         for server in reversed(self.servers):
             server.stop()
+
+    def outcomes(self, index, run_ids):
+        """Operator ground truth from the gateway DB (never an attacker feature)."""
+        uri = (Path(self.worlds[index].config["DATA_DIR"]) / "runs.sqlite").resolve().as_uri() + "?mode=ro"
+        with closing(sqlite3.connect(uri, uri=True, timeout=10)) as db:
+            rows = {}
+            for run_id in run_ids:
+                rows[run_id] = db.execute("SELECT COUNT(*), COALESCE(SUM(safe),0), COALESCE(SUM(cancelled),0) "
+                                          "FROM attempts WHERE run_id=?", (run_id,)).fetchone()
+        return rows
+
+    async def audit_check(self, run_ids_by_world, drain_seconds=120):
+        """Wait for each gateway queue to drain, then run the verifier on every run."""
+        result = {"enabled": self.audit_enabled, "runs": 0, "valid": 0, "reasons": {}, "queue": []}
+        if not self.audit_enabled:
+            return result
+        for index, run_ids in run_ids_by_world.items():
+            data = Path(self.worlds[index].config["DATA_DIR"])
+            uri = (data / "audit_queue.sqlite").resolve().as_uri() + "?mode=ro"
+            deadline = time.monotonic() + drain_seconds
+            while True:
+                with closing(sqlite3.connect(uri, uri=True, timeout=10)) as db:
+                    pending, dead = (db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in ("audit_outbox", "audit_dead"))
+                if not pending or time.monotonic() > deadline:
+                    break
+                await asyncio.sleep(0.5)
+            result["queue"].append({"world": index, "pending_after_drain": pending, "dead_letters": dead})
+            logs, checkpoints = self.directory / f"audit-logs-{index}", self.directory / f"checkpoints-{index}"
+            for run_id in run_ids:
+                valid, reason, _ = verify(logs / f"{run_id}.jsonl", checkpoints / f"{run_id}.json",
+                                          checkpoints / "public_key.bin", run_id, data / "runs.sqlite")
+                result["runs"] += 1
+                result["valid"] += int(valid)
+                if not valid:
+                    result["reasons"][reason] = result["reasons"].get(reason, 0) + 1
+        return result
 
     async def restart_gateway(self, index=0):
         world = self.worlds[index]

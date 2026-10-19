@@ -18,7 +18,9 @@ class Forwarder:
         self.queue, self.transport = queue, transport
         self.url = config.get("AUDIT_URL", "").rstrip("/")
         self.token = config.get("AUDIT_TOKEN", "")
-        self.enabled = bool(self.url and self.token)
+        # An explicit audit-off mode exists only for evaluation runs (EVAL_MODE=1).
+        audit_off = config.get("AUDIT_MODE") == "off" and config.get("EVAL_MODE") == "1"
+        self.enabled = bool(self.url and self.token) and not audit_off
         self.timeout = float(config.get("AUDIT_TIMEOUT_SECONDS", "0.3"))
         self.give_up = float(config.get("AUDIT_GIVE_UP_SECONDS", "2"))
         self.first_seen = {}  # row id -> monotonic time this process first saw it

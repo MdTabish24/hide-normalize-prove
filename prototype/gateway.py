@@ -22,6 +22,8 @@ from range_feedback import generate_range
 
 
 RunId = Annotated[str, Path(pattern="^[A-Za-z0-9_-]{1,64}$")]
+POLICIES = {"raw", "bucket", "bucket_hard", "window_hard"}
+EVAL_ONLY_POLICIES = {"raw", "bucket"}
 
 
 class Submit(BaseModel):
@@ -68,11 +70,15 @@ async def release_at(deadline):
 class Boundary:
     """Buffer all app output. Only a successful authorized report may vary its body.
 
-    Application errors use the last fixed bucket, so even an error arising late
-    has the same deadline. Timing starts at ASGI dispatch (after HTTP headers).
+    Bucket policies: application errors use the last fixed bucket, so even an
+    error arising late has the same deadline. window_hard: EVERY request (done,
+    blocked, error, report, or cancelled at the compute deadline) is released at
+    exactly `window` seconds. Timing starts at ASGI dispatch (after HTTP headers).
     """
-    def __init__(self, app, buckets, policy="bucket_hard"):
+    def __init__(self, app, buckets, policy="bucket_hard", window=None, deadline=None):
         self.app, self.buckets, self.policy = app, buckets, policy
+        self.window = window
+        self.limit = {"bucket_hard": buckets[-1], "window_hard": deadline}.get(policy, 60)
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
@@ -96,14 +102,16 @@ class Boundary:
             return message
 
         try:
-            async with asyncio.timeout(self.buckets[-1] if self.policy == "bucket_hard" else 60):
+            async with asyncio.timeout(self.limit):
                 await self.app(scope, limited_receive, capture)
         except (Exception, asyncio.TimeoutError):
             status, chunks = 500, []
         elapsed = time.perf_counter() - start
         error = status >= 400
         bucket = self.buckets[-1] if error else next((b for b in self.buckets if b >= elapsed), self.buckets[-1])
-        if not error and self.policy == "raw":
+        if self.policy == "window_hard":
+            bucket = self.window
+        elif not error and self.policy == "raw":
             bucket = elapsed
         elif not error and self.policy == "bucket" and elapsed > self.buckets[-1]:
             bucket = elapsed
@@ -111,7 +119,9 @@ class Boundary:
         if len(body) != 64:
             body = PENDING
         state = scope.get("state", {})
-        if error:
+        if state.get("cancelled"):
+            metadata("deadline_cancelled", state.get("run_id"), state.get("role"), bucket, state.get("prompt_hash"))
+        elif error:
             metadata("rejected", state.get("run_id"), state.get("role"), bucket, state.get("prompt_hash"))
         metadata("release", state.get("run_id"), state.get("role"), bucket, state.get("prompt_hash"))
         await release_at(start + bucket)
@@ -126,6 +136,8 @@ class Boundary:
         if audit:
             run_id = state.get("audit_run_id", state.get("run_id"))
             audit.emit("bucket_released", run_id, state.get("role"), bucket, state.get("prompt_hash"))
+            if state.get("cancelled"):
+                audit.emit("deadline_cancelled", run_id, state.get("role"), bucket, state.get("prompt_hash"))
             if state.get("audit_report"):
                 audit.emit("report_served", run_id, state.get("role"), bucket)
             if state.get("audit_finish"):
@@ -147,8 +159,18 @@ def create_app(settings=None, transport=None):
     fine_timer()
     buckets = parse_buckets(config.get("BUCKETS", "3,6,9"))
     policy = config.get("POLICY_MODE", "bucket_hard")
-    if policy not in {"raw", "bucket", "bucket_hard"}:
+    if policy not in POLICIES:
         raise ValueError("Invalid POLICY_MODE")
+    if policy in EVAL_ONLY_POLICIES and config.get("EVAL_MODE") != "1":
+        # Weak baselines exist only for evaluation, never silently in service.
+        metadata("policy_ignored_without_eval_mode")
+        policy = "bucket_hard"
+    window = float(config.get("WINDOW_SECONDS") or buckets[-1])
+    deadline = window * float(config.get("DEADLINE_FRACTION", "0.8"))
+    if not (math.isfinite(window) and window > 0 and 0 < deadline < window):
+        raise ValueError("window_hard needs WINDOW_SECONDS > 0 and 0 < DEADLINE_FRACTION < 1")
+    max_inflight = int(config.get("MAX_INFLIGHT_PER_IDENTITY", "16"))
+    inflight = {}
     tokens = {role: config[role.upper() + "_TOKEN"] for role in ("red", "blue", "evaluator")}
     if any(len(token) < 16 for token in tokens.values()) or len(set(tokens.values())) != 3:
         raise ValueError("Three distinct role tokens of at least 16 characters required")
@@ -164,7 +186,7 @@ def create_app(settings=None, transport=None):
     @asynccontextmanager
     async def lifespan(api):
         async with httpx.AsyncClient(transport=transport, trust_env=False,
-                                     timeout=buckets[-1] if policy == "bucket_hard" else 60) as client:
+                                     timeout={"bucket_hard": buckets[-1], "window_hard": deadline}.get(policy, 60)) as client:
             api.state.client = client
             api.state.audit = Forwarder(store.audit_queue, config, transport)
             api.state.audit.start()
@@ -176,6 +198,7 @@ def create_app(settings=None, transport=None):
     api = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
     api.state.store = store
     api.state.defense = defense
+    api.state.policy = policy
 
     def authorize(request, expected):
         supplied = request.headers.get("authorization", "")
@@ -197,6 +220,19 @@ def create_app(settings=None, transport=None):
     async def submit(body: Submit, request: Request):
         owner = authorize(request, "red")
         request.state.run_id = body.run_id
+        if policy != "window_hard":
+            return await handle_submit(body, request, owner)
+        # Queue rule: no queue. Over the fixed per-identity limit, reject at
+        # once (still released at the window), so waiting never shifts compute.
+        if inflight.get(owner, 0) >= max_inflight:
+            raise HTTPException(429)
+        inflight[owner] = inflight.get(owner, 0) + 1
+        try:
+            return await handle_submit(body, request, owner)
+        finally:
+            inflight[owner] -= 1
+
+    async def handle_submit(body, request, owner):
         request.state.prompt_hash = hashlib.sha256(body.prompt.encode()).hexdigest()
         request.state.audit = api.state.audit
         api.state.audit.emit("submit_received", body.run_id, "red", prompt_hash=request.state.prompt_hash)
@@ -206,7 +242,7 @@ def create_app(settings=None, transport=None):
             if attempt is not None:
                 store.end(attempt, False)
             raise HTTPException(403)
-        safe = False
+        safe = cancelled = False
         try:
             result = await internal("blue", "/check", {"prompt": body.prompt, "filter": api.state.defense})
             if not isinstance(result.get("allowed"), bool):
@@ -219,8 +255,12 @@ def create_app(settings=None, transport=None):
                         raise HTTPException(422)
                     model_body["sim_delay"] = body.sim_delay
                 await internal("model", "/generate", model_body)
+        except asyncio.CancelledError:
+            # Compute deadline hit. Recorded for the evaluator and audit only.
+            cancelled = request.state.cancelled = True
+            raise
         finally:
-            store.end(attempt, safe)
+            store.end(attempt, safe, cancelled)
         return Response(status_code=202)
 
     @api.post("/v1/defense")
@@ -256,7 +296,14 @@ def create_app(settings=None, transport=None):
         body = store.report(run_id, owner)
         return Response(body or PENDING, status_code=200)
 
-    api.add_middleware(Boundary, buckets=buckets, policy=policy)
+    @api.get("/v1/run/{run_id}/evaluation")
+    async def evaluation(run_id: RunId, request: Request):
+        # Sealed evaluator-only counts after finish; Red never sees these.
+        authorize(request, "evaluator")
+        request.state.run_id = run_id
+        return Response(store.evaluation(run_id) or PENDING, status_code=200)
+
+    api.add_middleware(Boundary, buckets=buckets, policy=policy, window=window, deadline=deadline)
     return api
 
 

@@ -1,4 +1,4 @@
-# finish + report + verify for isolation-a2dd1b8f051e  (2026-10-19T03:07:51Z)
+# finish + report + verify for isolation-693a206e6f01  (2026-10-19T03:39:27Z, Phase 1+2 image)
 202 {"status":"pending"}
 202 {"status":"complete","safe_range":[0,1]}
 ## verifier (network_mode none, read-only volumes)

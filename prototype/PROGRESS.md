@@ -84,3 +84,42 @@ shift of 2 ms or less is NOT excluded. Live separate-process measurement: Phase 
 
 NOT RUN yet: Docker image rebuild with Phase 1 code (do with Phase 2).
 Next: Phase 2 (window_hard).
+
+## Phase 2: window_hard (DONE)
+
+What changed
+- `POLICY_MODE=window_hard`: one window W (`WINDOW_SECONDS`, default = last
+  bucket), compute deadline D = `DEADLINE_FRACTION` x W (default 0.8, so a
+  20% margin for cancellation and release overhead). EVERY request (done,
+  blocked, error, report, cancelled) is released at exactly W after ASGI
+  dispatch (perf_counter, monotonic), same generic 202 envelope.
+- Cancelled at D: attempt is marked done; `attempts.cancelled=1`; stdout
+  metadata `deadline_cancelled`; audit event `deadline_cancelled`; new
+  evaluator-only `GET /v1/run/{id}/evaluation` (after finish) returns
+  `{"attempts","safe","cancelled"}`. Red's report is unchanged.
+- Queue rule: NO queue. Fixed per-identity in-flight limit
+  (`MAX_INFLIGHT_PER_IDENTITY`, default 16). Over it: immediate reject, still
+  released at W. Applied only under window_hard, so old baselines stay identical.
+- EVAL_MODE gating: `raw`/`bucket` fall back to `bucket_hard` unless
+  `EVAL_MODE=1` (stdout `policy_ignored_without_eval_mode`); explicit
+  `AUDIT_MODE=off` is honored only with `EVAL_MODE=1`.
+- Default stays `bucket_hard`: trial with window_hard as default made 3 existing
+  tests fail (they assert first-bucket timing). Reverted, as the brief requires.
+- Compose: `WINDOW_SECONDS`, `DEADLINE_FRACTION`, `MAX_INFLIGHT_PER_IDENTITY`.
+
+Utility cost (documented; measured in Phase 3): every response waits the full W
+(added latency = W - compute), and any compute longer than D is cancelled
+(timeout rate). With the real-model small sample (p99 2.12 s) and W = 3 s,
+D = 2.4 s, about 1% of requests would be cancelled (estimate from that sample,
+not measured with window_hard).
+
+Tests: host `pytest tests eval/tests` = **46 passed** (+5 in
+`tests/test_window_hard.py`). Docker rebuilt: isolation 11/11 PASS, audit VALID,
+tamper 7/7 INVALID (`evidence/isolation.txt`, `evidence/audit-docker.txt`).
+Inside Docker (Linux): `pytest tests` = **39 passed** (`evidence/tests-in-docker.txt`);
+there the collector-health release test shows medians 0.1520/0.1521/0.1523 s
+and p95 within ~1 ms (KS p 0.44, 0.12): Linux timers are far tighter than the
+Windows host.
+Phase 3 harness prepared: `eval/matrix.py` (smoke N=4: audit ON, 128/128 runs VALID).
+
+Next: Phase 3 (live matrix with audit ON, 4 policies + deadline probes).

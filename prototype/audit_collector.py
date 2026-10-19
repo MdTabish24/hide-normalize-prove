@@ -11,7 +11,8 @@ from audit_store import Collector
 
 class Event(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
-    type: Literal["submit_received", "bucket_released", "defense_stored", "report_served", "run_finished"]
+    type: Literal["submit_received", "bucket_released", "defense_stored", "report_served", "run_finished",
+                  "deadline_cancelled"]
     run_id: str = Field(pattern="^[A-Za-z0-9_@-]{1,64}$")
     role: Literal["red", "blue", "evaluator"] | None
     bucket: float | None = Field(ge=0)

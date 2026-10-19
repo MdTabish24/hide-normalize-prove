@@ -32,6 +32,11 @@ services:
       BUCKETS: ${BUCKETS:-3,6,9}
       DATA_DIR: /data
       POLICY_MODE: ${POLICY_MODE:-bucket_hard}
+      # window_hard only: release at WINDOW_SECONDS (default: last bucket),
+      # cancel compute at DEADLINE_FRACTION * window, no per-identity queue.
+      WINDOW_SECONDS: ${WINDOW_SECONDS:-}
+      DEADLINE_FRACTION: ${DEADLINE_FRACTION:-0.8}
+      MAX_INFLIGHT_PER_IDENTITY: ${MAX_INFLIGHT_PER_IDENTITY:-16}
       RANGE_SEED_MODE: ${RANGE_SEED_MODE:-run}
       EVAL_MODE: ${EVAL_MODE:-0}
     volumes: ["gateway-data:/data"]
