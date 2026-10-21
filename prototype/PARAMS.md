@@ -42,3 +42,24 @@ SAME production code (`meter.py`, `storage.Store`) as the gateway; they are labe
 
 ## Not covered by these evaluations
 Mock backend only, no real model, no timing channel, no Sybil identities, no attacker who changes probe content adaptively beyond the scripted Red.
+
+---
+
+# PARAMS (version 2: load-observer evaluation, fixed BEFORE it is run; version 1 above is unchanged)
+
+Question: does overload carry Blue's secret? Attack 9/9c only showed that Red's volume changes Blue's reply time; they never compared rule A with rule B.
+The observer here is Red itself (the system has exactly three role tokens: red, blue, evaluator, so there is no second Red identity).
+
+| Item | Value |
+|---|---|
+| Worlds | world 0 = rule A (keyword "pineapple"), world 1 = rule B (keyword "mango"); same laptop, runs strictly one at a time |
+| Flood (per run) | 12 concurrent Red workers, each looping unique prompts that contain the world-0 keyword, so world 0 blocks all of them (cheap) and world 1 allows all of them (model call): the worst case for a work difference. Each worker uses its own run id. |
+| Observer (per run) | 6 sequential neutral probes with unique text (allowed in both worlds), sent after 0.3 s of flood; features = `eval.run.features` of the observer's own HTTP observations (release times, status, size, header fingerprint) |
+| Why 12 | with the observer the in-flight count stays at or below the default per-identity cap of 16 |
+| Scale / window | timings x0.1, window W = 0.9 s, compute deadline 0.8 W; mock model |
+| N | 100 train runs and 100 unseen test runs per cell (balanced A/B), seed 20261023 |
+| Attacker | depth-3 decision tree (same as before); 95% Wilson interval; verdict thresholds as in the README (LEAKED if lower bound > 55% and accuracy >= 60%; no leak found if upper bound <= 60%; else bounded) |
+| Baseline cells | `bucket_hard` (current default) and `window_continue` (window_hard + WINDOW_CONTINUE=1) |
+| Mitigation cells | defined in version 3 of this file BEFORE they are run |
+| Not covered | no-flood control cell (use the earlier "ordinary" cells as the reference), a second identity, a real model, Sybil identities |
+| Success / failure for a mitigation (to be applied later) | success: upper Wilson bound <= 60% on this test and on attack 9c, completion not worse than the baseline cell; failure: lower bound > 55% and accuracy >= 60% on either |

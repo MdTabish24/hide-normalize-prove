@@ -13,14 +13,25 @@ from audit_format import InvalidAudit, canonical, inspect_chain
 
 def verify(log, checkpoint, public_key, run_id, gateway_db=None):
     try:
-        data = Path(log).read_bytes()
+        # Separate reasons (diagnosis only; the verdict is unchanged): a missing log is a delivery failure,
+        # a missing checkpoint means the chain never reached `complete`, neither is a cryptographic failure.
+        try:
+            data = Path(log).read_bytes()
+        except FileNotFoundError:
+            raise InvalidAudit("log file missing") from None
         records = inspect_chain(data, run_id)
-        checkpoint = json.loads(Path(checkpoint).read_bytes())
+        try:
+            checkpoint = json.loads(Path(checkpoint).read_bytes())
+        except FileNotFoundError:
+            raise InvalidAudit("checkpoint missing (chain never reached complete)") from None
         if set(checkpoint) != {"run_id", "count", "bytes", "head_hash", "signature"}:
             raise InvalidAudit("checkpoint fields")
         # Check signature before comparing checkpoint/log: a rewritten checkpoint
         # cannot hide a recomputed chain without the collector's private key.
-        key = Ed25519PublicKey.from_public_bytes(Path(public_key).read_bytes())
+        try:
+            key = Ed25519PublicKey.from_public_bytes(Path(public_key).read_bytes())
+        except FileNotFoundError:
+            raise InvalidAudit("public key missing") from None
         signed = {k: v for k, v in checkpoint.items() if k != "signature"}
         try:
             key.verify(bytes.fromhex(checkpoint["signature"]), canonical(signed))
@@ -44,9 +55,12 @@ def verify(log, checkpoint, public_key, run_id, gateway_db=None):
             # Read-only mode does not create a missing database or update it.
             queue = Path(gateway_db).with_name("audit_queue.sqlite")
             uri = queue.resolve().as_uri() + "?mode=ro"
-            with closing(sqlite3.connect(uri, uri=True)) as db:
-                status = db.execute("SELECT unavailable FROM audit_state WHERE run_id=?", (run_id,)).fetchone()
-                pending = db.execute("SELECT COUNT(*) FROM audit_outbox WHERE run_id=?", (run_id,)).fetchone()[0]
+            try:
+                with closing(sqlite3.connect(uri, uri=True)) as db:
+                    status = db.execute("SELECT unavailable FROM audit_state WHERE run_id=?", (run_id,)).fetchone()
+                    pending = db.execute("SELECT COUNT(*) FROM audit_outbox WHERE run_id=?", (run_id,)).fetchone()[0]
+            except sqlite3.Error:
+                raise InvalidAudit("gateway audit status unreadable") from None
             if status is None:
                 raise InvalidAudit("gateway audit status missing")
             if status[0]:

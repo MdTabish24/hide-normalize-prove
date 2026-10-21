@@ -101,7 +101,8 @@ async def run_matrix(output, n, train_n, scale, concurrency, seed, audit, polici
             ]}
     with tempfile.TemporaryDirectory(prefix="round2-matrix-") as directory:
         for policy in policies:
-            async with Lab(Path(directory) / policy, scale, policy, audit=audit, window_continue=window_continue) as lab:
+            async with Lab(Path(directory) / policy, scale, policy, audit=audit, window_continue=window_continue,
+                           capture_dir=output / "logs" / (policy + ("-continue" if window_continue else ""))) as lab:
                 run_ids = {0: [], 1: []}
                 for cohort in cohorts_for(policy):
                     if (time.monotonic() - started) / 60 > max_minutes:
@@ -122,6 +123,7 @@ async def run_matrix(output, n, train_n, scale, concurrency, seed, audit, polici
                         allowed = sum(row[1] for row in outcomes.values())
                         summary |= {"variant": "window_hard+continue", "late": late,
                                     "late_rate_of_allowed": late / allowed if allowed else 0.0}
+                    summary["dead_servers"] = lab.dead_servers()  # Non-empty means a service died during this cell.
                     data["cells"].append(summary)
                     with (output / "samples.jsonl").open("a", encoding="utf-8") as file:
                         file.write(json.dumps({"cohort": cohort, "policy": policy, "samples": cell["samples"]}) + "\n")

@@ -27,19 +27,23 @@ def free_port():
 
 
 class Server:
-    def __init__(self, module, env, log=None):
+    def __init__(self, module, env, log=None, err_log=None, log_level="critical"):
         self.module, self.env, self.port, self.process = module, env, free_port(), None
+        self.err_log, self.log_level = err_log, log_level  # Optional stderr capture (errors only), for diagnosis.
         self.log = log  # Optional file for the server's stdout metadata (log scans).
 
     def start(self):
         command = [sys.executable, "-m", "uvicorn", self.module, "--host", "127.0.0.1", "--port", str(self.port),
-                   "--no-access-log", "--no-date-header", "--no-server-header", "--log-level", "critical"]
+                   "--no-access-log", "--no-date-header", "--no-server-header", "--log-level", self.log_level]
         if self.module.endswith("factory"):
             command.append("--factory")
         stdout = open(self.log, "ab") if self.log else subprocess.DEVNULL
-        self.process = subprocess.Popen(command, cwd=ROOT, env=self.env, stdout=stdout, stderr=subprocess.DEVNULL)
+        stderr = open(self.err_log, "ab") if self.err_log else subprocess.DEVNULL
+        self.process = subprocess.Popen(command, cwd=ROOT, env=self.env, stdout=stdout, stderr=stderr)
         if self.log:
             stdout.close()  # The child keeps its own handle.
+        if self.err_log:
+            stderr.close()
         deadline = time.perf_counter() + 20
         while time.perf_counter() < deadline:
             if self.process.poll() is not None:
@@ -137,7 +141,8 @@ class World:
 class Lab:
     """Trusted controller owns labels/configuration; observations never include them."""
     def __init__(self, directory, scale=0.1, policy="bucket_hard", seed_mode="run", audit=False, demo_trace=False, backend="mock",
-                 window_continue=False, window_seconds=None, extra_env=None):
+                 window_continue=False, window_seconds=None, extra_env=None, capture_dir=None):
+        self.capture_dir = Path(capture_dir) if capture_dir else None  # Keep each server's error output here when set.
         self.window_continue = window_continue
         self.extra_env = dict(extra_env or {})  # Opt-in gateway settings, e.g. FEEDBACK_MODE; empty by default.
         self.window_seconds = window_seconds
@@ -161,7 +166,11 @@ class Lab:
         credentials = {name: secrets.token_hex(32) for name in (
             "RED_TOKEN", "BLUE_TOKEN", "EVALUATOR_TOKEN", "BLUE_SERVICE_TOKEN", "MODEL_SERVICE_TOKEN", "AUDIT_TOKEN")}
         def start(module, env):
-            server = Server(module, env)
+            err = None
+            if self.capture_dir:
+                self.capture_dir.mkdir(parents=True, exist_ok=True)
+                err = self.capture_dir / f"{module.replace(':', '-')}-{len(self.servers)}.err"
+            server = Server(module, env, err_log=err, log_level="error" if err else "critical")
             self.servers.append(server)
             return server.start()
         try:
@@ -219,6 +228,10 @@ class Lab:
                 rows[run_id] = db.execute("SELECT COUNT(*), COALESCE(SUM(safe),0), COALESCE(SUM(cancelled),0) "
                                           "FROM attempts WHERE run_id=?", (run_id,)).fetchone()
         return rows
+
+    def dead_servers(self):
+        """Modules whose process has exited (a collector or gateway that died or crashed during a run)."""
+        return [s.module for s in self.servers if s.process is not None and s.process.poll() is not None]
 
     def late_counts(self, index, run_ids):
         """Attempts that finished after the window deadline (continue mode only), from the gateway DB."""
