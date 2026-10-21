@@ -63,3 +63,23 @@ The observer here is Red itself (the system has exactly three role tokens: red, 
 | Mitigation cells | defined in version 3 of this file BEFORE they are run |
 | Not covered | no-flood control cell (use the earlier "ordinary" cells as the reference), a second identity, a real model, Sybil identities |
 | Success / failure for a mitigation (to be applied later) | success: upper Wilson bound <= 60% on this test and on attack 9c, completion not worse than the baseline cell; failure: lower bound > 55% and accuracy >= 60% on either |
+
+---
+
+# PARAMS (version 3: audit-OFF control cells and the decision rule, fixed BEFORE they are run; versions 1 and 2 are unchanged)
+
+Reason: in both version-2 cells one world's audit pipeline backed up (9973 and 9980 pending events, 888 and 829 dead letters), a different world each time, so the
+observer may have read audit trouble instead of a work difference.
+
+| Item | Value |
+|---|---|
+| New cells | `bucket_hard_noaudit` and `window_continue_noaudit`: identical to the version-2 cells in every parameter except audit OFF (`AUDIT_MODE=off`, honoured only with `EVAL_MODE=1`) |
+| Everything else | flood 12 workers, 6 observer probes, N = 100 train + 100 unseen test runs, seed 20261023, scale 0.1, window 0.9 s, mock model, depth-3 tree, 95% Wilson |
+| Verdict | README thresholds (LEAKED: lower bound > 55% and accuracy >= 60%; no leak found: upper bound <= 60%; otherwise bounded) |
+
+Decision rule (fixed now, applied to the two noaudit cells):
+- Both cells LEAKED: the work / event-loop channel is real. Build `LOOP_OFFLOAD` (blocking store, vault and audit-enqueue work off the event loop, WAL + synchronous=NORMAL)
+  and `FAIR_ADMIT` (per-identity in-flight cap for every policy); their cells are defined in version 4 before any run.
+- Both cells have an upper bound <= 60%: the earlier leak came from the audit backlog. Build `AUDIT_BATCH` and re-run the version-2 cells (audit ON) with it.
+- Anything else (one leaked, or bounded): report it as bounded and build both; no claim beyond "the tested observer ...".
+Independently of this result, `AUDIT_BATCH` is built because the shipper's one-event-per-round-trip delivery was measured to be the audit bottleneck.

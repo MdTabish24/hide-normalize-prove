@@ -32,6 +32,9 @@ FLOOD_KEYWORD = "pineapple"  # world 0 blocks it (cheap path), world 1 allows it
 CELLS = {
     "bucket_hard": dict(policy="bucket_hard", window_continue=False),
     "window_continue": dict(policy="window_hard", window_continue=True),
+    # Version 3 controls: identical except audit OFF, to separate the work channel from audit backlog.
+    "bucket_hard_noaudit": dict(policy="bucket_hard", window_continue=False, audit=False),
+    "window_continue_noaudit": dict(policy="window_hard", window_continue=True, audit=False),
 }
 
 
@@ -66,7 +69,7 @@ async def run_cell(name, n_train, n_test, output):
     started = time.time()
     rows = []
     with tempfile.TemporaryDirectory(prefix="load-observer-") as directory:
-        async with Lab(Path(directory) / name, SCALE, spec["policy"], audit=True, window_continue=spec["window_continue"],
+        async with Lab(Path(directory) / name, SCALE, spec["policy"], audit=spec.get("audit", True), window_continue=spec["window_continue"],
                        capture_dir=output / "logs" / name) as lab:
             for index, (split, secret) in enumerate(jobs):
                 run_id = f"obs-{name}-{index}"
@@ -85,7 +88,8 @@ async def run_cell(name, n_train, n_test, output):
     low, high = wilson(correct, len(test))
     totals = [t for r in rows for t in r["totals"]]
     verdict = timing_verdict(correct / len(test), len(test), [low, high])
-    return dict(label=LABEL, cell=name, policy=spec["policy"], window_continue=spec["window_continue"], params_version=2, seed=SEED,
+    return dict(label=LABEL, cell=name, policy=spec["policy"], window_continue=spec["window_continue"], audit=spec.get("audit", True),
+                params_version=3 if name.endswith("noaudit") else 2, seed=SEED,
                 flood_workers=FLOOD_WORKERS, observer_probes=OBSERVER_PROBES, scale=SCALE, train_runs=len(train), test_runs=len(test),
                 accuracy=correct / len(test), wilson_95=[low, high], train_accuracy=float(tree.score([r["features"] for r in train], [r["secret"] for r in train])),
                 verdict=verdict["status"], observer_release_seconds=dict(median=round(statistics.median(totals), 4), p95=round(percentile(totals, 95), 4),
