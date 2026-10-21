@@ -215,8 +215,25 @@ def create_app(settings=None, transport=None):
                   range_seed_mode=config.get("RANGE_SEED_MODE", "run"), range_generator=generate_range,
                   audit_queue_max=int(config.get("AUDIT_QUEUE_MAX", "10000")))
     demo_trace = config.get("EVAL_MODE") == "1" and config.get("DEMO_TRACE") == "1"
+    # Opt-in diagnosis only (EVAL_MODE=1): record every event-loop stall above 0.1 s with wall time and load counters.
+    lag_log = config.get("EVAL_MODE") == "1" and config.get("LOOP_LAG_LOG") == "1"
     # Fail closed if a persisted key/config is corrupt. No silent key rotation.
     defense = store.unseal()
+
+    async def loop_lag_monitor():
+        path, interval = FilePath(store.directory) / "loop-lag.jsonl", 0.05
+        while True:
+            before = time.perf_counter()
+            await asyncio.sleep(interval)
+            lag = time.perf_counter() - before - interval
+            if lag > 0.1:
+                row = dict(t=round(time.time(), 3), lag=round(lag, 3), background=len(background), inflight=sum(inflight.values()),
+                           tasks=len(asyncio.all_tasks()))
+                try:
+                    with path.open("a", encoding="utf-8") as stream:
+                        stream.write(json.dumps(row, separators=(",", ":")) + "\n")
+                except OSError:
+                    pass
 
     @asynccontextmanager
     async def lifespan(api):
@@ -229,6 +246,7 @@ def create_app(settings=None, transport=None):
             api.state.client = client
             api.state.audit = Forwarder(store.audit_queue, config, transport)
             api.state.audit.start()
+            lag_task = asyncio.create_task(loop_lag_monitor()) if lag_log else None
             if transport is None:
                 # Internal root GETs only establish HTTP pools; neither backend
                 # generates text on GET /. Failure does not stop safe startup.
@@ -238,6 +256,8 @@ def create_app(settings=None, transport=None):
             try:
                 yield
             finally:
+                if lag_task is not None:
+                    lag_task.cancel()
                 for pending in list(background):
                     pending.cancel()
                 if background:

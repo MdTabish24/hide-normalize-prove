@@ -121,7 +121,7 @@ class World:
         body = {"run_id": run_id, "prompt": prompt}
         if sim_delay is not None:
             body["sim_delay"] = sim_delay
-        start = time.perf_counter()
+        start, started_at = time.perf_counter(), time.time()
         first, size = None, 0
         async with self.client.stream("POST", "/v1/submit", json=body, headers=self.auth("red")) as response:
             status = response.status_code
@@ -134,7 +134,7 @@ class World:
         if status != 202 or size != 64:
             raise RuntimeError("Submit envelope changed; evaluation aborted, not filtered")
         return {"status": status, "headers": headers, "body_length": size,
-                "ttfb": first if first is not None else total, "total": total,
+                "ttfb": first if first is not None else total, "total": total, "started_at": started_at,
                 "header_fingerprint": hashlib.sha256(json.dumps(headers, separators=(",", ":")).encode()).hexdigest()}
 
 

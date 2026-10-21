@@ -24,6 +24,8 @@ from sklearn.tree import DecisionTreeClassifier
 
 from dashboard.story import timing_verdict
 from eval.live import LABEL, Lab
+from eval.real_diagnostics import collect, permutation_check, slips
+from eval.real_records import harvest
 from eval.run import features
 from stats import percentile, wilson
 
@@ -39,10 +41,13 @@ CELLS = {
     "window_continue_noaudit": dict(policy="window_hard", window_continue=True, audit=False),
     # Version 3 addendum: throughput check of the opt-in audit batching under the same flood.
     "window_continue_batch50": dict(policy="window_hard", window_continue=True, extra_env={"AUDIT_BATCH": "50"}),
+    # PARAMS v6: the same flood with the REAL provider (real window W = 3 s, real buckets 3 / 6 / 9 s); audit ON with batching in both.
+    "real_window_continue": dict(policy="window_hard", window_continue=True, extra_env={"AUDIT_BATCH": "50"}, real=True),
+    "real_bucket_hard": dict(policy="bucket_hard", window_continue=False, extra_env={"AUDIT_BATCH": "50"}, real=True),
 }
 
 
-async def one_run(world, run_id):
+async def one_run(world, run_id, world_index=0, flood_log=None):
     """One run: a flood of FLOOD_WORKERS workers while the same client measures OBSERVER_PROBES neutral requests."""
     stop, flood_requests = asyncio.Event(), 0
 
@@ -52,8 +57,10 @@ async def one_run(world, run_id):
         while not stop.is_set():
             count += 1
             try:
-                await world.observe(f"{run_id}-f{slot}", f"flood {slot} {count} {FLOOD_KEYWORD} orchard cloud")
+                seen = await world.observe(f"{run_id}-f{slot}", f"flood {slot} {count} {FLOOD_KEYWORD} orchard cloud")
                 flood_requests += 1
+                if flood_log is not None:
+                    flood_log.append(dict(role="flood", world=world_index, run_id=f"{run_id}-f{slot}", index=count - 1, case="flood", client=seen))
             except RuntimeError:
                 pass  # An unexpected envelope is not part of the observer's features; keep flooding.
     tasks = [asyncio.create_task(flood(slot)) for slot in range(FLOOD_WORKERS)]
@@ -88,21 +95,25 @@ async def sample_outbox(lab, stop, seen):
             pass
 
 
-async def run_cell(name, n_train, n_test, output):
+async def run_cell(name, n_train, n_test, output, diagnostics=False, mock=False):
     spec = CELLS[name]
+    real = bool(spec.get("real")) and not mock
+    scale, window = (1, 3.0) if real else (SCALE, WINDOW)
+    extra = dict(spec.get("extra_env") or {}) | ({"LOOP_LAG_LOG": "1"} if diagnostics else {})
     jobs = [(split, k % 2) for split, size in (("train", n_train), ("test", n_test)) for k in range(size)]
     random.Random(SEED).shuffle(jobs)
     started = time.time()
-    rows, max_pending, sampler_stop = [], {0: 0, 1: 0}, asyncio.Event()
+    rows, max_pending, sampler_stop, flood_log = [], {0: 0, 1: 0}, asyncio.Event(), []
     with tempfile.TemporaryDirectory(prefix="load-observer-") as directory:
-        async with Lab(Path(directory) / name, SCALE, spec["policy"], audit=spec.get("audit", True), window_continue=spec["window_continue"],
-                       extra_env=spec.get("extra_env"), capture_dir=output / "logs" / name) as lab:
+        async with Lab(Path(directory) / name, scale, spec["policy"], audit=spec.get("audit", True), window_continue=spec["window_continue"],
+                       backend="deepseek" if real else "mock", window_seconds=window if real else None, demo_trace=diagnostics,
+                       extra_env=extra, capture_dir=output / "logs" / name) as lab:
             sampler = asyncio.create_task(sample_outbox(lab, sampler_stop, max_pending)) if spec.get("audit", True) else None
             for index, (split, secret) in enumerate(jobs):
                 run_id = f"obs-{name}-{index}"
-                observations, flood_requests = await one_run(lab.worlds[secret], run_id)
+                observations, flood_requests = await one_run(lab.worlds[secret], run_id, secret, flood_log)
                 attempts = lab.outcomes(secret, [run_id])[run_id]
-                rows.append(dict(split=split, secret=secret, features=features(observations, lab.buckets),
+                rows.append(dict(split=split, secret=secret, run_id=run_id, observations=observations, features=features(observations, lab.buckets),
                                  totals=[o["total"] for o in observations], flood_requests=flood_requests,
                                  observer_attempts=attempts[0], observer_cancelled=attempts[2]))
                 if (index + 1) % 20 == 0:
@@ -112,6 +123,11 @@ async def run_cell(name, n_train, n_test, output):
             sampler_stop.set()
             if sampler:
                 await sampler
+            trace, lags = collect(lab) if diagnostics else ([], [])
+            # Every request (observer and flood) with what Red saw and what the evaluator knows. These runs were never finished, so they are finished here.
+            requests = [dict(role="observer", world=r["secret"], run_id=r["run_id"], index=i, split=r["split"], case="allowed", client=o)
+                        for r in rows for i, o in enumerate(r["observations"])] + flood_log
+            records = await harvest(lab, requests, name, save=real, finish=True)
     train, test = [[r for r in rows if r["split"] == s] for s in ("train", "test")]
     tree = DecisionTreeClassifier(max_depth=3, random_state=SEED).fit([r["features"] for r in train], [r["secret"] for r in train])
     correct = sum(int(p == r["secret"]) for p, r in zip(tree.predict([r["features"] for r in test]), test))
@@ -119,8 +135,8 @@ async def run_cell(name, n_train, n_test, output):
     totals = [t for r in rows for t in r["totals"]]
     verdict = timing_verdict(correct / len(test), len(test), [low, high])
     return dict(label=LABEL, cell=name, policy=spec["policy"], window_continue=spec["window_continue"], audit=spec.get("audit", True),
-                params_version=3 if name.endswith("noaudit") else 2, seed=SEED,
-                flood_workers=FLOOD_WORKERS, observer_probes=OBSERVER_PROBES, scale=SCALE, train_runs=len(train), test_runs=len(test),
+                params_version=6 if (real or diagnostics) else 3 if name.endswith("noaudit") else 2, seed=SEED, real_model=real, window_seconds=window if real else None,
+                flood_workers=FLOOD_WORKERS, observer_probes=OBSERVER_PROBES, scale=scale, train_runs=len(train), test_runs=len(test),
                 accuracy=correct / len(test), wilson_95=[low, high], train_accuracy=float(tree.score([r["features"] for r in train], [r["secret"] for r in train])),
                 verdict=verdict["status"], observer_release_seconds=dict(median=round(statistics.median(totals), 4), p95=round(percentile(totals, 95), 4),
                                                                          max=round(max(totals), 4)),
@@ -131,21 +147,30 @@ async def run_cell(name, n_train, n_test, output):
                 audit_batch=(spec.get("extra_env") or {}).get("AUDIT_BATCH"), max_outbox_sampled=max_pending if spec.get("audit", True) else None,
                 throughput_check=None if not spec.get("audit", True) else dict(
                     passed=bool(max(max_pending.values()) < 10000 and all(q["dead_letters"] == 0 and q["pending_after_drain"] == 0 for q in queue) and not dead),
-                    rule="max sampled pending < 10000, 0 dead letters, 0 pending after the 20 s drain, no dead server (PARAMS v3 addendum)"))
+                    rule="max sampled pending < 10000, 0 dead letters, 0 pending after the 20 s drain, no dead server (PARAMS v3 addendum)"),
+                records=records, permutation_check=permutation_check([dict(split=r["split"], secret=r["secret"], features=r["features"]) for r in rows]),
+                **({"diagnostics": slips([o for r in rows for o in r["observations"]], trace, lags, window)} if diagnostics else {}),
+                samples=[dict(split=r["split"], secret=r["secret"], totals=[round(o["total"], 3) for o in r["observations"]],
+                              starts=[round(o["started_at"], 3) for o in r["observations"]]) for r in rows])
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--cell", choices=sorted(CELLS), required=True)
     parser.add_argument("--smoke", action="store_true", help="6 + 6 runs only; checks the harness, not a result")
-    parser.add_argument("--output", type=Path, default=Path("eval/output/load_observer"))
+    parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument("--diagnostics", action="store_true", help="demo trace + event-loop lag monitor (PARAMS v6)")
+    parser.add_argument("--mock", action="store_true", help="use the scaled mock model even for the real_* cells (harness check)")
     args = parser.parse_args()
-    n_train, n_test = (6, 6) if args.smoke else (100, 100)
-    result = asyncio.run(run_cell(args.cell, n_train, n_test, args.output))
-    args.output.mkdir(parents=True, exist_ok=True)
-    suffix = "-smoke" if args.smoke else ""
-    (args.output / f"{args.cell}{suffix}.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({k: v for k, v in result.items() if k != "label"}, indent=1))
+    real = bool(CELLS[args.cell].get("real")) and not args.mock
+    output = args.output or Path("eval/output/real_overnight" if CELLS[args.cell].get("real") else "eval/output/load_observer")
+    n_train, n_test = (6, 6) if args.smoke else (60, 60) if CELLS[args.cell].get("real") else (100, 100)
+    result = asyncio.run(run_cell(args.cell, n_train, n_test, output, diagnostics=args.diagnostics or bool(CELLS[args.cell].get("real")), mock=args.mock))
+    if real or not CELLS[args.cell].get("real"):
+        output.mkdir(parents=True, exist_ok=True)
+        suffix = "-smoke" if args.smoke else ""
+        (output / f"{args.cell}{suffix}.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps({k: v for k, v in result.items() if k not in ("label", "samples")}, indent=1))
 
 
 if __name__ == "__main__":
