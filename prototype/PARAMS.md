@@ -138,3 +138,6 @@ so none is expected). Descriptive only; no hosted-cache claim beyond "our own ob
 
 Budget: about 540 + 540 + 360 + 360 provider calls plus 20 for the Docker check (1 retry at most each); long answers up to 512 tokens. Expected duration 45-60 minutes. The suite keeps Windows awake while it runs.
 Not covered (stated as limits, not run): a flood with the real model (thousands of calls per cell; the flood result is a gateway property measured with the mock), other cohorts, more repeats, Sybil identities.
+
+Version 5 addendum (before the run): a step that fails with a transport error (network or local connection reset) is retried ONCE with identical parameters and seed; the number of attempts is recorded.
+Any other failure is recorded and the step is skipped. No parameter is changed after seeing a result.
