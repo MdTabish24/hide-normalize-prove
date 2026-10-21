@@ -76,8 +76,9 @@ async def attempt(label, runner, key, summary):
     step["minutes"] = round((time.time() - begin) / 60, 1)
     print(step["result"], flush=True)
     summary["steps"].append(step)
-    OUTPUT.mkdir(parents=True, exist_ok=True)
-    SUMMARY.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")  # Written after every step.
+    if not summary["label"].startswith("MOCK"):
+        OUTPUT.mkdir(parents=True, exist_ok=True)
+        SUMMARY.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")  # Written after every step.
 
 
 async def main_async(mock, smoke):

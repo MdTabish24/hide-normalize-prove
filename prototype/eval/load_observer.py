@@ -107,7 +107,7 @@ async def run_cell(name, n_train, n_test, output, diagnostics=False, mock=False)
     with tempfile.TemporaryDirectory(prefix="load-observer-") as directory:
         async with Lab(Path(directory) / name, scale, spec["policy"], audit=spec.get("audit", True), window_continue=spec["window_continue"],
                        backend="deepseek" if real else "mock", window_seconds=window if real else None, demo_trace=diagnostics,
-                       extra_env=extra, capture_dir=output / "logs" / name) as lab:
+                       extra_env=extra, capture_dir=None if (spec.get("real") and mock) else output / "logs" / name) as lab:
             sampler = asyncio.create_task(sample_outbox(lab, sampler_stop, max_pending)) if spec.get("audit", True) else None
             for index, (split, secret) in enumerate(jobs):
                 run_id = f"obs-{name}-{index}"
