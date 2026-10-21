@@ -1,5 +1,8 @@
 # Final report: what is measured, and the open PROBLEMS (no solutions on purpose)
 
+> **STATUS: DRAFT.** Written BEFORE the real-model timing test (PARAMS v4) was run. P5 and section 4 will be rewritten with its results, and other
+> problems may change. Do not treat this as final until that section says RUN.
+
 Snapshot 2026-10-21. Purpose: give a solver (Opus) the exact problems, their mechanisms, the evidence and the constraints. Labels: **L** = live gateway, mock model, local run (timings x0.1);
 **R** = real model run, small sample, local; **S** = simulated with production code. "50% = the tested attacker could not tell Blue's rule A from B" (not proof of no leak).
 Sources: `FINDINGS.md`, `PROGRESS.md`, `PARAMS.md`, `eval/output/`, `attack_suite_results.json`, `OPUS_BRIEF.md` (how the code works).
@@ -36,7 +39,7 @@ cache guess 95% -> 45-48% with a per-run namespace (L); model-text rule disclosu
 `bucket_hard` is the default and fails boundary/overflow/deadline cohorts (98-100%) and the flood (76%). The better profile (`window_hard + continue + AUDIT_BATCH=50`, `docker-compose.recommended.yml`) is opt-in.
 Costs of continue: background compute is bounded by a hard maximum of 4W; with a real model it spends tokens.
 
-### P5. Real-model evidence is thin
+### P5. Real-model evidence is thin (DRAFT: to be rewritten after the v4 run)
 - R so far: 60 requests (36 provider calls), no A-vs-B classifier. The real-model timing test (`PARAMS.md` v4, `eval/real_timing.py`) is prepared but NOT RUN yet.
 - The hosted prefix cache is not under our control (we send a fresh random 64-hex system prefix per call); only our own latency distribution is observable.
 
