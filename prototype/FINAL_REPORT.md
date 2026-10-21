@@ -1,7 +1,7 @@
 # Final report: what is measured, and the open PROBLEMS (no solutions on purpose)
 
-> **STATUS: DRAFT.** Written BEFORE the real-model timing test (PARAMS v4) was run. P5 and section 4 will be rewritten with its results, and other
-> problems may change. Do not treat this as final until that section says RUN.
+> **STATUS:** P5 and section 4 were rewritten after the real-model timing test (PARAMS v4) was RUN on 2026-10-21. The other problems are unchanged.
+> One run per cell; see the limits listed in P5.
 
 Snapshot 2026-10-21. Purpose: give a solver (Opus) the exact problems, their mechanisms, the evidence and the constraints. Labels: **L** = live gateway, mock model, local run (timings x0.1);
 **R** = real model run, small sample, local; **S** = simulated with production code. "50% = the tested attacker could not tell Blue's rule A from B" (not proof of no leak).
@@ -39,9 +39,16 @@ cache guess 95% -> 45-48% with a per-run namespace (L); model-text rule disclosu
 `bucket_hard` is the default and fails boundary/overflow/deadline cohorts (98-100%) and the flood (76%). The better profile (`window_hard + continue + AUDIT_BATCH=50`, `docker-compose.recommended.yml`) is opt-in.
 Costs of continue: background compute is bounded by a hard maximum of 4W; with a real model it spends tokens.
 
-### P5. Real-model evidence is thin (DRAFT: to be rewritten after the v4 run)
-- R so far: 60 requests (36 provider calls), no A-vs-B classifier. The real-model timing test (`PARAMS.md` v4, `eval/real_timing.py`) is prepared but NOT RUN yet.
-- The hosted prefix cache is not under our control (we send a fresh random 64-hex system prefix per call); only our own latency distribution is observable.
+### P5. Real-model evidence: one small A-vs-B test exists; gaps remain
+- RUN (PARAMS v4, R: DeepSeek `deepseek-flash`, localhost, ordinary cohort, 60 train + 60 unseen test runs per cell, seed 20261024, audit ON with `AUDIT_BATCH=50`):
+  `raw` 100.0% (94.0-100%) LEAKED; `window_hard + continue` (W = 3 s) 33.3% (22.7-45.9%), verdict "no leak found" (README thresholds).
+- Real latency: raw release times ran from 0.049 s (blocked) to 1.841 s (median 0.957, p95 1.433, p99 1.661 over all probes). Over 540 allowed attempts per cell none exceeded the 2.4 s deadline
+  (0 late, 0 cancelled). The window cell released at 3.008-3.297 s (p99 3.126 s) with one reply shape; audit was 120 of 120 valid in both cells.
+- Anomaly, not resolved: the window cell's test accuracy is BELOW chance (33.3%, the interval excludes 50%) while its train accuracy was 78.3% (gap +45 points; the mock window cells had gaps of +5 to +17).
+  The tree learned a pattern in train noise that did not transfer. It is not evidence of a leak (nothing was distinguished above chance), but it shows overfitting at N=60 and that a verdict on the upper bound alone
+  ignores a two-sided deviation. Not investigated (per-run samples were not saved).
+- Still open: a single run per cell; ordinary cohort only (no boundary, overflow, deadline or flood cohort with the real model); localhost processes, not Docker isolation; N=60 test runs;
+  the hosted prefix cache is not under our control (we send a fresh random 64-hex system prefix) and the modality of the latency distribution was NOT analysed.
 
 ### P6. Audit limits
 - 247 of 2000 runs were INVALID in one `window_continue` repeat (delivery failure, no integrity failure); batching removed the backlog in the flood test, but the 2000-run matrix has not been re-run with batching.
@@ -63,5 +70,9 @@ Kernel/container escape, hardware and shared-GPU side channels, a compromised ga
 ## 3. Claims allowed and not allowed
 Allowed: "the tested attacker could not reliably distinguish" with the label, N and interval; the list of open problems above. Not allowed: "secure", "zero leakage", "formally private", "proves", or any claim about a hosted provider's internals.
 
-## 4. Real-model timing test (to fill in after it is run)
-NOT RUN. Parameters fixed in `PARAMS.md` v4: DeepSeek `deepseek-flash`, cells `raw` and `window_continue` (W = 3 s), 60 train + 60 unseen test runs each, seed 20261024.
+## 4. Real-model timing test (RUN 2026-10-21)
+Parameters fixed in `PARAMS.md` v4 before the run; results in `eval/output/real_timing/{raw,window_continue}.json` (label "real model run, small sample, local"). About 1080 DeepSeek calls in total.
+| Cell | Red's A-vs-B accuracy (95% Wilson) | Train accuracy | Verdict | Release time median / p95 / p99 / max | Late / cancelled | Audit |
+|---|---:|---:|---|---|---|---|
+| raw | 100.0% (94.0-100%) | 100% | LEAKED | 0.957 / 1.433 / 1.661 / 1.841 s | n/a / 0 | 120/120 valid |
+| window_hard + continue, W = 3 s | 33.3% (22.7-45.9%) | 78.3% | no leak found (below chance, see P5) | 3.033 / 3.082 / 3.126 / 3.297 s | 0 / 0 | 120/120 valid |

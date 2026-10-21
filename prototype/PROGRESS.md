@@ -555,3 +555,9 @@ Reading: (1) the audit backlog was a confound for the 73%: with audit off the wi
 load channel, not an audit artifact. (3) By the pre-registered rule (one cell leaked, one bounded) both fixes were to be built; AUDIT_BATCH is built and passes its throughput rule; LOOP_OFFLOAD and
 FAIR_ADMIT are NOT built. Caveats: one run per cell, N=100 (wide intervals), mock model, one laptop, worst-case flood only; the cell-3 accuracy is a single run and must not be read as proof of no leak.
 Not run: batching against the 2000-run matrix (audit VALID rate), attack 9c with batching, LOOP_OFFLOAD / FAIR_ADMIT cells.
+
+### Real-model A-vs-B timing test (PARAMS v4 fixed before the run; run by the user with their own key, 2026-10-21)
+`python -m eval.real_timing --cell raw` and `--cell window_continue` (new `eval/real_timing.py`; DeepSeek `deepseek-flash`, localhost, ordinary cohort, 60 train + 60 unseen test runs per cell, seed 20261024, audit ON with AUDIT_BATCH=50).
+Results (R): raw 100.0% (94.0-100%) LEAKED, release 0.049-1.841 s; window_hard + continue, W = 3 s: 33.3% (22.7-45.9%) "no leak found" (below chance; train 78.3%, gap +45 points, overfit), release 3.008-3.297 s, 0 late of 540 allowed, 0 cancelled,
+one reply shape; audit 120/120 valid in both cells; no dead server; no key in the result files (checked). FINAL_REPORT.md P5 and section 4 updated.
+NOT RUN: other cohorts and a flood with the real model, a repeat, latency-modality analysis, Docker isolation with the real model.
