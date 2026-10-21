@@ -75,6 +75,11 @@ class AuditQueue:
         with self.connect() as db:
             db.execute("DELETE FROM audit_outbox WHERE id=?", (row_id,))
 
+    def ack_many(self, row_ids):
+        """One transaction for a delivered batch."""
+        with self.connect() as db:
+            db.executemany("DELETE FROM audit_outbox WHERE id=?", [(row_id,) for row_id in row_ids])
+
     def dead_letter(self, row_ids, reason):
         with self.connect() as db:
             for row_id in row_ids:

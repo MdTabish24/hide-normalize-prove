@@ -65,6 +65,8 @@ services:
       AUDIT_GIVE_UP_SECONDS: ${AUDIT_GIVE_UP_SECONDS:-30}
       AUDIT_TIMEOUT_SECONDS: ${AUDIT_TIMEOUT_SECONDS:-1}
       AUDIT_QUEUE_MAX: ${AUDIT_QUEUE_MAX:-10000}
+      # Opt-in: deliver up to N audit events per request (0 = one per request, the default).
+      AUDIT_BATCH: ${AUDIT_BATCH:-0}
       BUCKETS: ${BUCKETS:-3,6,9}
       DATA_DIR: /data
       POLICY_MODE: ${POLICY_MODE:-bucket_hard}

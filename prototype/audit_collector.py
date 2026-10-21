@@ -22,6 +22,12 @@ class Event(BaseModel):
     gw_seq: int | None = Field(default=None, ge=1)
 
 
+class Batch(BaseModel):
+    """Opt-in AUDIT_BATCH delivery: validated as a whole, appended strictly in order."""
+    model_config = ConfigDict(extra="forbid")
+    events: list[Event] = Field(min_length=1, max_length=200)
+
+
 class Finish(BaseModel):
     model_config = ConfigDict(extra="forbid")
     run_id: str = Field(pattern="^[A-Za-z0-9_@-]{1,64}$")
@@ -46,6 +52,13 @@ def create_app(settings=None):
     @api.post("/append", dependencies=[Depends(authorize)])
     def append(event: Event):
         collector.append(event.model_dump())
+        return {"ok": True}
+
+    @api.post("/append_batch", dependencies=[Depends(authorize)])
+    def append_batch(batch: Batch):
+        # A retried batch is harmless: the collector drops duplicates by gw_seq.
+        for event in batch.events:
+            collector.append(event.model_dump())
         return {"ok": True}
 
     @api.post("/finish", dependencies=[Depends(authorize)])

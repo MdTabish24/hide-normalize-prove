@@ -23,6 +23,8 @@ class Forwarder:
         self.enabled = bool(self.url and self.token) and not audit_off
         self.timeout = float(config.get("AUDIT_TIMEOUT_SECONDS", "0.3"))
         self.give_up = float(config.get("AUDIT_GIVE_UP_SECONDS", "2"))
+        # Opt-in: deliver up to this many consecutive /append events per HTTP round trip (0 or 1 = one event per request).
+        self.batch = max(0, min(200, int(config.get("AUDIT_BATCH") or 0)))
         self.first_seen = {}  # row id -> monotonic time this process first saw it
         self.wakeup = asyncio.Event()
         self.task = self.client = None
@@ -61,6 +63,33 @@ class Forwarder:
             # No exception details, credentials or payloads are logged or returned.
             return False
 
+    async def deliver_batch(self):
+        """Ship the leading run of /append entries in one request. Returns how many were acknowledged (0 on failure)."""
+        rows = await asyncio.to_thread(self.queue.head, self.batch)
+        batch = []
+        for row in rows:
+            if row[2] != "/append":
+                break  # /finish is shipped alone: its audit_unavailable flag is computed when it is sent.
+            batch.append(row)
+        if not batch:
+            return 0
+        for row in batch:
+            self.first_seen.setdefault(row[0], time.monotonic())
+        timeout = self.timeout + 0.002 * len(batch)
+        try:
+            async with asyncio.timeout(timeout + 0.1):
+                response = await self.client.post(self.url + "/append_batch", json={"events": [json.loads(r[3]) for r in batch]},
+                                                  timeout=timeout, headers={"authorization": "Bearer " + self.token})
+            response.raise_for_status()
+            if response.json() != {"ok": True}:
+                return 0
+        except Exception:
+            return 0
+        await asyncio.to_thread(self.queue.ack_many, [r[0] for r in batch])
+        for row in batch:
+            self.first_seen.pop(row[0], None)
+        return len(batch)
+
     async def worker(self):
         backoff = 0.05
         while True:
@@ -69,7 +98,11 @@ class Forwarder:
             while (row := await asyncio.to_thread(self.queue.head)) is not None:
                 row_id, run_id, path, encoded = row
                 self.first_seen.setdefault(row_id, time.monotonic())
-                if await self.deliver(run_id, path, json.loads(encoded)):
+                if self.batch > 1 and path == "/append":
+                    if await self.deliver_batch():
+                        backoff = 0.05
+                        continue
+                elif await self.deliver(run_id, path, json.loads(encoded)):
                     await asyncio.to_thread(self.queue.ack, row_id)
                     self.first_seen.pop(row_id, None)
                     backoff = 0.05
