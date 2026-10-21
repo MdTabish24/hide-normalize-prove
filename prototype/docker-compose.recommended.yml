@@ -1,0 +1,10 @@
+# Recommended OPT-IN profile (the default compose is unchanged):
+#   docker compose -f docker-compose.yml -f docker-compose.recommended.yml up -d --build
+# Fixed-window release that does not cancel long requests, plus batched audit delivery.
+# Measured (live gateway, mock model, local run): see FINDINGS.md section 8. Not a "secure" claim.
+services:
+  gateway:
+    environment:
+      POLICY_MODE: window_hard      # every reply released at one fixed time (default window = last bucket)
+      WINDOW_CONTINUE: "1"          # compute continues in the background instead of being cancelled
+      AUDIT_BATCH: "50"             # up to 50 audit events per request; keeps the audit outbox from backing up under load

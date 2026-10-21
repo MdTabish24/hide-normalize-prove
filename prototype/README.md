@@ -112,6 +112,14 @@ python manage.py configure                  # Blue sets its rule (default trigge
 
 To run the Round 2 policy instead of the default: `$env:POLICY_MODE = "window_hard"; docker compose up -d`.
 
+**Recommended opt-in profile** (fixed-window release without cancelling long requests, plus batched audit delivery; the default stays `bucket_hard`):
+
+```powershell
+docker compose -f docker-compose.yml -f docker-compose.recommended.yml up -d --build
+```
+
+Why: under a worst-case load test the default leaked (observer 76-78%), while this profile gave 47% with the audit outbox staying below 24 events (one run per cell, N=100, mock model, one laptop; see `FINDINGS.md` section 8). That is "the tested observer could not reliably distinguish", not a security guarantee.
+
 ### Demo in 4 steps (what the video shows)
 
 ```powershell
