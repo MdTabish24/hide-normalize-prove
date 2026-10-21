@@ -397,3 +397,31 @@ idle machine; attack 9b loads all CPU cores), then feedback, evidence, README.
   remained queued despite a completed worker). Evidence:
   `evidence/measured-controls-verification.json`, `controls-comparison.json`,
   `measured-controls-audit.png`.
+
+## 2026-10-21 catch-up (matrix, attack suite, continue variant, real batch) and Step 0
+
+What changed since Phase 3 (all committed on `round2-fixes`)
+- Timing matrix 16/16 cells (raw, bucket, bucket_hard, window_hard; N=200 unseen runs/cell, seed 7391, scale 0.1).
+  bucket_hard leaks on boundary/overflow/deadline (98-100%); window_hard 49-58% but cancelled ~100% of long
+  requests in overflow/deadline cohorts (vacuous 50%).
+- Opt-in `WINDOW_CONTINUE=1` (window_hard only): same fixed release, compute continues in the background up to
+  4x the window, shares the per-identity in-flight limit, late attempts counted. Two repeats (round2c, round2d):
+  Red A-vs-B accuracy 46-56%, 0% cancelled; audit 1753/2000 VALID in run 1 (247 INVALID, cause unknown) and
+  2000/2000 in run 2.
+- Attack suite run (see `attack_suite_results.json`): network, filesystem, roles, error oracle, cache (95% -> 45-48% with
+  namespace), scan, repeat reads BLOCKED; noisy neighbour, CPU slip, extreme counts, cross-run averaging LEAKED;
+  Docker noisy neighbour (9c): median unchanged, p95 grows, CPU pinning did not help. Verdict rule aligned with README.
+- Dashboard: /history (dated, hash-checked saved runs) and /why (per-channel baseline vs solution, usability cost,
+  short summary on top, detail collapsed).
+- Real model: `dashboard.real_batch` (real 3 s window, window_hard + continue, 60 requests, ~36 provider calls):
+  release 3.007-3.131 s, 1 reply shape, 0 rule disclosures in 36 outputs, 0 late/cancelled, audit 6/6 VALID
+  (`evidence/real-batch-1792576001.json`). Small sample; no statistical timing claim.
+Tests: host suite 129+ passed; one timing test (`test_collector_healthy_slow_down_give_same_release_times`) is load
+sensitive and passes on an idle machine.
+NOT RUN: CPU quota/fair admission, meter feedback, side-by-side story view, window_continue under noisy neighbour,
+real-model timing matrix at scale, attack suite 8b (Docker volume scan).
+
+### Step 0: commit and push
+Checked `.env` and `dashboard/runtime/` are git-ignored (`git check-ignore`), scanned the diff for keys/tokens,
+committed the real-batch summary (aggregate only, no model text) and pushed `round2-fixes`. Not merged into main.
+Next: Step 1 (read-only analysis of the 247 INVALID runs).
