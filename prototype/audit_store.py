@@ -18,6 +18,7 @@ class Collector:
             directory.mkdir(parents=True, exist_ok=True)
         self.lock = threading.Lock()
         self.heads = {}  # run_id -> verified tail state (incremental appends)
+        self.pending_checkpoints = {}  # our signed, fsynced tail awaiting publication
         key_file = self.keys / "signing_key.bin"
         if key_file.exists():
             self.key = Ed25519PrivateKey.from_private_bytes(key_file.read_bytes())
@@ -45,6 +46,15 @@ class Collector:
         log, checkpoint = self.paths(run_id)
         data = log.read_bytes() if log.exists() else b""
         records = inspect_chain(data, run_id) if data else []
+        temporary = checkpoint.with_suffix(".tmp")
+        if temporary.exists():
+            # A crash/reader lock may leave the already-signed replacement here.
+            # Recover only a signature that authenticates the ENTIRE current log;
+            # never sign or bless an unsigned suffix found on disk.
+            valid, reason, _ = verify(log, temporary, self.checkpoints / "public_key.bin", run_id)
+            if valid or reason == "audit_unavailable recorded":
+                self.pending_checkpoints[run_id] = json.loads(temporary.read_bytes())
+                self.publish_checkpoint(run_id)
         if checkpoint.exists():
             # A crash may leave an unsigned suffix after an older checkpoint.
             # Authenticate that signed prefix before ever extending the file.
@@ -120,13 +130,35 @@ class Collector:
         checkpoint = {"run_id": run_id, "count": value["count"], "bytes": size,
                       "head_hash": value["current_hash"]}
         checkpoint["signature"] = self.key.sign(canonical(checkpoint)).hex()
+        self.pending_checkpoints[run_id] = checkpoint
+        self.publish_checkpoint(run_id)
+
+    def publish_checkpoint(self, run_id):
+        """Windows readers can briefly lock replace; retry the SAME signed head.
+
+        A lost HTTP acknowledgement must not discard a pending checkpoint when
+        the gateway retries its already-appended gw_seq. No unsigned disk suffix
+        is trusted on restart; recovery requires a valid already-signed temporary
+        checkpoint matching the entire log.
+        """
+        checkpoint = self.pending_checkpoints.get(run_id)
+        if checkpoint is None:
+            return
         _, path = self.paths(run_id)
         temporary = path.with_suffix(".tmp")
         with temporary.open("wb") as file:
             file.write(canonical(checkpoint) + b"\n")
             file.flush()
             os.fsync(file.fileno())
-        temporary.replace(path)
+        for attempt in range(6):
+            try:
+                temporary.replace(path)
+                del self.pending_checkpoints[run_id]
+                return
+            except PermissionError:
+                if attempt == 5:
+                    raise
+                time.sleep(.005 * (attempt + 1))
 
     def append(self, event):
         run_id = event["run_id"]
@@ -134,6 +166,7 @@ class Collector:
         event.setdefault("gw_seq", None)
         with self.lock:
             state = self.state(run_id)
+            self.publish_checkpoint(run_id)
             seq = event["gw_seq"]
             if seq is not None and seq <= state["last_gw_seq"]:
                 return  # Retried delivery already stored (lost acknowledgement).
@@ -149,6 +182,7 @@ class Collector:
     def finish(self, run_id, unavailable=False):
         with self.lock:
             state = self.state(run_id)
+            self.publish_checkpoint(run_id)
             # A gateway sequence gap means events are missing: never VALID.
             unavailable = bool(unavailable or state["unavailable"] or state["gap"])
             if state["last_flag"] == unavailable and state["sealed_at"] == state["count"]:

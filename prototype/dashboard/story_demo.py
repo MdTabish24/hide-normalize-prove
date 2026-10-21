@@ -1,6 +1,7 @@
 """One-command local launcher for /story and its explicit operator worker."""
 import argparse
 import asyncio
+import os
 from pathlib import Path
 
 import uvicorn
@@ -8,11 +9,13 @@ import uvicorn
 from .worker import Worker, matrix_active
 
 
-async def serve(port):
+async def serve(port, runtime=None):
     if await asyncio.to_thread(matrix_active):
         raise SystemExit("Timing matrix active or status unavailable. Story server NOT STARTED.")
-    worker = Worker(Path(__file__).parent / "runtime")
-    server = uvicorn.Server(uvicorn.Config("dashboard.app:app", host="127.0.0.1", port=port,
+    from .app import create_app
+    runtime=Path(runtime or os.getenv("DASHBOARD_RUNTIME",Path(__file__).parent / "runtime"))
+    worker = Worker(runtime)
+    server = uvicorn.Server(uvicorn.Config(create_app(runtime=runtime), host="127.0.0.1", port=port,
                                          access_log=False, log_level="warning"))
     operator = asyncio.create_task(worker.serve())
     web = asyncio.create_task(server.serve())

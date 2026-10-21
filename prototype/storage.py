@@ -1,8 +1,7 @@
-"""SQLite transactions and an AES-GCM sealed defense file. Gateway only."""
+"""Gateway-only SQLite metadata and fixed-size AES-GCM payload records."""
 import json
-import os
-import secrets
 import sqlite3
+import threading
 from contextlib import closing, contextmanager
 from pathlib import Path
 
@@ -11,6 +10,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from audit_queue import AuditQueue
 from common import MAX_ATTEMPTS_PER_RUN, RANGE_WIDTH, REPORT_BUDGET
 from range_feedback import generate_range, probe_digest
+from vault import PayloadVault, RECORD_BYTES
 
 
 class Store:
@@ -23,7 +23,11 @@ class Store:
         self.directory = Path(directory)
         self.directory.mkdir(parents=True, exist_ok=True)
         self.database = self.directory / "runs.sqlite"
+        # Prompt persistence runs in worker threads; prevent SQLite busy-backoff
+        # from stalling the event loop behind another connection's short commit.
+        self.lock = threading.Lock()
         self.cipher = AESGCM(key)
+        self.vault = PayloadVault(self.directory / "vault", key)
         with self.connect() as db:
             db.executescript("""
                 CREATE TABLE IF NOT EXISTS runs (
@@ -40,7 +44,10 @@ class Store:
                 );
             """)
             for table, column, kind in (("runs", "defense_version", "TEXT"), ("attempts", "prompt_hash", "TEXT"),
-                                        ("attempts", "cancelled", "INTEGER NOT NULL DEFAULT 0")):
+                                        ("attempts", "cancelled", "INTEGER NOT NULL DEFAULT 0"),
+                                        ("attempts", "payload_ref", "TEXT"), ("attempts", "output_ref", "TEXT"),
+                                        ("attempts", "blue_allowed", "INTEGER"),
+                                        ("attempts", "late", "INTEGER NOT NULL DEFAULT 0")):
                 if column not in {row[1] for row in db.execute(f"PRAGMA table_info({table})")}:
                     db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
             # One worker only: abandoned work after a restart is never replayed.
@@ -51,7 +58,7 @@ class Store:
 
     @contextmanager
     def connect(self):
-        with closing(sqlite3.connect(self.database, timeout=5)) as db, db:
+        with self.lock, closing(sqlite3.connect(self.database, timeout=5)) as db, db:
             db.execute("BEGIN IMMEDIATE")
             yield db
 
@@ -65,9 +72,33 @@ class Store:
                 return None
             return db.execute("INSERT INTO attempts(run_id, prompt_hash) VALUES (?, ?)", (run_id, prompt_hash)).lastrowid
 
-    def end(self, attempt, safe, cancelled=False):
+    def end(self, attempt, safe, cancelled=False, blue_allowed=None, output_ref=None, late=False):
         with self.connect() as db:
-            db.execute("UPDATE attempts SET safe=?, done=1, cancelled=? WHERE id=?", (int(safe), int(cancelled), attempt))
+            db.execute("UPDATE attempts SET safe=?, done=1, cancelled=?, blue_allowed=?, output_ref=COALESCE(?,output_ref), late=? WHERE id=?",
+                       (int(safe), int(cancelled), int(blue_allowed) if type(blue_allowed) is bool else None, output_ref, int(late), attempt))
+
+    def save_prompt(self, attempt, run_id, owner, prompt):
+        ref = self.vault.put(prompt, role="red", run_id=run_id, owner=owner, kind="prompt")
+        with self.connect() as db:
+            db.execute("UPDATE attempts SET payload_ref=? WHERE id=?", (ref, attempt))
+        return self.vault.get(ref, role="red", run_id=run_id, owner=owner, kind="prompt")
+
+    def seal_output(self, run_id, owner, output):
+        # A fixed-size output record also exists for blocked/failed/cancelled work.
+        # Its reference and done/count flags are published in one end() commit.
+        return self.vault.put(output, role="red", run_id=run_id, owner=owner, kind="output")
+
+    def completed_payloads(self, run_id, owner):
+        """Trusted gateway/operator method, never a Red/Blue HTTP endpoint."""
+        with self.connect() as db:
+            run = db.execute("SELECT finished FROM runs WHERE run_id=? AND owner=?", (run_id, owner)).fetchone()
+            if run != (1,):
+                raise PermissionError("Finished owned run required")
+            refs = db.execute("SELECT payload_ref, output_ref, blue_allowed, cancelled FROM attempts WHERE run_id=? ORDER BY id", (run_id,)).fetchall()
+        return [dict(prompt=self.vault.get(p, role="red", run_id=run_id, owner=owner, kind="prompt") if p else None,
+                     output=self.vault.get(o, role="red", run_id=run_id, owner=owner, kind="output") if o else None,
+                     blue_allowed=bool(allowed) if allowed is not None else None, cancelled=bool(cancelled))
+                for p, o, allowed, cancelled in refs]
 
     def evaluation(self, run_id):
         """Evaluator-only counts for a finished run (incl. deadline cancellations)."""
@@ -75,11 +106,13 @@ class Store:
             run = db.execute("SELECT finished FROM runs WHERE run_id=?", (run_id,)).fetchone()
             if not run or not run[0]:
                 return None
-            total, safe, cancelled = db.execute(
-                "SELECT COUNT(*), COALESCE(SUM(safe),0), COALESCE(SUM(cancelled),0) FROM attempts WHERE run_id=?",
+            total, safe, cancelled, late = db.execute(
+                "SELECT COUNT(*), COALESCE(SUM(safe),0), COALESCE(SUM(cancelled),0), COALESCE(SUM(late),0) FROM attempts WHERE run_id=?",
                 (run_id,)).fetchone()
-        return json.dumps({"attempts": total, "safe": safe, "cancelled": cancelled},
-                          separators=(",", ":")).encode().ljust(64, b" ")
+        result = {"attempts": total, "safe": safe, "cancelled": cancelled}
+        if late:  # Only the opt-in continue mode produces late (finished after the window deadline) attempts.
+            result["late"] = late
+        return json.dumps(result, separators=(",", ":")).encode().ljust(64, b" ")
 
     def finish(self, run_id):
         with self.connect() as db:
@@ -119,17 +152,20 @@ class Store:
             return result.encode().ljust(64, b" ")
 
     def seal(self, config):
-        nonce = secrets.token_bytes(12)
-        blob = nonce + self.cipher.encrypt(nonce, json.dumps(config).encode(), b"blue-defense-v1")
+        self.vault.cover_read()
+        blob = self.vault.pack(config, b"blue-defense-v2")
         path = self.directory / "defense.enc"
-        temporary = path.with_suffix(".tmp")
-        temporary.write_bytes(blob)
-        os.chmod(temporary, 0o600)
-        temporary.replace(path)
+        self.vault._write(path, blob)
 
     def unseal(self):
         path = self.directory / "defense.enc"
         if not path.exists():
             return None
         blob = path.read_bytes()
-        return json.loads(self.cipher.decrypt(blob[:12], blob[12:], b"blue-defense-v1"))
+        self.vault.cover_read()
+        if len(blob) == RECORD_BYTES:
+            return self.vault.unpack(blob, b"blue-defense-v2")
+        # Read old authentic records once, then migrate without rotating the key.
+        value = json.loads(self.cipher.decrypt(blob[:12], blob[12:], b"blue-defense-v1"))
+        self.seal(value)
+        return value

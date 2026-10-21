@@ -1,0 +1,39 @@
+# Explicit real-provider overlay. Default compose remains completely offline.
+# The adapter stays on internal model-net; only the allowlisted CONNECT broker
+# has an external network. No new host port or provider key in the gateway.
+services:
+  gateway:
+    environment:
+      # Never inherit the scaled mock-demo buckets from an existing .env.
+      BUCKETS: ${REAL_BUCKETS:-3,6,9}
+      POLICY_MODE: ${REAL_POLICY_MODE:-bucket_hard}
+      EVAL_MODE: "0"
+  model-mock:
+    command: ["uvicorn", "provider:factory", "--factory", "--host", "0.0.0.0", "--port", "8000", "--no-access-log", "--no-server-header", "--no-date-header", "--log-level", "critical"]
+    environment:
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:?Set DEEPSEEK_API_KEY in the launching terminal}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-flash}
+      MAX_OUTPUT_TOKENS: ${MAX_OUTPUT_TOKENS:-128}
+      PROVIDER_TIMEOUT_SECONDS: ${PROVIDER_TIMEOUT_SECONDS:-6}
+      PROVIDER_PROXY_URL: http://provider-egress:3128
+      EVAL_MODE: "0"
+    depends_on: [provider-egress]
+  provider-egress:
+    image: hide-normalize-prove:local
+    build: .
+    command: ["python", "provider_proxy.py"]
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=16m"]
+    pids_limit: 64
+    mem_limit: 128m
+    cpus: 0.5
+    environment:
+      SERVICE_TOKEN: ${MODEL_SERVICE_TOKEN:?Generate local credentials with init_env.py}
+    networks: [model-net, provider-wan]
+networks:
+  provider-wan:
+    driver: bridge
+    internal: false

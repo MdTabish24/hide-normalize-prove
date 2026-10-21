@@ -1,0 +1,1111 @@
+{
+  "generated": "2026-10-21T09:37:52+0530",
+  "results": [
+    {
+      "attack": 1,
+      "name": "Direct network from red-client (Blue, model, audit IPs+names, host, internet)",
+      "policy": "-",
+      "result": "BLOCKED",
+      "summary": "10/10 targets blocked; isolation demo exit 0",
+      "label": "local Docker stack (Docker Desktop)",
+      "audit_mode": "n/a",
+      "details": {
+        "probes": {
+          "172.25.0.2:8000": "blocked:OSError",
+          "172.21.0.2:8000": "blocked:OSError",
+          "172.22.0.2:8000": "blocked:OSError",
+          "blue-defense:8000": "blocked:gaierror",
+          "model-mock:8000": "blocked:gaierror",
+          "audit-collector:8000": "blocked:gaierror",
+          "host.docker.internal:8000": "blocked:gaierror",
+          "1.1.1.1:443": "blocked:OSError",
+          "8.8.8.8:53": "blocked:OSError",
+          "example.com:443": "blocked:gaierror"
+        },
+        "demo_tail": [
+          "{\"passed\": 9, \"total\": 9, \"run_id\": \"isolation-ec34a2c2bb7b\"}"
+        ]
+      }
+    },
+    {
+      "attack": 2,
+      "name": "Filesystem / Docker socket / Blue config from red-client",
+      "policy": "-",
+      "result": "BLOCKED",
+      "summary": "docker.sock=False, defense.enc visible=False, secret env=[], mounts=[], read-only root=True, uid=10001",
+      "label": "local Docker stack (Docker Desktop)",
+      "audit_mode": "n/a",
+      "details": {
+        "docker_sock": false,
+        "defense_enc": false,
+        "env_secrets": [],
+        "audit_dirs": [],
+        "root_writable": false,
+        "uid": 10001
+      }
+    },
+    {
+      "attack": 3,
+      "name": "Role and token confusion (10 cases)",
+      "policy": "bucket_hard",
+      "result": "BLOCKED",
+      "summary": "no effect, all generic 202",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {
+        "effects": {
+          "defense changed": false,
+          "run finished by red": false,
+          "attempts by non-red": false,
+          "evaluation body leaked": false,
+          "report before finish": false
+        }
+      }
+    },
+    {
+      "attack": 3,
+      "name": "Role and token confusion (10 cases)",
+      "policy": "window_hard",
+      "result": "BLOCKED",
+      "summary": "no effect, all generic 202",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {
+        "effects": {
+          "defense changed": false,
+          "run finished by red": false,
+          "attempts by non-red": false,
+          "evaluation body leaked": false,
+          "report before finish": false
+        }
+      }
+    },
+    {
+      "attack": 4,
+      "name": "Error oracle (12 request kinds)",
+      "policy": "bucket_hard",
+      "result": "BOUNDED LEAK",
+      "summary": "1 response shape; 3 release times [0.30000000000000004, 0.6000000000000001, 0.9]: Red can tell its own malformed/unauthorized requests from processed ones by time (not shown to carry Blue's secret)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {
+        "observations": [
+          {
+            "case": "valid allowed",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.6108,
+            "release_point": 0.6000000000000001
+          },
+          {
+            "case": "valid blocked",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.3228,
+            "release_point": 0.30000000000000004
+          },
+          {
+            "case": "missing field",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9046,
+            "release_point": 0.9
+          },
+          {
+            "case": "extra field",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9087,
+            "release_point": 0.9
+          },
+          {
+            "case": "bad JSON",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9089,
+            "release_point": 0.9
+          },
+          {
+            "case": "prompt too long",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9039,
+            "release_point": 0.9
+          },
+          {
+            "case": "body over 32 KiB",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9031,
+            "release_point": 0.9
+          },
+          {
+            "case": "bad run id",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9033,
+            "release_point": 0.9
+          },
+          {
+            "case": "unknown route",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9141,
+            "release_point": 0.9
+          },
+          {
+            "case": "wrong method",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9082,
+            "release_point": 0.9
+          },
+          {
+            "case": "bad token",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9051,
+            "release_point": 0.9
+          },
+          {
+            "case": "report (pending)",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.339,
+            "release_point": 0.30000000000000004
+          }
+        ]
+      }
+    },
+    {
+      "attack": 4,
+      "name": "Error oracle (12 request kinds)",
+      "policy": "window_hard",
+      "result": "BLOCKED",
+      "summary": "1 response shape and 1 release time (0.9 s) across 12 cases",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {
+        "observations": [
+          {
+            "case": "valid allowed",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9319,
+            "release_point": 0.9
+          },
+          {
+            "case": "valid blocked",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9087,
+            "release_point": 0.9
+          },
+          {
+            "case": "missing field",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9067,
+            "release_point": 0.9
+          },
+          {
+            "case": "extra field",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9102,
+            "release_point": 0.9
+          },
+          {
+            "case": "bad JSON",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9096,
+            "release_point": 0.9
+          },
+          {
+            "case": "prompt too long",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9056,
+            "release_point": 0.9
+          },
+          {
+            "case": "body over 32 KiB",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9054,
+            "release_point": 0.9
+          },
+          {
+            "case": "bad run id",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9053,
+            "release_point": 0.9
+          },
+          {
+            "case": "unknown route",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.908,
+            "release_point": 0.9
+          },
+          {
+            "case": "wrong method",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.905,
+            "release_point": 0.9
+          },
+          {
+            "case": "bad token",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9044,
+            "release_point": 0.9
+          },
+          {
+            "case": "report (pending)",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9309,
+            "release_point": 0.9
+          }
+        ]
+      }
+    },
+    {
+      "attack": 5,
+      "name": "Timing A-vs-B (live matrix)",
+      "policy": "raw",
+      "result": "LEAKED",
+      "summary": "ordinary 98%; boundary 100%; overflow 99% (n=200 unseen runs/cell); lower bound above 50% in: ordinary, boundary, overflow",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": 5,
+      "name": "Timing A-vs-B (live matrix)",
+      "policy": "bucket",
+      "result": "LEAKED",
+      "summary": "ordinary 56%; boundary 100%; overflow 100% (n=200 unseen runs/cell); lower bound above 50% in: boundary, overflow",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": 5,
+      "name": "Timing A-vs-B (live matrix)",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "summary": "ordinary 58%; boundary 98%; overflow 100%; deadline_near 100%; deadline_far 98% (n=200 unseen runs/cell); lower bound above 50% in: ordinary, boundary, overflow, deadline_near, deadline_far",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": 5,
+      "name": "Timing A-vs-B (live matrix)",
+      "policy": "window_hard",
+      "result": "BOUNDED LEAK",
+      "summary": "ordinary 52%; boundary 58%; overflow 55%; deadline_near 49%; deadline_far 51% (n=200 unseen runs/cell); lower bound above 50% in: boundary",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": 6,
+      "name": "Cross-run cache prefix probe",
+      "policy": "raw",
+      "result": "BLOCKED",
+      "summary": "19/40 = 48% (95% Wilson 33%-63%); cache namespace on",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": 6,
+      "name": "Cross-run cache prefix probe",
+      "policy": "raw",
+      "result": "LEAKED",
+      "summary": "38/40 = 95% (95% Wilson 83%-99%); cache namespace off (negative control, EVAL_MODE only)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": 6,
+      "name": "Cross-run cache prefix probe",
+      "policy": "window_hard",
+      "result": "BOUNDED LEAK",
+      "summary": "18/40 = 45% (95% Wilson 31%-60%); cache namespace off",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": 6,
+      "name": "Cross-run cache prefix probe",
+      "policy": "window_hard",
+      "result": "BLOCKED",
+      "summary": "18/40 = 45% (95% Wilson 31%-60%); cache namespace on",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": 7,
+      "name": "Feedback: same-run repeat + third read",
+      "policy": "raw",
+      "result": "BLOCKED",
+      "summary": "2 reads identical, 3rd read generic pending (both runs)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": 7,
+      "name": "Feedback: extreme counts (0 vs 16 of 16)",
+      "policy": "raw",
+      "result": "LEAKED",
+      "summary": "safe count 0 always gives [0, 12], 16 always gives [4, 16]: an extreme count is identifiable from its range (deterministic at the edges)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {
+        "ranges": [
+          [
+            0,
+            12
+          ],
+          [
+            4,
+            16
+          ]
+        ]
+      }
+    },
+    {
+      "attack": 7,
+      "name": "Feedback: cross-run averaging",
+      "policy": "run",
+      "result": "LEAKED",
+      "summary": "mean abs error K=1: 3.71 -> K=30: 2.56",
+      "label": "simulated (Monte Carlo)",
+      "audit_mode": "n/a",
+      "details": {}
+    },
+    {
+      "attack": 7,
+      "name": "Feedback: cross-run averaging",
+      "policy": "probeset",
+      "result": "BOUNDED LEAK",
+      "summary": "mean abs error K=1: 3.80 -> K=30: 3.80",
+      "label": "simulated (Monte Carlo)",
+      "audit_mode": "n/a",
+      "details": {}
+    },
+    {
+      "attack": 8,
+      "name": "Scan gateway stdout, audit logs, checkpoints, SQLite DBs, sealed config",
+      "policy": "window_hard",
+      "result": "BLOCKED",
+      "summary": "18 files scanned; hits: none (prompt SHA-256 hashes are stored and dictionary-guessable)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {
+        "files": 18,
+        "hits": {
+          "canary trigger": [],
+          "raw prompt marker": [],
+          "red token": [],
+          "gateway key": []
+        }
+      }
+    },
+    {
+      "attack": 8,
+      "name": "Scan Docker volumes + container logs",
+      "policy": "-",
+      "result": "NOT RUN",
+      "summary": "compose services not running: ['audit-collector', 'blue-defense', 'gateway', 'model-mock', 'red-client'] (run docker compose up -d)",
+      "label": "local Docker stack (Docker Desktop)",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": 9,
+      "name": "Noisy neighbor: Red burst (32 workers) vs Blue's release times",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "summary": "median shift +470.5 ms, p95 911 -> 3816 ms, KS D=1.00 p=0.000 (n=60/60)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": 9,
+      "name": "Noisy neighbor: Red burst (32 workers) vs Blue's release times",
+      "policy": "window_hard",
+      "result": "LEAKED",
+      "summary": "median shift +49.9 ms, p95 914 -> 1107 ms, KS D=0.93 p=0.000 (n=60/60)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": "9b",
+      "name": "Release slip under host CPU load (all cores busy)",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "summary": "late >5 ms: idle 60/60, loaded 60/60; late >20 ms: idle 3/60, loaded 7/60; max lateness idle 634 ms, loaded 338 ms",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {
+        "idle": [
+          0.3082108999999491,
+          0.3174421999999595,
+          0.31107570000017404,
+          0.3117162000000917,
+          0.9337440000001607,
+          0.30932340000003933,
+          0.311629000000039,
+          0.31446379999988494,
+          0.31417279999982384,
+          0.3144368000000668,
+          0.3157501000000593,
+          0.3129535999999007,
+          0.311777500000062,
+          0.31182319999993524,
+          0.31365070000015294,
+          0.3127273999998579,
+          0.3108734000002187,
+          0.3125139000001127,
+          0.30746030000000246,
+          0.311182300000155,
+          0.3198010000000977,
+          0.3127824000000601,
+          0.31772799999998824,
+          0.30818539999995664,
+          0.3083245000000261,
+          0.3166347000001224,
+          0.3110845999999583,
+          0.319748699999991,
+          0.3112928999998985,
+          0.3111870000000181,
+          0.3110947000000124,
+          0.3190395999999964,
+          0.3163606000000527,
+          0.30998890000000756,
+          0.30889909999996235,
+          0.3106740999999147,
+          0.3124950000001263,
+          0.30854180000005726,
+          0.3108409000001302,
+          0.30821629999991274,
+          0.3211180000000695,
+          0.3162260999999944,
+          0.3139886999999817,
+          0.3125949000000219,
+          0.31364589999998316,
+          0.3097216000001026,
+          0.31673430000000735,
+          0.3113456999999471,
+          0.3092758000000231,
+          0.31118160000005446,
+          0.3126608000000033,
+          0.31154479999986506,
+          0.31225850000009814,
+          0.3216362000000572,
+          0.3132290999999441,
+          0.31177149999984977,
+          0.30860329999995884,
+          0.3133247000000665,
+          0.3157486999998582,
+          0.31066599999985556
+        ],
+        "loaded": [
+          0.3081532999999581,
+          0.3073138000002018,
+          0.31291859999987537,
+          0.30698549999988245,
+          0.3080088000001524,
+          0.30710659999999734,
+          0.3073218999998062,
+          0.30684370000017225,
+          0.30752559999996265,
+          0.3101824000000306,
+          0.3116293000000496,
+          0.31113719999984824,
+          0.6080858999998782,
+          0.30663670000012644,
+          0.311915099999851,
+          0.3071313000000373,
+          0.30862600000000384,
+          0.30795469999998204,
+          0.30729519999999866,
+          0.3068983999999091,
+          0.3307297999999719,
+          0.3083977999999661,
+          0.34887720000006084,
+          0.30944290000002184,
+          0.3118587999999818,
+          0.30993629999989025,
+          0.3089217000001554,
+          0.31010889999993196,
+          0.638125299999956,
+          0.30740350000019134,
+          0.30685799999992014,
+          0.31643629999985023,
+          0.30731599999990067,
+          0.31245860000012726,
+          0.31191800000010517,
+          0.30698180000013053,
+          0.30779290000009496,
+          0.30786379999995006,
+          0.3067502000001241,
+          0.30813339999986056,
+          0.3076375000000553,
+          0.3068040000000565,
+          0.31026649999989786,
+          0.3108225000000857,
+          0.6075129000000743,
+          0.3070110000001023,
+          0.30738480000013624,
+          0.6145684000000529,
+          0.30780159999994794,
+          0.3072224999998525,
+          0.612385599999925,
+          0.30960159999995085,
+          0.30992809999997917,
+          0.30800429999999324,
+          0.3072228000000905,
+          0.3077895000001263,
+          0.30721630000016376,
+          0.307631899999933,
+          0.3069835000001149,
+          0.3085617999997794
+        ],
+        "target": 0.30000000000000004
+      }
+    },
+    {
+      "attack": "9b",
+      "name": "Release slip under host CPU load (all cores busy)",
+      "policy": "window_hard",
+      "result": "LEAKED",
+      "summary": "late >5 ms: idle 60/60, loaded 60/60; late >20 ms: idle 45/60, loaded 34/60; max lateness idle 42 ms, loaded 36 ms",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {
+        "idle": [
+          0.9377851000001556,
+          0.9379101999998056,
+          0.9291107999999895,
+          0.9328284999999141,
+          0.9341830000000755,
+          0.9104698000001008,
+          0.9304138999998486,
+          0.935337600000139,
+          0.9217148000000179,
+          0.9309271999998145,
+          0.9379920000001221,
+          0.9121322000000873,
+          0.9361547999999402,
+          0.9290157999998883,
+          0.9128367000000708,
+          0.928210799999988,
+          0.9294902999999977,
+          0.9109249000000545,
+          0.9101634999999533,
+          0.934428200000184,
+          0.9125934000001052,
+          0.9414012999998249,
+          0.9334018000001834,
+          0.9109020999999302,
+          0.9312095999998746,
+          0.9390384000000722,
+          0.9308687000000191,
+          0.9144372999999177,
+          0.9311092000000372,
+          0.9351894999999786,
+          0.932354499999974,
+          0.9305965999999444,
+          0.9337620999999672,
+          0.9414392999999563,
+          0.9124920000001566,
+          0.9110911000000215,
+          0.9099059000000125,
+          0.9336918000001333,
+          0.9347195999998803,
+          0.9140186000001904,
+          0.930862100000013,
+          0.9417049999999563,
+          0.9115922000000865,
+          0.9324741000000358,
+          0.9295836999999665,
+          0.9111093999999866,
+          0.9326736999998957,
+          0.9291591999999582,
+          0.9375257000001511,
+          0.9337660999999571,
+          0.935728700000027,
+          0.9364757000000736,
+          0.9303353999998762,
+          0.9224363999999241,
+          0.9301017999998749,
+          0.9354601999998522,
+          0.9109828000000562,
+          0.9316236999998182,
+          0.9315993000000162,
+          0.9391837000000578
+        ],
+        "loaded": [
+          0.9081696000000647,
+          0.9274470000000292,
+          0.9255912999999509,
+          0.9092932000000928,
+          0.9258233000000473,
+          0.9262271000000055,
+          0.9114175000001978,
+          0.9295170000000326,
+          0.9339522999998735,
+          0.9301490999998805,
+          0.931019200000037,
+          0.9084964999999556,
+          0.9341023000001769,
+          0.9087002000001121,
+          0.9285095000000183,
+          0.9265525999999227,
+          0.9099624000000404,
+          0.907843800000137,
+          0.9109978999999839,
+          0.9097271000000546,
+          0.9167053999999553,
+          0.9264736000000084,
+          0.9092401000000336,
+          0.9105334000000767,
+          0.9078856999999516,
+          0.9102680000000873,
+          0.9084324999998898,
+          0.9152995999997984,
+          0.9195076000000881,
+          0.9322285000000647,
+          0.934137999999848,
+          0.9246926999999232,
+          0.932270600000038,
+          0.9340016999999534,
+          0.9082782000000407,
+          0.9292735999999877,
+          0.9251292000001285,
+          0.9160213999998632,
+          0.9279387999999926,
+          0.9258434000000761,
+          0.9360309000001052,
+          0.9323885000001155,
+          0.9153084000001854,
+          0.930090699999937,
+          0.9280155999999806,
+          0.9266331999999693,
+          0.9245642000000771,
+          0.9107492999999067,
+          0.9086832999998933,
+          0.9106930000000375,
+          0.9310677000000851,
+          0.9297673999999461,
+          0.9262151999998878,
+          0.9304858000000422,
+          0.9290568999999778,
+          0.9092404000000442,
+          0.9347893999999997,
+          0.9122820000000047,
+          0.9340154999999868,
+          0.9150351000000683
+        ],
+        "target": 0.9
+      }
+    },
+    {
+      "attack": "9c",
+      "name": "Noisy neighbor inside Docker (Red flood from its own container, 32 workers), no pinning",
+      "policy": "bucket_hard",
+      "result": "BOUNDED LEAK",
+      "summary": "median shift -1.4 ms, p95 957 -> 6803 ms, KS D=0.31 p=0.020 (n=45/45)",
+      "label": "local Docker stack (Docker Desktop)",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": "9c",
+      "name": "Noisy neighbor inside Docker (Red flood from its own container, 32 workers), no pinning",
+      "policy": "window_hard",
+      "result": "BOUNDED LEAK",
+      "summary": "median shift -0.7 ms, p95 909 -> 2558 ms, KS D=0.31 p=0.020 (n=45/45)",
+      "label": "local Docker stack (Docker Desktop)",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": "9c",
+      "name": "Noisy neighbor inside Docker (Red flood from its own container, 32 workers), CPU pinned",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "summary": "median shift +2.6 ms, p95 912 -> 4814 ms, KS D=0.42 p=0.000 (n=45/45)",
+      "label": "local Docker stack (Docker Desktop) + cpuset",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": "9c",
+      "name": "Noisy neighbor inside Docker (Red flood from its own container, 32 workers), CPU pinned",
+      "policy": "window_hard",
+      "result": "LEAKED",
+      "summary": "median shift +7.9 ms, p95 922 -> 2555 ms, KS D=0.44 p=0.000 (n=45/45)",
+      "label": "local Docker stack (Docker Desktop) + cpuset",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": 10,
+      "name": "Host/kernel container escape",
+      "policy": "-",
+      "result": "NOT COVERED",
+      "summary": "out of scope for this prototype; stated in threat model",
+      "label": "-",
+      "audit_mode": "n/a",
+      "details": {}
+    },
+    {
+      "attack": 10,
+      "name": "Hardware and shared-GPU side channels (incl. real KV cache)",
+      "policy": "-",
+      "result": "NOT COVERED",
+      "summary": "out of scope for this prototype; stated in threat model",
+      "label": "-",
+      "audit_mode": "n/a",
+      "details": {}
+    },
+    {
+      "attack": 10,
+      "name": "Compromised gateway or collector (trusted components)",
+      "policy": "-",
+      "result": "NOT COVERED",
+      "summary": "out of scope for this prototype; stated in threat model",
+      "label": "-",
+      "audit_mode": "n/a",
+      "details": {}
+    }
+  ]
+}

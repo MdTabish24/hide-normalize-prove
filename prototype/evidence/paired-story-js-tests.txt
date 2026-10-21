@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: a stopped request never highlights a model call
+ok 1 - a stopped request never highlights a model call
+  ---
+  duration_ms: 1.567
+  ...
+# Subtest: an allowed request does not invent a model answer
+ok 2 - an allowed request does not invent a model answer
+  ---
+  duration_ms: 0.2042
+  ...
+# Subtest: failed or missing envelope evidence never celebrates
+ok 3 - failed or missing envelope evidence never celebrates
+  ---
+  duration_ms: 0.1758
+  ...
+# Subtest: comparison uses recorded ordinary raw versus original bucket only
+ok 4 - comparison uses recorded ordinary raw versus original bucket only
+  ---
+  duration_ms: 1.3368
+  ...
+# Subtest: full timing report preserves every expected arm and NOT RUN cells
+ok 5 - full timing report preserves every expected arm and NOT RUN cells
+  ---
+  duration_ms: 1.0331
+  ...
+# Subtest: complete report keeps failed checks and never passes absent report reads
+ok 6 - complete report keeps failed checks and never passes absent report reads
+  ---
+  duration_ms: 0.4773
+  ...
+# Subtest: paired playback separates Blue approval, model completion and Red envelope
+ok 7 - paired playback separates Blue approval, model completion and Red envelope
+  ---
+  duration_ms: 0.7825
+  ...
+# Subtest: missing implementation remains explicit in coverage
+ok 8 - missing implementation remains explicit in coverage
+  ---
+  duration_ms: 0.1652
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 194.7049

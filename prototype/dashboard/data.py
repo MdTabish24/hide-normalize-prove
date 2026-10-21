@@ -145,6 +145,12 @@ def public_observations(path):
         output["status"] = source["status"]
     output["heartbeat"] = number(source.get("heartbeat"))
     output["matrix_active"] = source.get("matrix_active") is True
+    output["real_provider_available"] = source.get("real_provider_available") is True
+    job = source.get("job")
+    output["job"] = None
+    if isinstance(job, dict) and re.fullmatch(r"[a-f0-9]{32}", str(job.get("id", ""))) and job.get("action") in ("traffic", "isolation", "audit", "story", "comparison", "real", "controls"):
+        output["job"] = dict(id=job["id"], action=job["action"],
+                             started_at=number(job.get("started_at")), finished_at=number(job.get("finished_at")))
     output["policy"] = source.get("policy") if source.get("policy") in POLICIES else "NOT RUN"
     output["report"] = None
     report = source.get("report")
@@ -187,7 +193,8 @@ def public_observations(path):
         names = ISOLATION_CASES if name == "isolation" else TAMPER_CASES
         rows = [{"name": n, "result": r.get("result") if r.get("result") in ("PASS", "FAIL", "VALID", "INVALID") else "NOT RUN"}
                 for r in objects(s.get("rows")) for n in names if r.get("name") == n]
-        output["scenarios"][name] = {"status": s.get("status") if s.get("status") in ("PASS", "FAIL") else "NOT RUN", "rows": rows}
+        output["scenarios"][name] = {"status": s.get("status") if s.get("status") in ("PASS", "FAIL") else "NOT RUN",
+                                    "rows": rows, "recorded_at": number(s.get("recorded_at"))}
     return output
 
 

@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-10-19T03:52:37+00:00",
+  "generated_utc": "2026-10-21T05:37:30+00:00",
   "mode": "cached",
   "rows": [
     {
@@ -15,7 +15,7 @@
       "test": "Test suite (inside Docker image)",
       "policy": "-",
       "result": "PASS",
-      "key_number": "39 passed, 0 failed",
+      "key_number": "65 passed, 0 failed",
       "label": "local Docker stack (Docker Desktop)",
       "audit_mode": "mixed fixtures",
       "source": "prototype/evidence/tests-in-docker.txt"
@@ -93,6 +93,123 @@
       "source": "prototype/eval/output/round2/results.json"
     },
     {
+      "test": "Timing A-vs-B: ordinary",
+      "policy": "bucket",
+      "result": "BOUNDED LEAK",
+      "key_number": "56.5% (95% 49.6%-63.2%); timeouts 0% of allowed; mean latency 0.36 s; Round 1 audit-off 68.5%",
+      "label": "live gateway, mock model, local run; scale 0.1, N=200 unseen runs/cell",
+      "audit_mode": "on",
+      "source": "prototype/eval/output/round2/results.json"
+    },
+    {
+      "test": "Timing A-vs-B: boundary",
+      "policy": "bucket",
+      "result": "LEAKED",
+      "key_number": "100.0% (95% 98.1%-100.0%); timeouts 0% of allowed; mean latency 0.44 s; Round 1 audit-off 98.5%",
+      "label": "live gateway, mock model, local run; scale 0.1, N=200 unseen runs/cell",
+      "audit_mode": "on",
+      "source": "prototype/eval/output/round2/results.json"
+    },
+    {
+      "test": "Timing A-vs-B: overflow",
+      "policy": "bucket",
+      "result": "LEAKED",
+      "key_number": "100.0% (95% 98.1%-100.0%); timeouts 0% of allowed; mean latency 0.65 s; Round 1 audit-off 100.0%",
+      "label": "live gateway, mock model, local run; scale 0.1, N=200 unseen runs/cell",
+      "audit_mode": "on",
+      "source": "prototype/eval/output/round2/results.json"
+    },
+    {
+      "test": "Timing A-vs-B: ordinary",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "key_number": "58.5% (95% 51.6%-65.1%); timeouts 0% of allowed; mean latency 0.39 s; Round 1 audit-off 59.5%",
+      "label": "live gateway, mock model, local run; scale 0.1, N=200 unseen runs/cell",
+      "audit_mode": "on",
+      "source": "prototype/eval/output/round2/results.json"
+    },
+    {
+      "test": "Timing A-vs-B: boundary",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "key_number": "98.5% (95% 95.7%-99.5%); timeouts 0% of allowed; mean latency 0.50 s; Round 1 audit-off 100.0%",
+      "label": "live gateway, mock model, local run; scale 0.1, N=200 unseen runs/cell",
+      "audit_mode": "on",
+      "source": "prototype/eval/output/round2/results.json"
+    },
+    {
+      "test": "Timing A-vs-B: overflow",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "key_number": "99.5% (95% 97.2%-99.9%); timeouts 72% of allowed; mean latency 0.65 s; Round 1 audit-off 100.0%",
+      "label": "live gateway, mock model, local run; scale 0.1, N=200 unseen runs/cell",
+      "audit_mode": "on",
+      "source": "prototype/eval/output/round2/results.json"
+    },
+    {
+      "test": "Timing A-vs-B: deadline_near",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "key_number": "100.0% (95% 98.1%-100.0%); timeouts 2% of allowed; mean latency 0.62 s",
+      "label": "live gateway, mock model, local run; scale 0.1, N=200 unseen runs/cell",
+      "audit_mode": "on",
+      "source": "prototype/eval/output/round2/results.json"
+    },
+    {
+      "test": "Timing A-vs-B: deadline_far",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "key_number": "98.5% (95% 95.7%-99.5%); timeouts 56% of allowed; mean latency 0.65 s",
+      "label": "live gateway, mock model, local run; scale 0.1, N=200 unseen runs/cell",
+      "audit_mode": "on",
+      "source": "prototype/eval/output/round2/results.json"
+    },
+    {
+      "test": "Timing A-vs-B: ordinary",
+      "policy": "window_hard",
+      "result": "BOUNDED LEAK",
+      "key_number": "52.0% (95% 45.1%-58.8%); timeouts 0% of allowed; mean latency 0.93 s",
+      "label": "live gateway, mock model, local run; scale 0.1, N=200 unseen runs/cell",
+      "audit_mode": "on",
+      "source": "prototype/eval/output/round2/results.json"
+    },
+    {
+      "test": "Timing A-vs-B: boundary",
+      "policy": "window_hard",
+      "result": "LEAKED",
+      "key_number": "58.0% (95% 51.1%-64.6%); timeouts 0% of allowed; mean latency 0.93 s",
+      "label": "live gateway, mock model, local run; scale 0.1, N=200 unseen runs/cell",
+      "audit_mode": "on",
+      "source": "prototype/eval/output/round2/results.json"
+    },
+    {
+      "test": "Timing A-vs-B: overflow",
+      "policy": "window_hard",
+      "result": "BOUNDED LEAK",
+      "key_number": "54.5% (95% 47.6%-61.3%); timeouts 100% of allowed; mean latency 0.93 s",
+      "label": "live gateway, mock model, local run; scale 0.1, N=200 unseen runs/cell",
+      "audit_mode": "on",
+      "source": "prototype/eval/output/round2/results.json"
+    },
+    {
+      "test": "Timing A-vs-B: deadline_near",
+      "policy": "window_hard",
+      "result": "BOUNDED LEAK",
+      "key_number": "49.0% (95% 42.2%-55.9%); timeouts 100% of allowed; mean latency 0.93 s",
+      "label": "live gateway, mock model, local run; scale 0.1, N=200 unseen runs/cell",
+      "audit_mode": "on",
+      "source": "prototype/eval/output/round2/results.json"
+    },
+    {
+      "test": "Timing A-vs-B: deadline_far",
+      "policy": "window_hard",
+      "result": "BOUNDED LEAK",
+      "key_number": "51.0% (95% 44.1%-57.8%); timeouts 100% of allowed; mean latency 0.92 s",
+      "label": "live gateway, mock model, local run; scale 0.1, N=200 unseen runs/cell",
+      "audit_mode": "on",
+      "source": "prototype/eval/output/round2/results.json"
+    },
+    {
       "test": "Audit under matrix load (verifier on every run)",
       "policy": "raw",
       "result": "PASS",
@@ -102,31 +219,355 @@
       "source": "prototype/eval/output/round2/results.json"
     },
     {
-      "test": "Timing matrix status",
-      "policy": "-",
-      "result": "NOT RUN",
-      "key_number": "artifact status: in_progress",
+      "test": "Audit under matrix load (verifier on every run)",
+      "policy": "bucket_hard",
+      "result": "PASS",
+      "key_number": "2000/2000 runs VALID; dead letters 0",
       "label": "live gateway, mock model, local run",
-      "audit_mode": "-",
+      "audit_mode": "on",
       "source": "prototype/eval/output/round2/results.json"
     },
     {
-      "test": "Attack suite",
-      "policy": "-",
-      "result": "NOT RUN",
-      "key_number": "no saved evidence",
+      "test": "Audit under matrix load (verifier on every run)",
+      "policy": "window_hard",
+      "result": "PASS",
+      "key_number": "2000/2000 runs VALID; dead letters 0",
       "label": "live gateway, mock model, local run",
-      "audit_mode": "-",
-      "source": ""
+      "audit_mode": "on",
+      "source": "prototype/eval/output/round2/results.json"
     },
     {
-      "test": "Feedback analysis (Phase 5)",
+      "test": "Attack 1: Direct network from red-client (Blue, model, audit IPs+names, host, internet)",
+      "policy": "-",
+      "result": "BLOCKED",
+      "key_number": "10/10 targets blocked; isolation demo exit 0",
+      "label": "local Docker stack (Docker Desktop)",
+      "audit_mode": "n/a",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 2: Filesystem / Docker socket / Blue config from red-client",
+      "policy": "-",
+      "result": "BLOCKED",
+      "key_number": "docker.sock=False, defense.enc visible=False, secret env=[], mounts=[], read-only root=True, uid=10001",
+      "label": "local Docker stack (Docker Desktop)",
+      "audit_mode": "n/a",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 3: Role and token confusion (10 cases)",
+      "policy": "bucket_hard",
+      "result": "BLOCKED",
+      "key_number": "no effect, all generic 202",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 3: Role and token confusion (10 cases)",
+      "policy": "window_hard",
+      "result": "BLOCKED",
+      "key_number": "no effect, all generic 202",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 4: Error oracle (12 request kinds)",
+      "policy": "bucket_hard",
+      "result": "BOUNDED LEAK",
+      "key_number": "1 response shape; 3 release times [0.30000000000000004, 0.6000000000000001, 0.9]: Red can tell its own malformed/unauthorized requests from processed ones by time (not shown to carry Blue's secret)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 4: Error oracle (12 request kinds)",
+      "policy": "window_hard",
+      "result": "BLOCKED",
+      "key_number": "1 response shape and 1 release time (0.9 s) across 12 cases",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 5: Timing A-vs-B (live matrix)",
+      "policy": "raw",
+      "result": "LEAKED",
+      "key_number": "ordinary 98%; boundary 100%; overflow 99% (n=200 unseen runs/cell); lower bound above 50% in: ordinary, boundary, overflow",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 5: Timing A-vs-B (live matrix)",
+      "policy": "bucket",
+      "result": "LEAKED",
+      "key_number": "ordinary 56%; boundary 100%; overflow 100% (n=200 unseen runs/cell); lower bound above 50% in: boundary, overflow",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 5: Timing A-vs-B (live matrix)",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "key_number": "ordinary 58%; boundary 98%; overflow 100%; deadline_near 100%; deadline_far 98% (n=200 unseen runs/cell); lower bound above 50% in: ordinary, boundary, overflow, deadline_near, deadline_far",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 5: Timing A-vs-B (live matrix)",
+      "policy": "window_hard",
+      "result": "BOUNDED LEAK",
+      "key_number": "ordinary 52%; boundary 58%; overflow 55%; deadline_near 49%; deadline_far 51% (n=200 unseen runs/cell); lower bound above 50% in: boundary",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 6: Cross-run cache prefix probe",
+      "policy": "raw",
+      "result": "BLOCKED",
+      "key_number": "19/40 = 48% (95% Wilson 33%-63%); cache namespace on",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 6: Cross-run cache prefix probe",
+      "policy": "raw",
+      "result": "LEAKED",
+      "key_number": "38/40 = 95% (95% Wilson 83%-99%); cache namespace off (negative control, EVAL_MODE only)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 6: Cross-run cache prefix probe",
+      "policy": "window_hard",
+      "result": "BOUNDED LEAK",
+      "key_number": "18/40 = 45% (95% Wilson 31%-60%); cache namespace off",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 6: Cross-run cache prefix probe",
+      "policy": "window_hard",
+      "result": "BLOCKED",
+      "key_number": "18/40 = 45% (95% Wilson 31%-60%); cache namespace on",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 7: Feedback: same-run repeat + third read",
+      "policy": "raw",
+      "result": "BLOCKED",
+      "key_number": "2 reads identical, 3rd read generic pending (both runs)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 7: Feedback: extreme counts (0 vs 16 of 16)",
+      "policy": "raw",
+      "result": "LEAKED",
+      "key_number": "safe count 0 always gives [0, 12], 16 always gives [4, 16]: an extreme count is identifiable from its range (deterministic at the edges)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 7: Feedback: cross-run averaging",
+      "policy": "run",
+      "result": "LEAKED",
+      "key_number": "mean abs error K=1: 3.71 -> K=30: 2.56",
+      "label": "simulated (Monte Carlo)",
+      "audit_mode": "n/a",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 7: Feedback: cross-run averaging",
+      "policy": "probeset",
+      "result": "BOUNDED LEAK",
+      "key_number": "mean abs error K=1: 3.80 -> K=30: 3.80",
+      "label": "simulated (Monte Carlo)",
+      "audit_mode": "n/a",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 8: Scan gateway stdout, audit logs, checkpoints, SQLite DBs, sealed config",
+      "policy": "window_hard",
+      "result": "BLOCKED",
+      "key_number": "18 files scanned; hits: none (prompt SHA-256 hashes are stored and dictionary-guessable)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 8: Scan Docker volumes + container logs",
       "policy": "-",
       "result": "NOT RUN",
-      "key_number": "no complete saved result",
+      "key_number": "compose services not running: ['audit-collector', 'blue-defense', 'gateway', 'model-mock', 'red-client'] (run docker compose up -d)",
+      "label": "local Docker stack (Docker Desktop)",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 9: Noisy neighbor: Red burst (32 workers) vs Blue's release times",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "key_number": "median shift +470.5 ms, p95 911 -> 3816 ms, KS D=1.00 p=0.000 (n=60/60)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 9: Noisy neighbor: Red burst (32 workers) vs Blue's release times",
+      "policy": "window_hard",
+      "result": "LEAKED",
+      "key_number": "median shift +49.9 ms, p95 914 -> 1107 ms, KS D=0.93 p=0.000 (n=60/60)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 9b: Release slip under host CPU load (all cores busy)",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "key_number": "late >5 ms: idle 60/60, loaded 60/60; late >20 ms: idle 3/60, loaded 7/60; max lateness idle 634 ms, loaded 338 ms",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 9b: Release slip under host CPU load (all cores busy)",
+      "policy": "window_hard",
+      "result": "LEAKED",
+      "key_number": "late >5 ms: idle 60/60, loaded 60/60; late >20 ms: idle 45/60, loaded 34/60; max lateness idle 42 ms, loaded 36 ms",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 9c: Noisy neighbor inside Docker (Red flood from its own container, 32 workers), no pinning",
+      "policy": "bucket_hard",
+      "result": "BOUNDED LEAK",
+      "key_number": "median shift -1.4 ms, p95 957 -> 6803 ms, KS D=0.31 p=0.020 (n=45/45)",
+      "label": "local Docker stack (Docker Desktop)",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 9c: Noisy neighbor inside Docker (Red flood from its own container, 32 workers), no pinning",
+      "policy": "window_hard",
+      "result": "BOUNDED LEAK",
+      "key_number": "median shift -0.7 ms, p95 909 -> 2558 ms, KS D=0.31 p=0.020 (n=45/45)",
+      "label": "local Docker stack (Docker Desktop)",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 9c: Noisy neighbor inside Docker (Red flood from its own container, 32 workers), CPU pinned",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "key_number": "median shift +2.6 ms, p95 912 -> 4814 ms, KS D=0.42 p=0.000 (n=45/45)",
+      "label": "local Docker stack (Docker Desktop) + cpuset",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 9c: Noisy neighbor inside Docker (Red flood from its own container, 32 workers), CPU pinned",
+      "policy": "window_hard",
+      "result": "LEAKED",
+      "key_number": "median shift +7.9 ms, p95 922 -> 2555 ms, KS D=0.44 p=0.000 (n=45/45)",
+      "label": "local Docker stack (Docker Desktop) + cpuset",
+      "audit_mode": "on",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 10: Host/kernel container escape",
+      "policy": "-",
+      "result": "NOT COVERED",
+      "key_number": "out of scope for this prototype; stated in threat model",
+      "label": "-",
+      "audit_mode": "n/a",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 10: Hardware and shared-GPU side channels (incl. real KV cache)",
+      "policy": "-",
+      "result": "NOT COVERED",
+      "key_number": "out of scope for this prototype; stated in threat model",
+      "label": "-",
+      "audit_mode": "n/a",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Attack 10: Compromised gateway or collector (trusted components)",
+      "policy": "-",
+      "result": "NOT COVERED",
+      "key_number": "out of scope for this prototype; stated in threat model",
+      "label": "-",
+      "audit_mode": "n/a",
+      "source": "prototype/attack_suite_results.json"
+    },
+    {
+      "test": "Feedback: same-run repeat, 3rd read blocked, after restart",
+      "policy": "run",
+      "result": "BLOCKED",
+      "key_number": "repeat stable=True, third read blocked=True",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "off (feedback harness)",
+      "source": "prototype/eval/output/feedback/results.json"
+    },
+    {
+      "test": "Feedback: same-run repeat, 3rd read blocked, after restart",
+      "policy": "probeset",
+      "result": "BLOCKED",
+      "key_number": "repeat stable=True, third read blocked=True",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "off (feedback harness)",
+      "source": "prototype/eval/output/feedback/results.json"
+    },
+    {
+      "test": "Feedback: cross-run averaging",
+      "policy": "run",
+      "result": "LEAKED",
+      "key_number": "mean abs error K=1: 3.71 -> K=30: 2.56 (extremes K=1: 6.00)",
       "label": "simulated (Monte Carlo)",
-      "audit_mode": "-",
-      "source": ""
+      "audit_mode": "n/a",
+      "source": "prototype/eval/output/feedback/results.json"
+    },
+    {
+      "test": "Feedback: cross-run averaging",
+      "policy": "probeset",
+      "result": "BOUNDED LEAK",
+      "key_number": "mean abs error K=1: 3.80 -> K=30: 3.80 (extremes K=1: 6.00)",
+      "label": "simulated (Monte Carlo)",
+      "audit_mode": "n/a",
+      "source": "prototype/eval/output/feedback/results.json"
+    },
+    {
+      "test": "Feedback: live K=3 cross-check of Monte Carlo",
+      "policy": "run",
+      "result": "PASS",
+      "key_number": "live MAE 3.00 vs MC 95% [2.6999999999999997, 3.45]",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "off (feedback harness)",
+      "source": "prototype/eval/output/feedback/results.json"
+    },
+    {
+      "test": "Feedback: live K=3 cross-check of Monte Carlo",
+      "policy": "probeset",
+      "result": "PASS",
+      "key_number": "live MAE 3.55 vs MC 95% [3.25, 4.45]",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "off (feedback harness)",
+      "source": "prototype/eval/output/feedback/results.json"
     },
     {
       "test": "Real-model latency vs 3/6/9 s buckets",

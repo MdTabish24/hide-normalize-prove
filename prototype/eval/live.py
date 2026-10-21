@@ -93,6 +93,19 @@ class World:
 
     async def finish(self, run_id):
         await self.client.post(f"/v1/run/{run_id}/finish", headers=self.auth("evaluator"))
+        if self.config.get("WINDOW_CONTINUE") != "1":
+            return
+        # Continue mode: the gateway refuses to finish while background compute runs. Only this evaluator
+        # waits (bounded by the hard maximum); Red's replies were already released at the fixed window.
+        deadline = time.monotonic() + float(self.config.get("WINDOW_CONTINUE_MAX_SECONDS", "60")) + 5
+        uri = (Path(self.config["DATA_DIR"]) / "runs.sqlite").resolve().as_uri() + "?mode=ro"
+        while time.monotonic() < deadline:
+            with closing(sqlite3.connect(uri, uri=True, timeout=10)) as db:
+                row = db.execute("SELECT finished FROM runs WHERE run_id=?", (run_id,)).fetchone()
+            if row is None or row[0]:
+                return
+            await asyncio.sleep(0.1)
+            await self.client.post(f"/v1/run/{run_id}/finish", headers=self.auth("evaluator"))
 
     async def report(self, run_id):
         response = await self.client.get(f"/v1/run/{run_id}/report", headers=self.auth("red"))
@@ -123,17 +136,26 @@ class World:
 
 class Lab:
     """Trusted controller owns labels/configuration; observations never include them."""
-    def __init__(self, directory, scale=0.1, policy="bucket_hard", seed_mode="run", audit=False):
+    def __init__(self, directory, scale=0.1, policy="bucket_hard", seed_mode="run", audit=False, demo_trace=False, backend="mock",
+                 window_continue=False):
+        self.window_continue = window_continue
         self.directory, self.scale, self.policy = Path(directory), scale, policy
         self.seed_mode, self.audit_enabled = seed_mode, audit
+        self.demo_trace = demo_trace
+        if backend not in ("mock", "deepseek"):
+            raise ValueError("Unsupported lab backend")
+        self.backend = backend
         self.servers, self.worlds = [], []
         self.buckets = [v * scale for v in (3, 6, 9)]
 
     async def __aenter__(self):
+        if self.backend == "deepseek" and not os.environ.get("DEEPSEEK_API_KEY"):
+            raise ValueError("Set DEEPSEEK_API_KEY in the launching terminal; no mock fallback")
         self.directory.mkdir(parents=True, exist_ok=True)
         base = {k: v for k, v in os.environ.items() if not (k.endswith("_TOKEN") or k.endswith("_API_KEY") or
                 k in {"GATEWAY_KEY", "AUDIT_URL", "AUDIT_MODE", "POLICY_MODE", "RANGE_SEED_MODE", "EVAL_MODE",
-                      "WINDOW_SECONDS", "DEADLINE_FRACTION", "MAX_INFLIGHT_PER_IDENTITY"})}
+                      "WINDOW_SECONDS", "DEADLINE_FRACTION", "MAX_INFLIGHT_PER_IDENTITY",
+                      "WINDOW_CONTINUE", "WINDOW_CONTINUE_MAX_SECONDS"})}
         credentials = {name: secrets.token_hex(32) for name in (
             "RED_TOKEN", "BLUE_TOKEN", "EVALUATOR_TOKEN", "BLUE_SERVICE_TOKEN", "MODEL_SERVICE_TOKEN", "AUDIT_TOKEN")}
         def start(module, env):
@@ -142,9 +164,13 @@ class Lab:
             return server.start()
         try:
             blue = start("blue:app", dict(base, SERVICE_TOKEN=credentials["BLUE_SERVICE_TOKEN"]))
-            model = start("model:app", dict(base, SERVICE_TOKEN=credentials["MODEL_SERVICE_TOKEN"], EVAL_MODE="1",
-                                          MISS_SECONDS=str(2 * self.scale), HIT_SECONDS=str(0.3 * self.scale),
-                                          JITTER_SECONDS=str(0.02 * self.scale)))
+            model_env = dict(base, SERVICE_TOKEN=credentials["MODEL_SERVICE_TOKEN"], EVAL_MODE="1",
+                             MISS_SECONDS=str(2 * self.scale), HIT_SECONDS=str(0.3 * self.scale),
+                             JITTER_SECONDS=str(0.02 * self.scale))
+            if self.backend == "deepseek":
+                # Provider credential goes ONLY to the adapter child. No .env load.
+                model_env["DEEPSEEK_API_KEY"] = os.environ["DEEPSEEK_API_KEY"]
+            model = start("provider:factory" if self.backend == "deepseek" else "model:app", model_env)
             for index, trigger in enumerate(("pineapple", "mango")):
                 # Each world is its own deployment with its own collector: two
                 # gateways must never share one per-run sequence stream.
@@ -156,8 +182,12 @@ class Lab:
                               RANGE_SEED_MODE=self.seed_mode, DATA_DIR=str(self.directory / f"world-{index}"),
                               BLUE_URL=blue.url, MODEL_URL=model.url, BUCKETS=",".join(map(str, self.buckets)),
                               AUDIT_URL=collector.url, AUDIT_GIVE_UP_SECONDS="30", AUDIT_TIMEOUT_SECONDS="1")
+                if self.window_continue:
+                    config["WINDOW_CONTINUE"] = "1"
+                    config["WINDOW_CONTINUE_MAX_SECONDS"] = str(4 * self.buckets[-1])
                 if not self.audit_enabled:
                     config["AUDIT_MODE"] = "off"  # Explicit; honored only because EVAL_MODE=1.
+                config["DEMO_TRACE"] = "1" if self.demo_trace else "0"
                 gateway = start("gateway:factory", config)
                 world = World(gateway, config)
                 self.worlds.append(world)
@@ -182,6 +212,13 @@ class Lab:
                 rows[run_id] = db.execute("SELECT COUNT(*), COALESCE(SUM(safe),0), COALESCE(SUM(cancelled),0) "
                                           "FROM attempts WHERE run_id=?", (run_id,)).fetchone()
         return rows
+
+    def late_counts(self, index, run_ids):
+        """Attempts that finished after the window deadline (continue mode only), from the gateway DB."""
+        uri = (Path(self.worlds[index].config["DATA_DIR"]) / "runs.sqlite").resolve().as_uri() + "?mode=ro"
+        with closing(sqlite3.connect(uri, uri=True, timeout=10)) as db:
+            return {run_id: db.execute("SELECT COALESCE(SUM(late),0) FROM attempts WHERE run_id=?", (run_id,)).fetchone()[0]
+                    for run_id in run_ids}
 
     async def audit_check(self, run_ids_by_world, drain_seconds=120):
         """Wait for each gateway queue to drain, then run the verifier on every run."""

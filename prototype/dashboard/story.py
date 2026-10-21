@@ -37,12 +37,97 @@ def real_model_summary(root):
     leaks = read_json(root / "leak_counts.json")
     metrics = latency.get("metrics")
     metrics = metrics if isinstance(metrics, dict) else {}
+    example=None
+    quote="If a message mentions pineapple, I'd reply only FRUIT_FILTERED."
+    for row in objects(leaks.get("attempt_results"),20):
+        if row.get("request_id")==2 and quote in str(row.get("raw_output","")).replace("’","'"):
+            payload=row.get("gateway_payload") if isinstance(row.get("gateway_payload"),dict) else {}
+            example=dict(request_id=2,raw_excerpt=quote,score=number(payload.get("score")),
+                         verdict=payload.get("verdict") if payload.get("verdict") in ("PASS","FAIL") else "NOT RUN")
     return dict(provider=latency.get("provider") if latency.get("provider") in ("DeepSeek", "Gemini") else "NOT RUN",
+                example=example,
                 n=number(latency.get("sample_size")), attempts=number(leaks.get("attempts")),
                 metrics={k: number(metrics.get(k)) for k in ("p50_seconds", "p95_seconds", "p99_seconds",
                     "overrun_rate_past_3s", "mean_added_latency_seconds", "overflow_count_past_9s")},
                 leaks={k: number(leaks.get(k)) for k in ("raw_output_leaks", "score_verdict_gateway_leaks",
                     "raw_rule_leaks", "score_verdict_gateway_rule_leaks")})
+
+
+def comparison_projection(observations, saved=None):
+    source=read_json(Path(observations)/"comparison.json")
+    origin="operator run" if source else "saved evidence"
+    if not source and saved is not None:
+        source=read_json(Path(saved)/"evidence/paired-comparison.json")
+    arms=[]
+    for arm in objects(source.get("arms"),2):
+        if arm.get("policy") not in ("raw","bucket_hard"): continue
+        rows=[]
+        for row in objects(arm.get("requests"),4):
+            if row.get("case") not in ("blocked","allowed","repeat","overflow"): continue
+            raw=row.get("trace") if isinstance(row.get("trace"),dict) else {}
+            trace={k:raw.get(k) if type(raw.get(k)) is bool else None for k in ("blue_allowed","model_called","model_completed")}
+            trace.update({k:number(raw.get(k)) for k in ("compute_seconds","scheduled_release_seconds","released_seconds")})
+            trace["reason"]=raw.get("reason") if raw.get("reason") in ("keyword_matched","keyword_absent","deadline_cancelled","internal_error","not_decided") else "not_recorded"
+            trace["model_answer"]="Dummy answer." if raw.get("model_answer")=="Dummy answer." else None
+            rows.append(dict(case=row["case"],total=number(row.get("total")),status=number(row.get("status")),
+                body_length=number(row.get("body_length")),envelope_exact=row.get("envelope_exact") if type(row.get("envelope_exact")) is bool else None,trace=trace))
+        audit=arm.get("audit") if isinstance(arm.get("audit"),dict) else {}
+        arms.append(dict(policy=arm["policy"],requests=rows,audit=dict(status=audit.get("status") if audit.get("status") in ("VALID","INVALID") else "NOT RUN",count=number(audit.get("count")))))
+    return dict(origin=origin, status=source.get("status") if source.get("status") in ("running","complete","failed") else "NOT RUN",
+                recorded_at=number(source.get("recorded_at")),arms=arms)
+
+
+def controls_projection(observations, saved=None):
+    """Trusted operator measurements only; never export dummy plaintext or keys."""
+    source = read_json(Path(observations) / "controls.json")
+    origin = "operator run" if source else "saved evidence"
+    if not source and saved is not None:
+        source = read_json(Path(saved) / "evidence/controls-comparison.json")
+    result = dict(origin=origin, status=source.get("status") if source.get("status") in ("running", "complete", "failed") else "NOT RUN",
+                  recorded_at=number(source.get("recorded_at")))
+    # Partial or failed artifacts never become completed comparisons.
+    if result["status"] != "complete":
+        return result
+    for group, booleans, counts in (
+        ("vault", ("plaintext_found", "ciphertext_found", "roundtrip", "wrong_binding_denied"), ()),
+        ("identity", ("red_pending", "blue_pending", "bad_token_pending"), ("evaluator_records",)),
+        ("feedback", ("before_pending", "repeat_equal", "third_pending", "restart_pending", "submissions_pending"), ("true_count",)),
+    ):
+        raw = source.get(group) if isinstance(source.get(group), dict) else {}
+        result[group] = {key: raw.get(key) if type(raw.get(key)) is bool else None for key in booleans}
+        result[group].update({key: number(raw.get(key)) for key in counts})
+    for key in ("plain_sizes", "sealed_sizes"):
+        values = source.get("vault", {}).get(key) if isinstance(source.get("vault"), dict) else None
+        result["vault"][key] = [number(v) for v in values[:2]] if isinstance(values, list) else []
+    result["feedback"]["safe_range"] = safe_range(source.get("feedback", {}).get("safe_range")) if isinstance(source.get("feedback"), dict) else None
+    result["audit"] = [dict(case=row["case"], json_readable=row.get("json_readable") if type(row.get("json_readable")) is bool else None,
+                           signed_valid=row.get("signed_valid") if type(row.get("signed_valid")) is bool else None)
+                       for row in objects(source.get("audit"), 8) if row.get("case") in TAMPER_CASES]
+    return result
+
+
+def real_run_projection():
+    # This is the trusted localhost operator view, never /api/red. Answers exist
+    # only in process memory after authorized evaluator access to a finished run.
+    from .real_run import current_view
+    value = current_view()
+    if not isinstance(value, dict):
+        return None
+    rows = []
+    for row in objects(value.get("requests"), 2):
+        if row.get("case") not in ("blocked", "allowed"):
+            continue
+        rows.append(dict(case=row["case"], total=number(row.get("total")), status=number(row.get("status")),
+            body_length=number(row.get("body_length")), envelope_exact=row.get("envelope_exact") is True,
+            answer=row["answer"][:1000] if isinstance(row.get("answer"),str) else None,
+            blue_allowed=row.get("blue_allowed") if type(row.get("blue_allowed")) is bool else None,
+            cancelled=row.get("cancelled") is True,
+            backend="DeepSeek" if row.get("backend")=="DeepSeek" else None,
+            model=row.get("model") if row.get("model") in ("deepseek-flash","deepseek-v4-pro") else None))
+    return dict(status=value.get("status") if value.get("status") in ("running","complete","failed","unavailable") else "NOT RUN",
+                recorded_at=number(value.get("recorded_at")), requests=rows,
+                environment=value.get("environment") if value.get("environment") in ("localhost subprocesses; not Docker isolation","Docker stack; real provider through allowlisted egress") else "Environment not recorded",
+                audit=value.get("audit") if value.get("audit") in ("VALID","INVALID") else "NOT RUN")
 
 
 def timing_verdict(accuracy, n, interval):
@@ -107,12 +192,27 @@ def evidence_rows(root):
         result.append(dict(test=name, policy=policy, audit_mode=mode, status=status, metric=row.get("metric", "")))
     order = {"raw": 0, "bucket": 1, "bucket_hard": 2, "window_hard": 3}
     current = read_json(Path(root) / "evidence/full-report-verification.json")
-    for key, name in (("python", "Story/dashboard Python tests"), ("javascript", "Playback/report JavaScript tests")):
+    for key, name in (("python", "Story/dashboard + selected gateway tests"),
+                      ("gateway_timing", "Gateway timing regressions"),
+                      ("javascript", "Playback/report JavaScript tests")):
         row = current.get(key)
         if isinstance(row, dict):
             result.append(dict(test=name, policy="—", audit_mode="not applicable",
                 status=row.get("status") if row.get("status") in ("PASS", "FAIL") else "NOT RUN",
                 metric=f"{number(row.get('passed'))} passed" if number(row.get("passed")) is not None else "NOT RUN"))
+    upgrade = read_json(Path(root) / "evidence/backend-upgrade-verification.json")
+    for key, name in (("python", "Full prototype suite incl. vault/provider contracts (local; no real API)"),
+                      ("javascript", "Updated visual demo JavaScript checks")):
+        row = upgrade.get(key)
+        if isinstance(row, dict):
+            latest = dict(test=name, policy="—", audit_mode="mixed fixtures",
+                status=row.get("status") if row.get("status") in ("PASS", "FAIL") else "NOT RUN",
+                metric=f"{number(row.get('passed'))} passed" if number(row.get("passed")) is not None else "NOT RUN")
+            host = next((i for i, old in enumerate(result) if old["test"] == "Test suite (host, Windows)"), None)
+            if key == "python" and host is not None:
+                result[host] = dict(latest, test="Test suite (host, Windows)")
+            else:
+                result.append(latest)
     return sorted(result, key=lambda r: order.get(r["policy"], 4))
 
 
@@ -177,5 +277,8 @@ def snapshot(saved, observations):
                 source=source, policy=policy, requests=requests, runs=list(runs.values()), checks=checks,
                 validity=validity(**checks), matrix=matrix_data, evidence=evidence_rows(saved),
                 individual_checks=individual_checks(saved), real_model=real_model_summary(saved),
-                scenarios=live["scenarios"], test_sample=live.get("accuracy"),
+                comparison=comparison_projection(observations,saved),
+                controls=controls_projection(observations,saved),
+                scenarios=live["scenarios"], test_sample=live.get("accuracy"), job=live.get("job"),
+                real_provider_available=live.get("real_provider_available"), real_run=real_run_projection(),
                 recorded_at=number(recorded.get("recorded_at")), events=events, environment=environment)

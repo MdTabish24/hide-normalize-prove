@@ -58,6 +58,45 @@ def test_restart_key_persistence_and_post_finish_append(collected):
     assert not (original.checkpoints / "signing_key.bin").exists()
 
 
+@pytest.mark.parametrize('recovery',['retry','restart'])
+def test_locked_checkpoint_retry_publishes_same_signed_tail_without_replay(collected, monkeypatch, recovery):
+    from pathlib import Path
+    collector, log, checkpoint, public_key = collected
+    event = dict(type="report_served",run_id="audit-run",role="red",bucket=3.,timestamp=2001.,prompt_hash=None,gw_seq=1)
+    original_replace = Path.replace
+    def locked(self,target):
+        if Path(target)==checkpoint:
+            raise PermissionError("simulated reader holding checkpoint")
+        return original_replace(self,target)
+    monkeypatch.setattr(Path,"replace",locked)
+    monkeypatch.setattr("audit_store.time.sleep",lambda _:None)
+    with pytest.raises(PermissionError):
+        collector.append(event)
+    tail = log.read_bytes()
+    assert not verify(log,checkpoint,public_key,"audit-run")[0]
+    monkeypatch.setattr(Path,"replace",original_replace)
+    recovering=collector if recovery=='retry' else Collector(collector.logs,collector.keys,collector.checkpoints)
+    recovering.append(event)  # Lost acknowledgement: same gw_seq, no new log line.
+    assert log.read_bytes()==tail
+    assert verify(log,checkpoint,public_key,"audit-run")[0]
+    restarted=Collector(collector.logs,collector.keys,collector.checkpoints)
+    restarted.append(event)
+    assert log.read_bytes()==tail and verify(log,checkpoint,public_key,"audit-run")[0]
+
+
+def test_forged_temporary_checkpoint_cannot_bless_recomputed_log(collected):
+    collector,log,checkpoint,public_key=collected
+    original=checkpoint.read_bytes()
+    forged_log,forged_cp=tamper_cases(log.read_bytes(),original)['rehash without signing key']
+    log.write_bytes(forged_log)
+    checkpoint.with_suffix('.tmp').write_bytes(forged_cp)
+    restarted=Collector(collector.logs,collector.keys,collector.checkpoints)
+    with pytest.raises(Exception):
+        restarted.finish('audit-run')
+    assert checkpoint.read_bytes()==original
+    assert not verify(log,checkpoint,public_key,'audit-run')[0]
+
+
 def test_completed_count_and_bytes_include_terminal_line(collected):
     _, log, checkpoint, public_key = collected
     data = log.read_bytes()

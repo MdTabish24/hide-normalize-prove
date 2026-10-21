@@ -57,6 +57,7 @@ class Worker:
 
     def save(self):
         self.state["heartbeat"] = time.time()
+        self.state["real_provider_available"] = bool(os.environ.get("DEEPSEEK_API_KEY"))
         path = self.runtime / "observations/state.json"
         return atomic_json(path, self.state)
 
@@ -183,16 +184,28 @@ class Worker:
         status = "NOT RUN" if all(r["result"] == "NOT RUN" for r in rows) else "PASS" if all(r["result"] == "PASS" for r in rows) else "FAIL"
         self.state["scenarios"]["isolation"] = dict(status=status, rows=rows)
 
-    async def execute(self, job):
+    async def execute(self, job, job_id=None):
+        self.state["job"] = dict(id=job_id or uuid.uuid4().hex, action=job.action,
+                                 started_at=time.time(), finished_at=None)
         self.state["matrix_active"] = await asyncio.to_thread(matrix_active)
         if self.state["matrix_active"] or (job.policy == "raw" and os.getenv("EVAL_MODE") != "1"):
             self.state["status"] = "blocked"
+            self.state["job"]["finished_at"] = time.time()
             self.save()
             return
         self.state["status"] = "running"
         self.save()
         try:
-            if job.action == "story":
+            if job.action == "real":
+                from .real_run import run_real
+                await run_real(self.runtime / "observations/real.json", self.runtime / "private")
+            elif job.action == "controls":
+                from .control_run import run_controls
+                await run_controls(self.runtime / "observations/controls.json")
+            elif job.action == "comparison":
+                from .compare_run import run_comparison
+                await run_comparison(self.runtime / "observations/comparison.json")
+            elif job.action == "story":
                 from .story_run import run_story
                 await run_story(self.runtime / "observations/story.json", job.policy, self.save)
             elif job.action == "traffic":
@@ -208,7 +221,21 @@ class Worker:
             if job.action in ("isolation", "audit"):
                 self.state["scenarios"][job.action] = dict(status="NOT RUN", rows=[])
             print("Demo unavailable/failed; no result asserted. Check local prerequisites.", flush=True)
+        self.state["job"]["finished_at"] = time.time()
+        if job.action in ("isolation", "audit"):
+            self.state["scenarios"][job.action]["recorded_at"] = time.time()
         self.save()
+        self.archive(job.action)
+
+    def archive(self, action):
+        """Dated copy of this job's sanitized record, so History keeps every run (state.json is overwritten)."""
+        if action == "real":
+            return  # run_real already writes its own dated archive and private record
+        stamp = int(self.state["job"]["finished_at"])
+        name = dict(comparison="comparison", controls="controls", story="story").get(action)
+        source = read_json(self.runtime / f"observations/{name}.json") if name else self.state
+        if source:
+            atomic_json(self.runtime / f"observations/history/{action}-{stamp}.json", dict(source, action=action, recorded_at=source.get("recorded_at") or stamp))
 
     async def serve(self, once=None):
         async def heartbeat():
@@ -230,7 +257,7 @@ class Worker:
                         path.unlink(missing_ok=True)
                         continue
                     path.unlink()
-                    await self.execute(job)
+                    await self.execute(job, path.stem)
                 self.save()
                 await asyncio.sleep(1)
         finally:

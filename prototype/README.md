@@ -19,10 +19,11 @@ attacker and publish what still leaks, instead of claiming it is gone.
 
 | Component | File | Role |
 |---|---|---|
-| Gateway | `gateway.py` | The only mediator. Role comes from the token, never from JSON. Every response to Red is the same 202 envelope (same status, header set, 64-byte body). Release time follows the policy below. |
+| Gateway | `gateway.py` | The only mediator. Role comes from the token, never from JSON. Red submit/denial replies are 202 pending with fixed headers/64-byte body; delayed final reports keep the size but contain a noisy range. |
 | Blue filter | `blue.py` | Private keyword filter, reachable only from the gateway. |
 | Mock model | `model.py` | Simulated prefix cache, namespaced per (role, run). No real model or API key. |
-| Sealed config | `storage.py` | Blue's rule is AES-256-GCM encrypted at rest; only the gateway holds the key. Per-run report budget (2 reads). |
+| Payload vault | `vault.py`, `storage.py` | Blue config, Red prompts and model outputs: AES-256-GCM, fixed 32 KiB records, role/run/identity binding, cover reads. Per-run report budget (2 reads). Not ORAM. |
+| Real model (opt-in) | `provider.py`, `provider_proxy.py`, `docker-compose.real.yml` | Stateless DeepSeek calls, environment key, capped output, timeout and retry. Authenticated egress broker; default mock stack stays offline. |
 | Feedback | `range_feedback.py` | After a run: a noisy 12-wide range for the safe count, not the exact count. |
 | Audit queue + shipper | `audit_queue.py`, `audit_forwarder.py` | Durable local queue with per-run sequence numbers, retry with backoff, never on the request path. |
 | Audit collector | `audit_collector.py`, `audit_store.py` | Separate container, Ed25519 key only here, canonical hash chain, signed checkpoints. |
@@ -36,8 +37,8 @@ attacker and publish what still leaks, instead of claiming it is gone.
 |---|---|---|
 | `raw` | actual compute time | evaluation baseline only, honored only with `EVAL_MODE=1` |
 | `bucket` | smallest of 3/6/9 s that fits; late = actual time | evaluation baseline only (`EVAL_MODE=1`) |
-| `bucket_hard` | smallest of 3/6/9 s; compute stopped at 9 s | **default** (unchanged from Round 1) |
-| `window_hard` | **always exactly W** (default 9 s); compute cancelled at D = 0.8 W | Round 2 proposal; select explicitly |
+| `bucket_hard` | smallest of 3/6/9 s; gateway wait cancelled at 9 s | **default**; remote provider termination is unverified |
+| `window_hard` | target W (default 9 s); gateway wait cancelled at D = 0.8 W | Round 2 proposal; select explicitly; OS scheduling jitter remains |
 
 `window_hard` removes the bucket boundary: a request that finishes at 0.1 s,
 one that is blocked, one that errors and one cancelled at D are all released
@@ -49,6 +50,53 @@ W, and compute longer than D is cancelled. It is not the default because three
 existing tests assert first-bucket timing.
 
 ## Run it (Windows PowerShell)
+
+### Real DeepSeek demo
+
+Use Python 3.11. On a fresh checkout, create `.venv` and install
+`requirements.txt` there before running the command below.
+
+```powershell
+cd "C:\Users\Mohammad Tabish\Downloads\hackatrhon-hackskills\prototype"
+.\.venv\Scripts\python.exe -m dashboard.real_demo
+```
+
+Enter the key at the hidden terminal prompt, then open
+`http://127.0.0.1:8091/story`. Select **Live DeepSeek → Run test now**. This starts
+real localhost gateway/filter/DeepSeek-adapter/audit processes. Two benign probes:
+one expected to be blocked, one allowed to call DeepSeek. Normally one provider
+request, at most four calls including retries if both probes reach the provider;
+an unexpected filter decision fails the demo. Missing/invalid keys never fall back to a mock.
+The UI compares the private operator execution with Red's view of the **same
+request**, not a fabricated unprotected deployment. Actual model text is kept in
+operator memory; only hash/metadata persist. This mode does not test Docker
+network isolation. The worker queue is separate from the existing 8090 demo.
+
+For the real **Docker** stack, first start Docker Desktop's Linux Engine, then:
+
+```powershell
+.\.venv\Scripts\python.exe -m dashboard.real_demo --docker
+```
+
+This builds/starts the real-provider overlay and uses its gateway for the real
+test. Local role credentials are initialized without replacing existing keys.
+The existing `model-mock` service slot runs `provider:factory` in this overlay;
+it is not the mock implementation. Its only network remains internal model-net.
+An authenticated CONNECT broker alone joins provider-wan and allows only
+`api.deepseek.com:443` with public DNS answers. No extra published ports. Only the
+adapter container gets the provider key. This is an explicit internet exception
+for a hosted API; the default Compose stack is still offline. The real overlay
+uses `REAL_BUCKETS` (default 3,6,9), not scaled mock buckets from `.env`.
+Stop the 8091 real-demo server with Ctrl+C before switching between local/Docker modes.
+
+Current contract: fixed `https://api.deepseek.com/chat/completions`, default
+`DEEPSEEK_MODEL=deepseek-flash`, non-thinking, 128 output tokens (configurable up
+to 512), six-second provider deadline, at most one 429/503 retry. Checked against
+[DeepSeek's API reference](https://api-docs.deepseek.com/api/create-chat-completion/).
+Fresh random prefixes/no history reduce reuse but cannot enforce hosted KV
+deletion; [DeepSeek caching is automatic](https://api-docs.deepseek.com/guides/kv_cache/).
+
+### Offline/mock stack
 
 Requirements: Python 3.11, Docker Desktop (Linux containers, Compose v2).
 
@@ -139,17 +187,31 @@ administrator; TEEs (not required, not used).
 ## Design details
 
 ### Timing contract
-- Every response: status 202, `content-type: application/json`,
-  `content-length: 64`, body `{"status":"pending"}` padded to 64 bytes. Only an
+- Red submit/error replies: status 202, `content-type: application/json`,
+  `content-length: 64`, body `{"status":"pending"}` padded to 64 bytes. An
   authorized final report body differs (its range), with the same length.
+- The evaluator-only `/v1/run/{id}/artifacts` response is variable-size after
+  completion. It decrypts stored prompts/results for the trusted operator;
+  Red/Blue, bad tokens and unfinished runs receive the generic 64-byte envelope.
 - Release is scheduled from ASGI dispatch on a monotonic clock. The gateway
   sleeps to 3 ms before the deadline and then yields until it, so lateness does
   not depend on unrelated event-loop work; on Windows hosts it requests 1 ms
   timer resolution. Docker/Linux timers were already precise.
 - Errors (auth, schema, route, downstream failure) use the last bucket under
   bucket policies and W under `window_hard`.
+- Startup warms the local executor and internal HTTP pools with root GETs;
+  these do not submit prompts, touch the prefix cache, or call a model API.
+  Prompt file I/O runs off the event loop; SQLite commits are serialized in the
+  gateway process. Result references and completion flags publish atomically.
 
 ### Audit pipeline
+
+Checkpoint publication retries short Windows reader locks using the same signed
+head. A repeated gateway sequence republishes a pending checkpoint without
+duplicating events. Restart recovery accepts an already-signed temporary
+checkpoint only when it authenticates the entire current log; unsigned/forged
+tails are never re-signed automatically. This is still a local checkpoint, not
+an independent witness.
 - The gateway enqueues metadata (event type, run ID, role, release time,
   timestamp, SHA-256 of the prompt, per-run `gw_seq`) into
   `audit_queue.sqlite`. No raw prompt, rule, token or exception text.
@@ -280,104 +342,139 @@ services is NOT RUN because the Engine is unavailable; Compose config and
 static network checks pass. See `evidence/dashboard-verification.json` and
 `evidence/dashboard-timing-check.txt`. The saved matrix remains 6/16, incomplete.
 
-## Dashboard story view
+## Dashboard story view: paired before / after
 
-`http://127.0.0.1:8090/story` is a NEW presentation page. `/`, its HTML/CSS/JS,
-and existing dashboard observations are unchanged. Use the same dashboard and
-worker commands above. New read-only endpoints: `/api/story`, `/api/story/events`.
-The existing allowlisted job queue accepts the additional `story` action.
-
-Or start the local UI + worker together in ONE terminal (do not also start the
-separate worker/preview on the same port):
+`http://127.0.0.1:8090/story` is the trusted operator view. The original `/`
+dashboard remains separate. Start UI and worker together (do not run another
+preview/worker on the same port):
 
 ```powershell
 cd "C:\Users\Mohammad Tabish\Downloads\hackatrhon-hackskills\prototype"
 .\.venv\Scripts\python.exe -m dashboard.story_demo
 ```
 
-Open **http://127.0.0.1:8090/story**. Ctrl+C stops both. The launcher refuses to
-start if a timing matrix is active. Stop it before starting any timing matrix.
+The two synchronized panels play a measured paired mock run at four seconds per
+step. **Slow demo** plays/pauses; **Agla step** advances manually. Inactive actors
+dim. Blue's decision, model call/completion, Red's actual envelope and timing are
+separate fields. Rejection explains the actual keyword decision; allowance is
+never presented as an attack win. A gateway timeout does not prove backend compute
+physically stopped. Actor icons are a cast/status view, not network routes.
 
-The page has one main **Demo dekho** button. It explains one saved request in
-eight short phases; the active character stays bright and the others dim.
-The same button pauses, resumes or replays. Technical controls and evidence are
-collapsed under **Asli numbers aur proof**. Playback is a simplified explanation
-of recorded facts, not an actual inner-service timing trace or a fresh attack.
+Left is raw **timing**, not a completely unprotected deployment: authentication,
+Blue, sealed config, output shaping and audit stay on. Right is the unchanged
+default `bucket_hard`, with 0.3/0.6/0.9s demo buckets. Real-model output disclosure
+is a separate chapter using an existing DeepSeek response and saved score payload,
+labelled offline, small sample. Playback itself makes no model calls.
 
-The optional **Naya 4-request test record karo** action inside details starts a separate local mock Lab,
-with the same two fictional benign probes in each A/B world. All evaluator
-file writes happen AFTER response release. It reads actual gateway outcomes,
-finished evaluator counts, three actual report responses (stable repeat and
-pending third read), persistent report-budget usage, then verifies each run's
-signed audit checkpoint and reads its event count. Only allowlisted metadata
-is written to `dashboard/runtime/observations/story.json` (UI read-only mount).
-This evaluator-only artifact is protected by the operator boundary, not a new
-encryption/signature format; audit integrity comes from the existing verifier.
-The 4-request story is not a leakage accuracy experiment or Docker isolation test.
+Record a fresh eight-submission pair (or use the optional control in details):
 
-No gateway, Blue, model or existing test changes. The gateway discards model
-text and records no compute duration: the story explicitly states **Mock model:
-fixed dummy answer (not a real model)** as configuration, NOT as a captured
-per-request output. Actual generated text, rule-firing trace and compute time
-stay NOT RUN in details. A `safe=0` DB outcome is “not allowed”, not proof of a
-logged block reason. No real provider/API calls or keys are used.
+```powershell
+.\.venv\Scripts\python.exe -m dashboard.compare_run
+```
 
-Presentation verdict rules (fixed now, before running this story demo; existing
-matrix results have already been seen, so this is NOT a preregistration claim):
+The controller launches temporary localhost gateway/Blue/mock/collector processes,
+never reads `.env`, and uses no real API keys. It enables private telemetry with
+BOTH `EVAL_MODE=1` and `DEMO_TRACE=1`. The gateway writes decision, known mock
+answer and compute/release metadata only after sending Red's response. Normal
+service and ordinary evaluations create no trace. Arbitrary model output, prompt
+text, filter text and credentials are never persisted in that trace.
 
-- Timing needs at least 40 unseen test groups and a recorded 95% interval.
-  Otherwise timing is NOT RUN / insufficient evidence.
-- LEAKED: accuracy >=60% and interval lower endpoint >55%.
-- NO LEAK FOUND: interval upper endpoint <=60%. Wording: “the tested attacker
-  could not reliably distinguish”, never “no leak”.
-- Otherwise BOUNDED LEAK: an uncertain presentation category, **not a formal
-  information-theoretic or differential-privacy bound**.
-- Overall VALID requires isolation PASS, timing NO LEAK FOUND or BOUNDED LEAK,
-  and audit VALID, all for the same deployment/run scope. A failure is INVALID;
-  missing inputs are INCOMPLETE. Historical Docker isolation or an unrelated
-  timing demo cannot certify a new localhost story run.
+The paired artifact is `dashboard/runtime/observations/comparison.json` (ignored).
+The checked-in sanitized `evidence/paired-comparison.json` is the fallback when
+no runtime recording exists. Audit chains were verified inside the temporary lab;
+its temporary keys/logs are removed. The exported UI JSON is not independently
+signed. Fresh tests are instrumented examples, not a powered leakage experiment.
+The recorded protected blocked/allowed totals were 0.342s/0.630s: equal envelopes
+still did not produce equal times. The UI explicitly shows this limitation.
 
-Below the animation, **Saare tests. Saaf hisaab.** exposes all saved evidence in
-five visible tables (no extra mode buttons): all 16 expected timing cells across
-four policies, real DeepSeek output/latency comparisons, the complete evidence
-register including unresolved failures, 11 individual isolation + 8 audit cases,
-and every current-story request/report/budget/audit check. Missing cells remain
-NOT RUN; unplanned timing arms are shown as a dash. Raw/bucket ordinary accuracy
-is 98.5%/56.5%; boundary and overflow bucket accuracy is 100%. Intervals, sample
-sizes, training accuracy and gaps are visible in the timing table. Historical
-checks are labelled separately from this tiny mock story. Real-model projections
-expose only allowlisted numeric metrics/provider, never raw prompts or outputs.
-Exact pending envelope verification does not establish equal timing.
+The implementation coverage table lists the original controls and gaps. See
+[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md): workload attestation,
+formal access-pattern hiding and real hosted KV reset are not
+implemented. The complete evidence tables remain visible, including all 16 timing
+arms (6 saved), historical isolation/audit cases, real-model statistics, earlier
+report-budget checks and the unresolved collector timing failure.
 
-### Robot stage: who is doing what?
+Read-only `/api/story` and `/api/story/events` expose allowlisted operator
+projections. `/api/red` continues to exclude private reasons and telemetry.
+The job queue accepts only fixed scenarios; the browser gets no API keys or
+Docker socket. Only the trusted host operator may read the provider environment
+and execute demos. The separate Docker dashboard image still gets no credentials.
 
-`/story` now shows a red robot (Red/scripted tester), a blue robot
-(Blue/private guard), a central gateway shield (trusted mediator), and a
-neutral face (client model, explicitly MOCK). Red is outside the environment;
-only the gateway connects to Blue, the model and audit. The diagram is a flow
-map, not proof of Docker isolation for a localhost demo.
+Selected validation: 41 non-timing Python checks, four existing gateway timing
+checks, eight JavaScript checks passed. Earlier collector timing isolation failure
+remains unresolved; this is not a full-suite PASS. Evidence: `paired-story-tests.txt`,
+`paired-gateway-timing-tests.txt`, `paired-story-js-tests.txt`, `paired-story.png`.
 
-The optional recording action executes real HTTP submissions. Attempt events
-are written BEFORE the HTTP measurement clock starts; evaluator reads/writes
-remain after release. No new work is added inside the gateway request path.
-SSE polls every 0.4 seconds during a job, every 2 seconds idle.
+Timing presentation rules remain: at least 40 unseen test groups and a valid 95%
+interval; LEAKED if accuracy >=60% and lower bound >55%; NO LEAK FOUND if upper
+bound <=60%; otherwise uncertain BOUNDED LEAK (not a formal bound). Whole-run
+VALID still needs matching isolation, timing and audit; the tiny story is not a
+certificate. Stop this UI/worker before a full timing matrix; Ctrl+C stops both.
 
-**Demo dekho** preferentially explains a saved not-allowed request with a verified
-pending envelope, otherwise the first saved request. Red shakes when that attempt
-stops. Flowers celebrate only a verified exact output envelope. Failed or missing
-evidence never produces flowers. With reduced-motion enabled, these effects are
-disabled. Playback makes no API/model calls; its pace is not original compute
-time. The model branch follows recorded allow status and known gateway flow;
-actual model output and compute timing remain uncaptured.
+### Current presentation: visual demo vs evidence
 
-Green PASS means only that the exact generic output envelope matched. An
-allowed request can still have its raw model output withheld. This does not
-certify timing isolation or the whole run. Environment lifecycle is recorded
-as starting/running/stopped/unknown; completed temporary services are not
-presented as still online.
+`/story` is now an English-only visual surface, with one Scenario selector and
+Play/Pause + Next Step. The eight scenes cover live DeepSeek, output disclosure, response timing,
+network isolation, vault/identity, delayed reports/budgets, audit tampering and
+A/B leakage evaluation. It contains no evidence tables or implementation matrix.
+Figures use the same saved observations: network boundary, sealed-config drawing,
+latency/accuracy bars, score gate, report budget and hash-chain changes. They are
+explanatory replays, not additional sensor telemetry or newly run attacks.
 
-34 story/dashboard tests and six JavaScript playback/report checks pass. Browser QA
-checks active/inactive opacity, playback completion and flower elements. New
-evidence: `evidence/simple-story.png`, `evidence/simple-ui-tests.txt`,
-`evidence/simple-playback-tests.txt`. The previous collector timing-test failure
-remains unresolved; this UI work does not change its assertions.
+`/story/evidence` preserves all detailed tables and implementation coverage in
+English. Fresh recording is also available directly on `/story`. The original `/` operator
+page is unchanged. Unmeasured baselines remain grey; missing controls are not
+animated as implemented. Historical Docker results, code inspection, local mock
+measurements and saved real DeepSeek outputs remain labelled separately.
+
+Current UI checks: 36 Python story/dashboard checks and nine JavaScript checks
+passed. These do not rerun the full gateway/matrix or resolve the existing
+collector timing failure. Evidence: `evidence/visual-demo-tests.txt`,
+`evidence/visual-demo-js-tests.txt`, and `evidence/visual-demo-audit.png`.
+
+### Run from the visual demo
+
+Start `python -m dashboard.story_demo` and open `http://127.0.0.1:8090/story`.
+Select a scenario and click **Run test now**. This submits an allowlisted job to
+the host worker, starts actual local subprocess services (or probes the existing
+Docker stack for isolation), and plays the measured results after completion.
+The fresh job ID must match before a result is presented as completed. A failed
+fresh isolation/audit attempt replaces old passes with no result; it cannot fall
+back to historical evidence. Other queued actions are disabled during execution.
+
+Live actions: paired HTTP timing (eight submissions; only timing differs), measured
+controls (vault, role access, reports/restart, eight audit copies; two submissions),
+existing Docker isolation probes, and tiny A/B smoke evaluation (16 submissions;
+four train/four unseen groups, not the full matrix). Each is mock-model/local.
+Playback remains a separate action and never starts tests. The output-disclosure
+scene is saved real DeepSeek evidence, not a live API call. Choose Vault & identity,
+Audit tampering, or Final report & budget to rerun the measured controls together.
+Only the saved output-disclosure scene has no live action. Full implementation gaps and failed timing checks remain in
+the evidence view. This UI wiring does not resolve those security gaps.
+
+### Measured control comparisons
+
+Run `python -m dashboard.control_run` without a provider key or Docker. It writes
+`dashboard/runtime/observations/controls.json` and `/story` replays its measured
+comparisons; Run test now performs the same test. A saved result is available in
+`evidence/controls-comparison.json`, explicitly labelled saved when used.
+
+- Vault: scan temporary plaintext and AES-GCM files for the same random dummy
+  marker, decrypt round-trip, compare short/long file sizes, reject a changed owner.
+- Role access: actual local HTTP to finished-run private artifacts as evaluator,
+  Red, Blue and invalid token. Only the evaluator receives the records.
+- Feedback: private evaluator exact count vs Red range; pending before finish,
+  identical repeated range, third read withheld, budget still exhausted after an
+  actual gateway process restart. This is two views of one protected deployment,
+  not a measured insecure exact-count deployment.
+- Audit: the same eight log copies are read as JSON and passed through the signed
+  verifier. JSON reading deliberately has no integrity check; it is a diagnostic
+  baseline, not an unsigned gateway mode. Seven altered copies remain readable
+  JSON but fail signed verification; the original passes.
+
+Dummy payloads, keys and log copies are temporary; artifacts contain counts and
+booleans only. These tests do not prove ORAM, workload attestation, hosted KV reset,
+Docker isolation, formal privacy or security against a compromised collector/host.
+Fresh failed control jobs never fall back to saved successful control results.
+For a real provider run use `python -m dashboard.real_demo` and enter the key at
+the hidden terminal prompt; never paste it into chat or commit it.

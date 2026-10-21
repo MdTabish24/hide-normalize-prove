@@ -1,0 +1,46 @@
+{
+  "scenes": [
+    {
+      "graphic": "scene-graphic graphic-output ",
+      "scene": "output",
+      "value": "REQUEST SENT"
+    },
+    {
+      "graphic": "scene-graphic graphic-output ",
+      "scene": "timing",
+      "value": "REQUEST SENT"
+    },
+    {
+      "graphic": "scene-graphic graphic-network good",
+      "scene": "isolation",
+      "value": "BLOCKED"
+    },
+    {
+      "graphic": "scene-graphic graphic-vault good",
+      "scene": "vault",
+      "value": "SEALED"
+    },
+    {
+      "graphic": "scene-graphic graphic-feedback good",
+      "scene": "feedback",
+      "value": "0–2"
+    },
+    {
+      "graphic": "scene-graphic graphic-audit good",
+      "scene": "audit",
+      "value": "LOG INTACT"
+    },
+    {
+      "graphic": "scene-graphic graphic-guess waiting",
+      "scene": "leakage",
+      "value": "56.5%"
+    }
+  ],
+  "main_tables": 0,
+  "evidence_tables": 6,
+  "evidence_checks": 25,
+  "evidence_individual_cases": 19,
+  "english_render_verified": true,
+  "python_ui_checks": 36,
+  "javascript_checks": 9
+}

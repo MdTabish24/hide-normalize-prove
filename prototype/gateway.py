@@ -7,6 +7,7 @@ import os
 import secrets
 import sys
 import time
+from pathlib import Path as FilePath
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -68,7 +69,9 @@ async def release_at(deadline):
 
 
 class Boundary:
-    """Buffer all app output. Only a successful authorized report may vary its body.
+    """Buffer app output. Red sees 64-byte generic replies or a final noisy range.
+
+    Finished-run artifacts are a separate evaluator-only variable-size exception.
 
     Bucket policies: application errors use the last fixed bucket, so even an
     error arising late has the same deadline. window_hard: EVERY request (done,
@@ -115,19 +118,32 @@ class Boundary:
             bucket = elapsed
         elif not error and self.policy == "bucket" and elapsed > self.buckets[-1]:
             bucket = elapsed
-        body = b"".join(chunks) if status == 200 else PENDING
-        if len(body) != 64:
-            body = PENDING
         state = scope.get("state", {})
+        operator_view = status == 200 and state.get("operator_artifacts") is True and state.get("role") == "evaluator"
+        body = b"".join(chunks) if status == 200 else PENDING
+        if (not operator_view and len(body) != 64) or len(body) > 4_000_000:
+            body = PENDING
         if state.get("cancelled"):
             metadata("deadline_cancelled", state.get("run_id"), state.get("role"), bucket, state.get("prompt_hash"))
         elif error:
             metadata("rejected", state.get("run_id"), state.get("role"), bucket, state.get("prompt_hash"))
         metadata("release", state.get("run_id"), state.get("role"), bucket, state.get("prompt_hash"))
         await release_at(start + bucket)
+        response_headers = dict(HEADERS, **{"content-length": str(len(body))})
         await send({"type": "http.response.start", "status": 202,
-                    "headers": [(key.encode(), value.encode()) for key, value in HEADERS.items()]})
+                    "headers": [(key.encode(), value.encode()) for key, value in response_headers.items()]})
         await send({"type": "http.response.body", "body": body})
+        # Opt-in operator demo telemetry, AFTER release; never part of Red's reply.
+        # Default/normal evaluations do not create this file or record model text.
+        trace = state.get("demo_trace")
+        if trace is not None:
+            trace.update(compute_seconds=elapsed, scheduled_release_seconds=bucket,
+                         released_seconds=time.perf_counter()-start)
+            try:
+                with FilePath(state["demo_trace_file"]).open("a", encoding="utf-8") as stream:
+                    stream.write(json.dumps(trace, separators=(",", ":"))+"\n")
+            except OSError:
+                metadata("demo_trace_unavailable")
         if state.get("audit_report"):
             metadata("report_read", state.get("run_id"), state.get("role"), bucket)
         # Persist audit metadata only after sending, so collector I/O cannot move
@@ -171,6 +187,14 @@ def create_app(settings=None, transport=None):
         raise ValueError("window_hard needs WINDOW_SECONDS > 0 and 0 < DEADLINE_FRACTION < 1")
     max_inflight = int(config.get("MAX_INFLIGHT_PER_IDENTITY", "16"))
     inflight = {}
+    # Opt-in variant of window_hard: Red's reply is still released at exactly one window, but compute is NOT
+    # cancelled at the deadline. It continues in the background up to a hard maximum, counts against the same
+    # per-identity in-flight limit, and its result joins the sealed run record (late attempts are counted).
+    continue_mode = policy == "window_hard" and config.get("WINDOW_CONTINUE") == "1"
+    continue_max = float(config.get("WINDOW_CONTINUE_MAX_SECONDS") or 4 * window)
+    if continue_mode and not (math.isfinite(continue_max) and window < continue_max <= 60):
+        raise ValueError("WINDOW_CONTINUE_MAX_SECONDS must be greater than the window and at most 60")
+    background = set()
     tokens = {role: config[role.upper() + "_TOKEN"] for role in ("red", "blue", "evaluator")}
     if any(len(token) < 16 for token in tokens.values()) or len(set(tokens.values())) != 3:
         raise ValueError("Three distinct role tokens of at least 16 characters required")
@@ -180,19 +204,34 @@ def create_app(settings=None, transport=None):
     store = Store(config.get("DATA_DIR", "/data"), key,
                   range_seed_mode=config.get("RANGE_SEED_MODE", "run"), range_generator=generate_range,
                   audit_queue_max=int(config.get("AUDIT_QUEUE_MAX", "10000")))
+    demo_trace = config.get("EVAL_MODE") == "1" and config.get("DEMO_TRACE") == "1"
     # Fail closed if a persisted key/config is corrupt. No silent key rotation.
     defense = store.unseal()
 
     @asynccontextmanager
     async def lifespan(api):
+        # Initialize the executor/crypto before a measured request, without any
+        # model call or prompt/cache entry. Cold module/thread startup is not
+        # useful compute and otherwise makes the first tiny demo bucket overrun.
+        await asyncio.to_thread(store.vault.cover_read)
         async with httpx.AsyncClient(transport=transport, trust_env=False,
-                                     timeout={"bucket_hard": buckets[-1], "window_hard": deadline}.get(policy, 60)) as client:
+                                     timeout={"bucket_hard": buckets[-1], "window_hard": continue_max if continue_mode else deadline}.get(policy, 60)) as client:
             api.state.client = client
             api.state.audit = Forwarder(store.audit_queue, config, transport)
             api.state.audit.start()
+            if transport is None:
+                # Internal root GETs only establish HTTP pools; neither backend
+                # generates text on GET /. Failure does not stop safe startup.
+                urls = [config.get("BLUE_URL", "http://blue-defense:8000"),
+                        config.get("MODEL_URL", "http://model-mock:8000")]
+                await asyncio.gather(*(client.get(url.rstrip("/")+"/", timeout=.3) for url in urls),return_exceptions=True)
             try:
                 yield
             finally:
+                for pending in list(background):
+                    pending.cancel()
+                if background:
+                    await asyncio.gather(*background, return_exceptions=True)
                 await api.state.audit.close()
 
     api = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
@@ -227,12 +266,41 @@ def create_app(settings=None, transport=None):
         if inflight.get(owner, 0) >= max_inflight:
             raise HTTPException(429)
         inflight[owner] = inflight.get(owner, 0) + 1
+        if continue_mode:
+            task = asyncio.create_task(run_background(body, request, owner))
+            background.add(task)
+
+            def finished(done, owner=owner):
+                background.discard(done)
+                inflight[owner] -= 1
+                if not done.cancelled():
+                    done.exception()  # Mark retrieved; the route re-raises it when it finished in time.
+            task.add_done_callback(finished)
+            # Wait only until just before the deadline; unfinished work keeps running without delaying Red.
+            await asyncio.wait({task}, timeout=max(0.0, deadline - 0.05 * window))
+            if task.done() and not task.cancelled():
+                task.result()
+            return Response(status_code=202)
         try:
             return await handle_submit(body, request, owner)
         finally:
             inflight[owner] -= 1
 
+    async def run_background(body, request, owner):
+        try:
+            async with asyncio.timeout(continue_max):
+                return await handle_submit(body, request, owner)
+        except TimeoutError:
+            return None  # Hard maximum reached; handle_submit already recorded the attempt as cancelled.
+
     async def handle_submit(body, request, owner):
+        started = time.perf_counter()
+        trace = None
+        if demo_trace:
+            trace = {"run_id": body.run_id, "blue_allowed": None, "reason": "not_decided",
+                     "model_called": False, "model_completed": False, "model_answer": None}
+            request.state.demo_trace = trace
+            request.state.demo_trace_file = str(store.directory / "demo-trace.jsonl")
         request.state.prompt_hash = hashlib.sha256(body.prompt.encode()).hexdigest()
         request.state.audit = api.state.audit
         api.state.audit.emit("submit_received", body.run_id, "red", prompt_hash=request.state.prompt_hash)
@@ -243,24 +311,54 @@ def create_app(settings=None, transport=None):
                 store.end(attempt, False)
             raise HTTPException(403)
         safe = cancelled = False
+        blue_allowed = None
+        output = None
         try:
-            result = await internal("blue", "/check", {"prompt": body.prompt, "filter": api.state.defense})
+            # Disk creation/encryption must not serialize unrelated requests on
+            # the event loop. Only published, complete record refs are readable.
+            prompt = await asyncio.to_thread(store.save_prompt, attempt, body.run_id, owner, body.prompt)
+            result = await internal("blue", "/check", {"prompt": prompt, "filter": api.state.defense})
             if not isinstance(result.get("allowed"), bool):
                 raise ValueError("Invalid defense response")
             safe = result["allowed"]
+            blue_allowed = safe
+            if trace is not None:
+                trace.update(blue_allowed=safe, reason="keyword_absent" if safe else "keyword_matched")
             if safe:
-                model_body = {"prompt": body.prompt, "role": "red", "run_id": body.run_id}
+                model_body = {"prompt": prompt, "role": "red", "run_id": body.run_id}
                 if config.get("EVAL_MODE") == "1" and body.sim_delay is not None:
                     if type(body.sim_delay) not in (int, float) or not math.isfinite(body.sim_delay) or not 0 <= body.sim_delay <= 30:
                         raise HTTPException(422)
                     model_body["sim_delay"] = body.sim_delay
-                await internal("model", "/generate", model_body)
+                if trace is not None:
+                    trace["model_called"] = True
+                answer = await internal("model", "/generate", model_body)
+                if not isinstance(answer.get("answer"), str) or len(answer["answer"].encode()) > 20000:
+                    raise ValueError("Invalid model output")
+                output = {k: answer[k] for k in ("answer", "backend", "model", "usage") if k in answer}
+                if trace is not None:
+                    # Only the known mock answer is eligible; never persist arbitrary LLM text.
+                    trace.update(model_completed=True,
+                                 model_answer="Dummy answer." if answer.get("answer") == "Dummy answer." else None)
         except asyncio.CancelledError:
             # Compute deadline hit. Recorded for the evaluator and audit only.
             cancelled = request.state.cancelled = True
+            if trace is not None:
+                trace["reason"] = "deadline_cancelled"
+            if continue_mode:  # No middleware cancel here, so record the hard-maximum stop in the audit chain.
+                api.state.audit.emit("deadline_cancelled", body.run_id, "red", window, request.state.prompt_hash)
+            raise
+        except Exception:
+            if trace is not None:
+                trace["reason"] = "internal_error"
             raise
         finally:
-            store.end(attempt, safe, cancelled)
+            output_ref = None
+            try:
+                output_ref = store.seal_output(body.run_id, owner, output)
+            finally:
+                late = continue_mode and not cancelled and time.perf_counter() - started > deadline
+                store.end(attempt, safe, cancelled, blue_allowed=blue_allowed, output_ref=output_ref, late=late)
         return Response(status_code=202)
 
     @api.post("/v1/defense")
@@ -302,6 +400,19 @@ def create_app(settings=None, transport=None):
         authorize(request, "evaluator")
         request.state.run_id = run_id
         return Response(store.evaluation(run_id) or PENDING, status_code=200)
+
+    @api.get("/v1/run/{run_id}/artifacts")
+    async def artifacts(run_id: RunId, request: Request):
+        # Private operator readout after completion. Red/Blue authorization fails
+        # before loading records, and their responses keep the 64-byte envelope.
+        authorize(request, "evaluator")
+        with store.connect() as db:
+            run = db.execute("SELECT owner, finished FROM runs WHERE run_id=?", (run_id,)).fetchone()
+        if not run or not run[1]:
+            return Response(PENDING, status_code=200)
+        rows = store.completed_payloads(run_id, run[0])
+        request.state.operator_artifacts = True
+        return Response(json.dumps({"run_id": run_id, "records": rows}, ensure_ascii=False).encode(), status_code=200)
 
     api.add_middleware(Boundary, buckets=buckets, policy=policy, window=window, deadline=deadline)
     return api

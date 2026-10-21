@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
 COPY --chown=10001:10001 common.py storage.py gateway.py blue.py model.py demo_isolation.py init_env.py manage.py ./
 COPY --chown=10001:10001 audit_format.py audit_store.py audit_collector.py audit_forwarder.py verify_audit.py demo_audit_tamper.py ./
 COPY --chown=10001:10001 range_feedback.py tcp_proxy.py ./
+COPY --chown=10001:10001 vault.py provider.py provider_proxy.py ./
 COPY --chown=10001:10001 pytest.ini stats.py audit_queue.py ./
 COPY --chown=10001:10001 tests/ ./tests/
 USER 10001:10001

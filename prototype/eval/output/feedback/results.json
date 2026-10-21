@@ -1,0 +1,1161 @@
+{
+  "label": "feedback",
+  "status": "complete",
+  "seed": 7391,
+  "mc_sets": 200,
+  "live_sets": 20,
+  "live_scale": 0.02,
+  "ks": [
+    1,
+    3,
+    10,
+    30
+  ],
+  "live": [
+    {
+      "label": "live gateway with mock model, local run; feedback small subset",
+      "mode": "run",
+      "k": 3,
+      "sets": 20,
+      "within_run_repeat_stable_after_restart": true,
+      "third_read_blocked_after_restart": true,
+      "identical_probe_ranges_across_3_runs": [
+        [
+          12,
+          24
+        ],
+        [
+          14,
+          26
+        ],
+        [
+          4,
+          16
+        ]
+      ],
+      "same_probes_cross_run_identical": false,
+      "changed_probe_distinct_ranges": 8,
+      "changed_probe_sets": 8,
+      "summary": {
+        "sets": 20,
+        "mean_absolute_error": 3.0,
+        "intersection_mean_absolute_error": 2.9,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 7.4,
+        "truth_at_range_center_share": 0.03333333333333333,
+        "exact_estimate_share": 0,
+        "estimate_at_intersection_center_share": 0.15
+      },
+      "rows": [
+        {
+          "true_count": 0,
+          "estimate": 6.0,
+          "absolute_error": 6.0,
+          "intersection": [
+            0,
+            12
+          ],
+          "intersection_absolute_error": 6.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 2,
+          "estimate": 6.0,
+          "absolute_error": 4.0,
+          "intersection": [
+            0,
+            12
+          ],
+          "intersection_absolute_error": 4.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 3,
+          "estimate": 7.666666666666667,
+          "absolute_error": 4.666666666666667,
+          "intersection": [
+            3,
+            13
+          ],
+          "intersection_absolute_error": 5.0,
+          "intersection_width": 10,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 5,
+          "estimate": 8.0,
+          "absolute_error": 3.0,
+          "intersection": [
+            5,
+            12
+          ],
+          "intersection_absolute_error": 3.5,
+          "intersection_width": 7,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 7,
+          "estimate": 11.333333333333334,
+          "absolute_error": 4.333333333333334,
+          "intersection": [
+            7,
+            15
+          ],
+          "intersection_absolute_error": 4.0,
+          "intersection_width": 8,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 8,
+          "estimate": 7.333333333333333,
+          "absolute_error": 0.666666666666667,
+          "intersection": [
+            4,
+            12
+          ],
+          "intersection_absolute_error": 0.0,
+          "intersection_width": 8,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 10,
+          "estimate": 11.666666666666666,
+          "absolute_error": 1.666666666666666,
+          "intersection": [
+            9,
+            15
+          ],
+          "intersection_absolute_error": 2.0,
+          "intersection_width": 6,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 12,
+          "estimate": 7.666666666666667,
+          "absolute_error": 4.333333333333333,
+          "intersection": [
+            4,
+            12
+          ],
+          "intersection_absolute_error": 4.0,
+          "intersection_width": 8,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 13,
+          "estimate": 13.666666666666666,
+          "absolute_error": 0.6666666666666661,
+          "intersection": [
+            13,
+            14
+          ],
+          "intersection_absolute_error": 0.5,
+          "intersection_width": 1,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 15,
+          "estimate": 13.333333333333334,
+          "absolute_error": 1.666666666666666,
+          "intersection": [
+            11,
+            16
+          ],
+          "intersection_absolute_error": 1.5,
+          "intersection_width": 5,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 17,
+          "estimate": 15.0,
+          "absolute_error": 2.0,
+          "intersection": [
+            12,
+            17
+          ],
+          "intersection_absolute_error": 2.5,
+          "intersection_width": 5,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 19,
+          "estimate": 20.666666666666668,
+          "absolute_error": 1.6666666666666679,
+          "intersection": [
+            19,
+            20
+          ],
+          "intersection_absolute_error": 0.5,
+          "intersection_width": 1,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 20,
+          "estimate": 20.333333333333332,
+          "absolute_error": 0.33333333333333215,
+          "intersection": [
+            17,
+            22
+          ],
+          "intersection_absolute_error": 0.5,
+          "intersection_width": 5,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 22,
+          "estimate": 21.333333333333332,
+          "absolute_error": 0.6666666666666679,
+          "intersection": [
+            20,
+            24
+          ],
+          "intersection_absolute_error": 0.0,
+          "intersection_width": 4,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 24,
+          "estimate": 22.333333333333332,
+          "absolute_error": 1.6666666666666679,
+          "intersection": [
+            18,
+            26
+          ],
+          "intersection_absolute_error": 2.0,
+          "intersection_width": 8,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0.3333333333333333,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 25,
+          "estimate": 21.666666666666668,
+          "absolute_error": 3.333333333333332,
+          "intersection": [
+            19,
+            25
+          ],
+          "intersection_absolute_error": 3.0,
+          "intersection_width": 6,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0.3333333333333333,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 27,
+          "estimate": 23.666666666666668,
+          "absolute_error": 3.333333333333332,
+          "intersection": [
+            20,
+            28
+          ],
+          "intersection_absolute_error": 3.0,
+          "intersection_width": 8,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 29,
+          "estimate": 24.666666666666668,
+          "absolute_error": 4.333333333333332,
+          "intersection": [
+            19,
+            30
+          ],
+          "intersection_absolute_error": 4.5,
+          "intersection_width": 11,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 30,
+          "estimate": 24.333333333333332,
+          "absolute_error": 5.666666666666668,
+          "intersection": [
+            19,
+            30
+          ],
+          "intersection_absolute_error": 5.5,
+          "intersection_width": 11,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": false
+        },
+        {
+          "true_count": 32,
+          "estimate": 26.0,
+          "absolute_error": 6.0,
+          "intersection": [
+            20,
+            32
+          ],
+          "intersection_absolute_error": 6.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        }
+      ]
+    },
+    {
+      "label": "live gateway with mock model, local run; feedback small subset",
+      "mode": "probeset",
+      "k": 3,
+      "sets": 20,
+      "within_run_repeat_stable_after_restart": true,
+      "third_read_blocked_after_restart": true,
+      "identical_probe_ranges_across_3_runs": [
+        [
+          10,
+          22
+        ],
+        [
+          10,
+          22
+        ],
+        [
+          10,
+          22
+        ]
+      ],
+      "same_probes_cross_run_identical": true,
+      "changed_probe_distinct_ranges": 7,
+      "changed_probe_sets": 8,
+      "summary": {
+        "sets": 20,
+        "mean_absolute_error": 3.55,
+        "intersection_mean_absolute_error": 3.55,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 12,
+        "truth_at_range_center_share": 0,
+        "exact_estimate_share": 0,
+        "estimate_at_intersection_center_share": 1
+      },
+      "rows": [
+        {
+          "true_count": 0,
+          "estimate": 6.0,
+          "absolute_error": 6.0,
+          "intersection": [
+            0,
+            12
+          ],
+          "intersection_absolute_error": 6.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 2,
+          "estimate": 7.0,
+          "absolute_error": 5.0,
+          "intersection": [
+            1,
+            13
+          ],
+          "intersection_absolute_error": 5.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 3,
+          "estimate": 9.0,
+          "absolute_error": 6.0,
+          "intersection": [
+            3,
+            15
+          ],
+          "intersection_absolute_error": 6.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 5,
+          "estimate": 9.0,
+          "absolute_error": 4.0,
+          "intersection": [
+            3,
+            15
+          ],
+          "intersection_absolute_error": 4.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 7,
+          "estimate": 8.0,
+          "absolute_error": 1.0,
+          "intersection": [
+            2,
+            14
+          ],
+          "intersection_absolute_error": 1.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 8,
+          "estimate": 10.0,
+          "absolute_error": 2.0,
+          "intersection": [
+            4,
+            16
+          ],
+          "intersection_absolute_error": 2.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 10,
+          "estimate": 14.0,
+          "absolute_error": 4.0,
+          "intersection": [
+            8,
+            20
+          ],
+          "intersection_absolute_error": 4.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 12,
+          "estimate": 7.0,
+          "absolute_error": 5.0,
+          "intersection": [
+            1,
+            13
+          ],
+          "intersection_absolute_error": 5.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 13,
+          "estimate": 12.0,
+          "absolute_error": 1.0,
+          "intersection": [
+            6,
+            18
+          ],
+          "intersection_absolute_error": 1.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 15,
+          "estimate": 10.0,
+          "absolute_error": 5.0,
+          "intersection": [
+            4,
+            16
+          ],
+          "intersection_absolute_error": 5.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 17,
+          "estimate": 18.0,
+          "absolute_error": 1.0,
+          "intersection": [
+            12,
+            24
+          ],
+          "intersection_absolute_error": 1.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 19,
+          "estimate": 16.0,
+          "absolute_error": 3.0,
+          "intersection": [
+            10,
+            22
+          ],
+          "intersection_absolute_error": 3.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 20,
+          "estimate": 17.0,
+          "absolute_error": 3.0,
+          "intersection": [
+            11,
+            23
+          ],
+          "intersection_absolute_error": 3.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 22,
+          "estimate": 26.0,
+          "absolute_error": 4.0,
+          "intersection": [
+            20,
+            32
+          ],
+          "intersection_absolute_error": 4.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 24,
+          "estimate": 23.0,
+          "absolute_error": 1.0,
+          "intersection": [
+            17,
+            29
+          ],
+          "intersection_absolute_error": 1.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 25,
+          "estimate": 22.0,
+          "absolute_error": 3.0,
+          "intersection": [
+            16,
+            28
+          ],
+          "intersection_absolute_error": 3.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 27,
+          "estimate": 24.0,
+          "absolute_error": 3.0,
+          "intersection": [
+            18,
+            30
+          ],
+          "intersection_absolute_error": 3.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 29,
+          "estimate": 26.0,
+          "absolute_error": 3.0,
+          "intersection": [
+            20,
+            32
+          ],
+          "intersection_absolute_error": 3.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 30,
+          "estimate": 25.0,
+          "absolute_error": 5.0,
+          "intersection": [
+            19,
+            31
+          ],
+          "intersection_absolute_error": 5.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        },
+        {
+          "true_count": 32,
+          "estimate": 26.0,
+          "absolute_error": 6.0,
+          "intersection": [
+            20,
+            32
+          ],
+          "intersection_absolute_error": 6.0,
+          "intersection_width": 12,
+          "intersection_contains_truth": true,
+          "truth_at_range_center": 0,
+          "estimate_equals_truth": false,
+          "estimate_at_intersection_center": true
+        }
+      ]
+    }
+  ],
+  "monte_carlo": [
+    {
+      "label": "simulated feedback analysis (production range logic, Monte Carlo)",
+      "mode": "run",
+      "k": 1,
+      "sets": 200,
+      "mean_absolute_error": 3.705,
+      "intersection_mean_absolute_error": 3.705,
+      "intersection_coverage": 1,
+      "mean_intersection_width": 12,
+      "truth_at_range_center_share": 0.07,
+      "exact_estimate_share": 0.07,
+      "estimate_at_intersection_center_share": 1,
+      "extremes": {
+        "sets": 13,
+        "mean_absolute_error": 6.0,
+        "intersection_mean_absolute_error": 6.0,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 12,
+        "truth_at_range_center_share": 0,
+        "exact_estimate_share": 0,
+        "estimate_at_intersection_center_share": 1
+      },
+      "unclipped_interior": {
+        "sets": 54,
+        "mean_absolute_error": 3.3518518518518516,
+        "intersection_mean_absolute_error": 3.3518518518518516,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 12,
+        "truth_at_range_center_share": 0.05555555555555555,
+        "exact_estimate_share": 0.05555555555555555,
+        "estimate_at_intersection_center_share": 1
+      },
+      "extremes_by_count": {
+        "0": {
+          "sets": 7,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        },
+        "32": {
+          "sets": 6,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        }
+      }
+    },
+    {
+      "label": "simulated feedback analysis (production range logic, Monte Carlo)",
+      "mode": "run",
+      "k": 3,
+      "sets": 200,
+      "mean_absolute_error": 3.0883333333333334,
+      "intersection_mean_absolute_error": 2.9925,
+      "intersection_coverage": 1,
+      "mean_intersection_width": 7.925,
+      "truth_at_range_center_share": 0.06333333333333332,
+      "exact_estimate_share": 0.03,
+      "estimate_at_intersection_center_share": 0.18,
+      "extremes": {
+        "sets": 13,
+        "mean_absolute_error": 6.0,
+        "intersection_mean_absolute_error": 6.0,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 12,
+        "truth_at_range_center_share": 0,
+        "exact_estimate_share": 0,
+        "estimate_at_intersection_center_share": 1
+      },
+      "unclipped_interior": {
+        "sets": 54,
+        "mean_absolute_error": 1.5987654320987654,
+        "intersection_mean_absolute_error": 1.3333333333333333,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 4.925925925925926,
+        "truth_at_range_center_share": 0.05555555555555555,
+        "exact_estimate_share": 0.05555555555555555,
+        "estimate_at_intersection_center_share": 0.07407407407407407
+      },
+      "extremes_by_count": {
+        "0": {
+          "sets": 7,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        },
+        "32": {
+          "sets": 6,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        }
+      }
+    },
+    {
+      "label": "simulated feedback analysis (production range logic, Monte Carlo)",
+      "mode": "run",
+      "k": 10,
+      "sets": 200,
+      "mean_absolute_error": 2.7475,
+      "intersection_mean_absolute_error": 2.5725,
+      "intersection_coverage": 1,
+      "mean_intersection_width": 5.535,
+      "truth_at_range_center_share": 0.0575,
+      "exact_estimate_share": 0.025,
+      "estimate_at_intersection_center_share": 0.165,
+      "extremes": {
+        "sets": 13,
+        "mean_absolute_error": 6.0,
+        "intersection_mean_absolute_error": 6.0,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 12,
+        "truth_at_range_center_share": 0,
+        "exact_estimate_share": 0,
+        "estimate_at_intersection_center_share": 1
+      },
+      "unclipped_interior": {
+        "sets": 54,
+        "mean_absolute_error": 0.7481481481481481,
+        "intersection_mean_absolute_error": 0.5,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 1.2592592592592593,
+        "truth_at_range_center_share": 0.05555555555555556,
+        "exact_estimate_share": 0.09259259259259259,
+        "estimate_at_intersection_center_share": 0.1111111111111111
+      },
+      "extremes_by_count": {
+        "0": {
+          "sets": 7,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        },
+        "32": {
+          "sets": 6,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        }
+      }
+    },
+    {
+      "label": "simulated feedback analysis (production range logic, Monte Carlo)",
+      "mode": "run",
+      "k": 30,
+      "sets": 200,
+      "mean_absolute_error": 2.5635,
+      "intersection_mean_absolute_error": 2.405,
+      "intersection_coverage": 1,
+      "mean_intersection_width": 4.85,
+      "truth_at_range_center_share": 0.058,
+      "exact_estimate_share": 0.01,
+      "estimate_at_intersection_center_share": 0.11,
+      "extremes": {
+        "sets": 13,
+        "mean_absolute_error": 6.0,
+        "intersection_mean_absolute_error": 6.0,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 12,
+        "truth_at_range_center_share": 0,
+        "exact_estimate_share": 0,
+        "estimate_at_intersection_center_share": 1
+      },
+      "unclipped_interior": {
+        "sets": 54,
+        "mean_absolute_error": 0.5055555555555554,
+        "intersection_mean_absolute_error": 0.05555555555555555,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 0.1111111111111111,
+        "truth_at_range_center_share": 0.06049382716049383,
+        "exact_estimate_share": 0.037037037037037035,
+        "estimate_at_intersection_center_share": 0.037037037037037035
+      },
+      "extremes_by_count": {
+        "0": {
+          "sets": 7,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        },
+        "32": {
+          "sets": 6,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        }
+      }
+    },
+    {
+      "label": "simulated feedback analysis (production range logic, Monte Carlo)",
+      "mode": "probeset",
+      "k": 1,
+      "sets": 200,
+      "mean_absolute_error": 3.8,
+      "intersection_mean_absolute_error": 3.8,
+      "intersection_coverage": 1,
+      "mean_intersection_width": 12,
+      "truth_at_range_center_share": 0.07,
+      "exact_estimate_share": 0.07,
+      "estimate_at_intersection_center_share": 1,
+      "extremes": {
+        "sets": 13,
+        "mean_absolute_error": 6.0,
+        "intersection_mean_absolute_error": 6.0,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 12,
+        "truth_at_range_center_share": 0,
+        "exact_estimate_share": 0,
+        "estimate_at_intersection_center_share": 1
+      },
+      "unclipped_interior": {
+        "sets": 54,
+        "mean_absolute_error": 3.5555555555555554,
+        "intersection_mean_absolute_error": 3.5555555555555554,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 12,
+        "truth_at_range_center_share": 0.07407407407407407,
+        "exact_estimate_share": 0.07407407407407407,
+        "estimate_at_intersection_center_share": 1
+      },
+      "extremes_by_count": {
+        "0": {
+          "sets": 7,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        },
+        "32": {
+          "sets": 6,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        }
+      }
+    },
+    {
+      "label": "simulated feedback analysis (production range logic, Monte Carlo)",
+      "mode": "probeset",
+      "k": 3,
+      "sets": 200,
+      "mean_absolute_error": 3.8,
+      "intersection_mean_absolute_error": 3.8,
+      "intersection_coverage": 1,
+      "mean_intersection_width": 12,
+      "truth_at_range_center_share": 0.07,
+      "exact_estimate_share": 0.07,
+      "estimate_at_intersection_center_share": 1,
+      "extremes": {
+        "sets": 13,
+        "mean_absolute_error": 6.0,
+        "intersection_mean_absolute_error": 6.0,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 12,
+        "truth_at_range_center_share": 0,
+        "exact_estimate_share": 0,
+        "estimate_at_intersection_center_share": 1
+      },
+      "unclipped_interior": {
+        "sets": 54,
+        "mean_absolute_error": 3.5555555555555554,
+        "intersection_mean_absolute_error": 3.5555555555555554,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 12,
+        "truth_at_range_center_share": 0.07407407407407407,
+        "exact_estimate_share": 0.07407407407407407,
+        "estimate_at_intersection_center_share": 1
+      },
+      "extremes_by_count": {
+        "0": {
+          "sets": 7,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        },
+        "32": {
+          "sets": 6,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        }
+      }
+    },
+    {
+      "label": "simulated feedback analysis (production range logic, Monte Carlo)",
+      "mode": "probeset",
+      "k": 10,
+      "sets": 200,
+      "mean_absolute_error": 3.8,
+      "intersection_mean_absolute_error": 3.8,
+      "intersection_coverage": 1,
+      "mean_intersection_width": 12,
+      "truth_at_range_center_share": 0.07,
+      "exact_estimate_share": 0.07,
+      "estimate_at_intersection_center_share": 1,
+      "extremes": {
+        "sets": 13,
+        "mean_absolute_error": 6.0,
+        "intersection_mean_absolute_error": 6.0,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 12,
+        "truth_at_range_center_share": 0,
+        "exact_estimate_share": 0,
+        "estimate_at_intersection_center_share": 1
+      },
+      "unclipped_interior": {
+        "sets": 54,
+        "mean_absolute_error": 3.5555555555555554,
+        "intersection_mean_absolute_error": 3.5555555555555554,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 12,
+        "truth_at_range_center_share": 0.07407407407407407,
+        "exact_estimate_share": 0.07407407407407407,
+        "estimate_at_intersection_center_share": 1
+      },
+      "extremes_by_count": {
+        "0": {
+          "sets": 7,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        },
+        "32": {
+          "sets": 6,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        }
+      }
+    },
+    {
+      "label": "simulated feedback analysis (production range logic, Monte Carlo)",
+      "mode": "probeset",
+      "k": 30,
+      "sets": 200,
+      "mean_absolute_error": 3.8,
+      "intersection_mean_absolute_error": 3.8,
+      "intersection_coverage": 1,
+      "mean_intersection_width": 12,
+      "truth_at_range_center_share": 0.07,
+      "exact_estimate_share": 0.07,
+      "estimate_at_intersection_center_share": 1,
+      "extremes": {
+        "sets": 13,
+        "mean_absolute_error": 6.0,
+        "intersection_mean_absolute_error": 6.0,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 12,
+        "truth_at_range_center_share": 0,
+        "exact_estimate_share": 0,
+        "estimate_at_intersection_center_share": 1
+      },
+      "unclipped_interior": {
+        "sets": 54,
+        "mean_absolute_error": 3.5555555555555554,
+        "intersection_mean_absolute_error": 3.5555555555555554,
+        "intersection_coverage": 1,
+        "mean_intersection_width": 12,
+        "truth_at_range_center_share": 0.07407407407407407,
+        "exact_estimate_share": 0.07407407407407407,
+        "estimate_at_intersection_center_share": 1
+      },
+      "extremes_by_count": {
+        "0": {
+          "sets": 7,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        },
+        "32": {
+          "sets": 6,
+          "mean_absolute_error": 6.0,
+          "intersection_mean_absolute_error": 6.0,
+          "intersection_coverage": 1,
+          "mean_intersection_width": 12,
+          "truth_at_range_center_share": 0,
+          "exact_estimate_share": 0,
+          "estimate_at_intersection_center_share": 1
+        }
+      }
+    }
+  ],
+  "cross_check": [
+    {
+      "label": "live gateway with mock model, local run; feedback small subset",
+      "mode": "run",
+      "k": 3,
+      "live_sets": 20,
+      "live_mae": 3.0,
+      "mc_predictive_interval_95": [
+        2.6999999999999997,
+        3.45
+      ],
+      "agreement": true,
+      "method": "2000 fixed-seed count-stratified resamples of production-logic Monte Carlo errors; agreement is not proof"
+    },
+    {
+      "label": "live gateway with mock model, local run; feedback small subset",
+      "mode": "probeset",
+      "k": 3,
+      "live_sets": 20,
+      "live_mae": 3.55,
+      "mc_predictive_interval_95": [
+        3.25,
+        4.45
+      ],
+      "agreement": true,
+      "method": "2000 fixed-seed count-stratified resamples of production-logic Monte Carlo errors; agreement is not proof"
+    }
+  ],
+  "minutes": 6.8
+}

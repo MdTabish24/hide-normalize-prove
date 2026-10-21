@@ -25,16 +25,16 @@ window.storyReport=(function(){
       });fragment.append(tr);
     });$(id).replaceChildren(fragment);
   }
-  var cohorts=[['ordinary','Roz ke prompts','Normal traffic'],['boundary','Bucket ke kinare','Pehle bucket se just pehle / baad'],
-    ['overflow','9s se zyada','Scaled overflow probes'],['deadline_near','Deadline ke paas','Compute cutoff ke aas-paas'],
-    ['deadline_far','Deadline se door','Compute cutoff se door']];
+  var cohorts=[['ordinary','Ordinary traffic','Normal traffic'],['boundary','Bucket boundary','Just before / after the first bucket'],
+    ['overflow','Overflow above 9s','Scaled overflow probes'],['deadline_near','Near deadline','Near the compute cutoff'],
+    ['deadline_far','Far from deadline','Far from the compute cutoff']];
   function matrixRows(data){
     var rows=data.matrix&&data.matrix.rows||[];
     return cohorts.map(function(c){
       return [cell(c[1],c[2])].concat(['raw','bucket','bucket_hard','window_hard'].map(function(policy){
         var r=rows.find(function(x){return x.cohort===c[0]&&x.policy===policy;});
-        if(!r)return cell('—','Is matrix mein yeh arm nahi');
-        if(r.status!=='SAVED'||typeof r.accuracy!=='number')return cell('NOT RUN','Result abhi saved nahi','waiting');
+        if(!r)return cell('—','Not part of this matrix');
+        if(r.status!=='SAVED'||typeof r.accuracy!=='number')return cell('NOT RUN','No saved result','waiting');
         var interval=Array.isArray(r.interval)&&r.interval.every(function(x){return typeof x==='number';})?
           ' · 95% CI '+r.interval.map(pct).join('–'):'';
         return cell(pct(r.accuracy),'test n='+r.n+interval+' · train '+pct(r.train_accuracy)+' · gap '+pct(r.gap),
@@ -43,37 +43,38 @@ window.storyReport=(function(){
     });
   }
   var explanations={
-    'Test suite (host, Windows)':'Poore host suite ka saved result; selected checks neeche alag hain.',
-    'Test suite (inside Docker image)':'Container mein code/tests chale.',
-    'docker compose ps':'Saved snapshot mein services up thi; abhi ki health nahi.',
-    'Isolation demo inside red-client':'Red private services, host aur internet tak pahunch saka ya nahi?',
-    'Extra probes (audit/proxy from Red; egress of gateway, Blue, model)':'Audit/proxy access aur internet egress ka saved check.',
-    'Audit verifier':'Finished run ki chain aur signed checkpoint verify hue.',
-    'Audit tamper demo':'Log badalne ki 7 koshishein detect hui; individual cases neeche.',
-    'Audit under matrix load (verifier on every run)':'Saved raw-policy runs ka audit; dusri policies ka certificate nahi.',
-    'Timing matrix status':'Poora matrix abhi adhura hai; saved cells upar hain.',
-    'Attack suite':'Alag attack-suite ka complete result abhi nahi.',
-    'Feedback':'Noisy reports ke repeated-query analysis ka complete result nahi.',
-    'Real-model latency vs 3/6/9 s buckets':'Real response times; padding offline lagayi gayi thi.',
-    'Offline replay: window_hard W=3 s, D=2.4 s on the measured real latencies':'Real times par offline policy replay; live gateway test nahi.',
-    'Real-model exact-canary scan of raw outputs':'Exact secret nahi mila; iska matlab poori secrecy nahi.',
-    'Real-model rule disclosure in raw outputs (keyword scan + manual review)':'Canary ke bina bhi rule ka detail nikla.',
-    'Same outputs behind score-only gateway':'Raw text rokne se 0 disclosures by design; feedback privacy prove nahi.',
-    'External coding-agent red team':'raw / bucket_hard / window_hard: external agent sessions abhi NOT RUN.',
-    'Dashboard backend tests':'Purana saved UI backend check; latest UI check ka poora suite nahi.',
-    'Selected non-timing regression checks':'Selected checks hi; full suite nahi.',
-    'Collector timing check (isolated host run)':'FAIL unresolved: slow collector se median gap 10 ms limit se bada tha.',
-    'Dashboard Compose config validation':'Compose configuration valid; runtime isolation ka proof nahi.',
-    'Dashboard Docker runtime / isolation':'Is dashboard version ki Docker isolation abhi verify nahi hui.',
-    'Story/dashboard Python tests':'Current report projection, HTTP allowlisting aur existing UI regressions.',
-    'Playback/report JavaScript tests':'Current animation decisions, all timing arms aur missing/failure handling.'
+      'Test suite (host, Windows)':'Full host pytest suite: local HTTP, vault and provider-contract fixtures; no real API or Docker deployment.',
+    'Test suite (inside Docker image)':'Tests executed inside the container.',
+    'docker compose ps':'Services were running in a saved snapshot; not current health.',
+    'Isolation demo inside red-client':'Direct access to private services, host and internet.',
+    'Extra probes (audit/proxy from Red; egress of gateway, Blue, model)':'Saved audit/proxy access and internet egress checks.',
+    'Audit verifier':'Finished-run chain and signed checkpoint verification.',
+    'Audit tamper demo':'Seven tamper attempts detected; individual cases are listed below.',
+    'Audit under matrix load (verifier on every run)':'Audit of saved raw-policy runs only.',
+    'Timing matrix status':'The matrix is incomplete; saved cells are listed above.',
+    'Attack suite':'No complete saved attack-suite result.',
+    'Feedback':'No complete repeated-query analysis of noisy reports.',
+    'Real-model latency vs 3/6/9 s buckets':'Real response times with offline padding.',
+    'Offline replay: window_hard W=3 s, D=2.4 s on the measured real latencies':'Offline policy replay on real latencies, not a live gateway test.',
+    'Real-model exact-canary scan of raw outputs':'No exact-canary match; broader secrecy is not established.',
+    'Real-model rule disclosure in raw outputs (keyword scan + manual review)':'Rule details were disclosed without the canary.',
+    'Same outputs behind score-only gateway':'Zero raw-text disclosures by design; feedback privacy is unproved.',
+    'External coding-agent red team':'External sessions under raw / bucket_hard / window_hard are NOT RUN.',
+    'Dashboard backend tests':'Earlier saved backend check, not the complete current suite.',
+    'Selected non-timing regression checks':'Selected checks, not the full suite.',
+      'Collector timing check (isolated host run)':'Historical FAIL: median gap exceeded 10 ms. A later passing suite does not prove timing independence.',
+    'Dashboard Compose config validation':'Configuration validation, not runtime isolation verification.',
+    'Dashboard Docker runtime / isolation':'Docker isolation for this dashboard version is unverified.',
+    'Story/dashboard + selected gateway tests':'Recorded UI, private telemetry gating, auth, storage and selected gateway checks.',
+    'Gateway timing regressions':'Four gateway timing regressions; the earlier collector isolation failure is separate.',
+    'Playback/report JavaScript tests':'Recorded playback decisions, matrix coverage and missing/failure handling.'
   };
   function evidenceRows(data){
     return (data.evidence||[]).filter(function(r){return !r.test.startsWith('Timing A-vs-B:');}).map(function(r){
       var scope=r.test.startsWith('Real-model')||r.test.startsWith('Same outputs')||r.test.startsWith('Offline replay:')?
         'Real model run, small sample · offline analysis':'Historical saved local check';
-      if(r.test==='Story/dashboard Python tests'||r.test==='Playback/report JavaScript tests')scope='Latest saved UI/report check';
-      return [cell(r.test,explanations[r.test]||'Saved evidence; fresh run nahi.'),
+      if(['Story/dashboard + selected gateway tests','Gateway timing regressions','Playback/report JavaScript tests'].includes(r.test))scope='Recorded selected check';
+      return [cell(r.test,explanations[r.test]||'Saved evidence, not a fresh run.'),
         cell(r.status,'',tone(r.status)),cell(r.metric||'No numeric summary saved',
         (r.policy==='—'?'':'Policy: '+r.policy+' · ')+'audit: '+r.audit_mode),scope];
     });
@@ -81,7 +82,7 @@ window.storyReport=(function(){
   function caseRows(data){
     return (data.individual_checks||[]).map(function(r){return [cell(r.test,r.group),
       r.expected,cell(r.observed,r.observed==='NOT RUN'?'Saved case output missing':'Historical Docker log'),
-      cell(r.status,r.group==='Audit tamper'&&r.expected==='INVALID'?'Tamper detect hona PASS hai':'',tone(r.status))];});
+      cell(r.status,r.group==='Audit tamper'&&r.expected==='INVALID'?'Detecting a tamper is a passing check':'',tone(r.status))];});
   }
   function storyRows(data){
     var rows=[];
@@ -93,7 +94,7 @@ window.storyReport=(function(){
     });
     (data.runs||[]).forEach(function(r){
       var report=r.report||{},audit=r.audit||{};
-      rows.push([cell('Run #'+r.index+' · final report','Evaluator count Red ko nahi diya gaya'),
+      rows.push([cell('Run #'+r.index+' · final report','The exact evaluator count is withheld from Red'),
         Array.isArray(report.safe_range)?report.safe_range.join(' – ')+' safe':'NOT RUN',
         'Repeat: '+(report.repeat_equal===true?'same range':report.repeat_equal===false?'CHANGED':'NOT RUN'),
         cell(report.repeat_equal===true?'PASS':report.repeat_equal===false?'FAIL':'NOT RUN','Range stability only',report.repeat_equal===true?'good':report.repeat_equal===false?'bad':'waiting')]);
@@ -111,8 +112,8 @@ window.storyReport=(function(){
     var r=data.real_model||{},m=r.metrics||{},l=r.leaks||{},n=typeof r.attempts==='number'?r.attempts:'?';
     function count(x){return typeof x==='number'?x+'/'+n:'NOT RUN';}
     return [
-      [cell('Exact secret canary','Exact-string scan'),count(l.raw_output_leaks),count(l.score_verdict_gateway_leaks),'0 exact hits broader secrecy prove nahi karte.'],
-      [cell('Blue ka filter rule','Keyword scan + manual review'),count(l.raw_rule_leaks),count(l.score_verdict_gateway_rule_leaks),'Score-only: 0 by design; raw text Red tak nahi jaata.'],
+      [cell('Exact secret canary','Exact-string scan'),count(l.raw_output_leaks),count(l.score_verdict_gateway_leaks),'Zero exact matches do not establish broader secrecy.'],
+      [cell('Blue filter rule','Keyword scan + manual review'),count(l.raw_rule_leaks),count(l.score_verdict_gateway_rule_leaks),'Zero by design: the score-only gateway withholds raw text.'],
       [cell('Response latency','Measured real API time; n='+(r.n||'NOT RUN')),
         'p50 / p95 / p99: '+fmt(m.p50_seconds,2)+' / '+fmt(m.p95_seconds,2)+' / '+fmt(m.p99_seconds,2)+' s',
         'Mean padding: +'+fmt(m.mean_added_latency_seconds,2)+' s','Offline bucket replay; no paired A/B secret labels.'],
@@ -122,7 +123,7 @@ window.storyReport=(function(){
   return {matrixRows:matrixRows,evidenceRows:evidenceRows,caseRows:caseRows,storyRows:storyRows,realRows:realRows,
     render:function(data){
       $('matrix-summary').textContent=(data.matrix?data.matrix.saved+'/'+data.matrix.total:'0/16')+
-        ' timing cells saved · missing results NOT RUN · fresh evaluation start nahi hui';
+        ' timing cells saved · missing results NOT RUN · no new evaluation started';
       $('real-scope').textContent='Real model run ('+((data.real_model||{}).provider||'NOT RUN')+
         '), small sample · same saved outputs, offline gateway comparison.';
       table('timing-results',matrixRows(data));table('real-results',realRows(data));

@@ -19,7 +19,8 @@ def test_new_route_does_not_replace_old_dashboard(tmp_path):
     old = client.get("/").text
     assert "What Red sees" in old and 'src="/static/app.js"' in old
     story = client.get("/story").text
-    assert "Recorded request replay" in story and 'src="/static/story.js"' in story
+    assert 'src="/static/scenes.js"' in story and 'src="/static/story.js"' in story
+    assert '<table' not in story and 'href="/story/evidence"' in story
     assert 'https://' not in story
     assert client.get("/static/story.css").status_code == 200
 
@@ -133,14 +134,14 @@ def test_actor_events_are_allowlisted_and_old_service_state_is_unknown(tmp_path)
 def test_robot_stage_has_named_roles_and_explicit_replay(tmp_path):
     client=TestClient(create_app(saved=tmp_path,runtime=tmp_path))
     page=client.get("/story").text
-    for label in ("Red · attacker robot","Blue · guard robot","Client LLM · mock backend",
-                  "Gateway · traffic controller","Recorded request replay","event trail"):
+    for label in ("Two synchronized evidence panels","Client LLM","private guard",
+                  "duel-before","duel-after","Scenario"):
         assert label in page
     assert client.get("/static/stage.js").status_code == 200
     assert client.get("/static/stage.css").status_code == 200
 
 
-def test_simple_view_has_only_one_main_button(tmp_path):
+def test_simple_view_has_live_run_and_two_playback_controls(tmp_path):
     from html.parser import HTMLParser
     class Controls(HTMLParser):
         def __init__(self):
@@ -148,12 +149,22 @@ def test_simple_view_has_only_one_main_button(tmp_path):
         def handle_starttag(self,tag,attrs):
             if tag=='details': self.depth+=1
             if tag=='button' and self.depth==0: self.main_buttons.append(dict(attrs).get('id'))
-            if tag=='select' and self.depth==0: raise AssertionError('No main policy selector')
+            if tag=='select' and self.depth==0: assert dict(attrs).get('id')=='scenario'
         def handle_endtag(self,tag):
             if tag=='details': self.depth-=1
     client=TestClient(create_app(saved=tmp_path,runtime=tmp_path))
     parsed=Controls(); parsed.feed(client.get('/story').text)
-    assert parsed.main_buttons==['play']
+    assert parsed.main_buttons==['run-live','play','next']
+
+
+def test_evidence_is_separate_and_preserves_all_tables(tmp_path):
+    client=TestClient(create_app(saved=tmp_path,runtime=tmp_path))
+    page=client.get('/story/evidence')
+    assert page.status_code==200
+    assert 'Evidence register' in page.text and 'coverage-results' in page.text
+    for name in ('timing-results','real-results','check-results','case-results','story-results'):
+        assert f'id="{name}"' in page.text
+    assert 'Saare tests' not in page.text and 'Kya bana' not in page.text
 
 
 def test_individual_cases_keep_failures_and_missing_evidence(tmp_path):
@@ -180,3 +191,37 @@ def test_real_summary_projects_only_numbers_and_provider(tmp_path):
     assert value['provider']=='DeepSeek' and value['leaks']['raw_rule_leaks']==2
     assert value['metrics']['p95_seconds'] is None
     for word in secret.split(): assert word not in json.dumps(value)
+
+
+def test_comparison_projection_cannot_serve_arbitrary_outputs_or_reasons(tmp_path):
+    from dashboard.story import comparison_projection
+    secret='sk-private BLUE_SECRET_CANARY_7391'
+    write(tmp_path/'comparison.json',dict(status='complete',arms=[dict(policy='raw',requests=[dict(
+        case='allowed',prompt=secret,trace=dict(reason=secret,model_answer=secret,blue_allowed=True))])]))
+    value=comparison_projection(tmp_path)
+    row=value['arms'][0]['requests'][0]
+    assert row['trace']['model_answer'] is None and row['trace']['reason']=='not_recorded'
+    assert row['trace']['blue_allowed'] is True
+    for word in secret.split(): assert word not in json.dumps(value)
+
+
+def test_backend_evidence_projects_only_counts_and_status(tmp_path):
+    from dashboard.story import evidence_rows
+    write(tmp_path/'evidence/backend-upgrade-verification.json',
+          {'python':{'status':'PASS','passed':106,'api_key':'never-display-this-secret'},'javascript':{'status':'FAIL','passed':12}})
+    rows=evidence_rows(tmp_path)
+    assert rows[-2]['metric']=='106 passed' and rows[-2]['status']=='PASS'
+    assert rows[-1]['status']=='FAIL'
+    assert 'never-display-this-secret' not in json.dumps(rows)
+
+
+def test_latest_full_suite_supersedes_old_absence_without_hiding_failures(tmp_path):
+    from dashboard.story import evidence_rows
+    write(tmp_path/'evidence/results.json',{'rows':[
+        {'test':'Test suite (host, Windows)','result':'NOT RUN'},
+        {'test':'Collector timing check (isolated host run)','result':'FAIL'}]})
+    write(tmp_path/'evidence/backend-upgrade-verification.json',{'python':{'status':'PASS','passed':106}})
+    rows=evidence_rows(tmp_path)
+    assert [r['status'] for r in rows if r['test']=='Test suite (host, Windows)']==['PASS']
+    assert rows[0]['metric']=='106 passed'
+    assert any(r['status']=='FAIL' for r in rows)

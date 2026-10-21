@@ -1,0 +1,20 @@
+Command: prototype/.venv/Scripts/python.exe -m pytest tests -q
+Scope: full prototype/tests suite; local Windows host. No real model API key.
+Result: 106 passed, 1 warning in 88.57s.
+Follow-up after evidence projection updates: tests/test_story.py, 28 passed.
+JavaScript playback/report suite: 13 passed.
+Warning: installed Starlette TestClient recommends httpx2.
+
+Collector timing check in this full-suite run (45 observations per arm):
+healthy median 0.1695811 s; slow median 0.1708208 s; down median 0.1698711 s.
+Slow vs healthy: KS D=0.267, p=0.067. Down vs healthy: D=0.200, p=0.295.
+This does not prove independence or erase historical failed measurements.
+
+Includes real HTTP subprocess/restart tests, AES-GCM/padded records, ownership,
+tampering, collector checkpoint lock/restart recovery, forged checkpoint rejection,
+deadline/admission tests and an authenticated end-to-end TLS CONNECT fixture.
+Provider contract tests use simulated upstream responses, NOT real DeepSeek calls.
+
+Real DeepSeek completion: NOT RUN (key unavailable in process/user environment).
+Current Docker isolation: NOT RUN (Linux Engine unavailable; Windows service
+cannot be started from this session). Compose overlay configuration validates.

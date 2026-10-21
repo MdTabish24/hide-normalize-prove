@@ -1,0 +1,16 @@
+{
+  "browser": {
+    "afterResult": "OUTPUT DISCLOSURE BLOCKED · 0/20 by design. Feedback privacy alag.",
+    "beforeResult": "RULE LEAK · 2/20 raw outputs; canary 0/20",
+    "coverageRows": 12,
+    "evidenceTables": 6,
+    "progress": "20/20",
+    "source": "Real model run (DeepSeek), small sample · paired OFFLINE output modes"
+  },
+  "automatic_advance_observed": "1/20 to 2/20; synchronized Blue rejection",
+  "manual_step_verified": true,
+  "private_mock_trace_verified": true,
+  "selected_python_passed": 41,
+  "gateway_timing_passed": 4,
+  "javascript_passed": 8
+}

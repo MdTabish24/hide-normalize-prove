@@ -1,1 +1,1 @@
-{"scope":"UI/report checks only; not the full gateway suite","python":{"status":"PASS","passed":34},"javascript":{"status":"PASS","passed":6}}
+{"scope": "Selected checks only; unresolved collector timing test is separate", "python": {"status": "PASS", "passed": 41}, "gateway_timing": {"status": "PASS", "passed": 4}, "javascript": {"status": "PASS", "passed": 8}}

@@ -1,0 +1,26 @@
+{
+  "recorded_at": "2026-10-20T07:12:48.344731+00:00",
+  "scope": "Measured local controls; dummy data; mock backend; not a real DeepSeek run",
+  "python": {
+    "command": "python -m pytest tests/test_control_run.py tests/test_story.py tests/test_dashboard.py -q",
+    "passed": 43,
+    "failed": 0,
+    "warnings": 1
+  },
+  "javascript": {
+    "command": "node --test tests/story_playback.cjs",
+    "passed": 16,
+    "failed": 0
+  },
+  "browser": {
+    "action": "Run test now / Audit tampering",
+    "completed": true,
+    "job_id": "548a6b6a00844818894e16ecd2fa8bf5",
+    "screenshot": "measured-controls-audit.png"
+  },
+  "measurements": "controls-comparison.json",
+  "not_run": [
+    "Fresh DeepSeek API run: key unavailable to this process",
+    "Fresh Docker isolation: Linux Engine unavailable"
+  ]
+}

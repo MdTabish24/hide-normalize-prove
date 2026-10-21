@@ -11,9 +11,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.trustedhost import TrustedHostMiddleware
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
 
+from . import history, why
 from .data import LABEL, audit_events, evidence, matrix, public_observations
 
 HERE = Path(__file__).parent
@@ -21,9 +22,14 @@ HERE = Path(__file__).parent
 
 class Job(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    action: Literal["traffic", "isolation", "audit", "story"]
+    action: Literal["traffic", "isolation", "audit", "story", "comparison", "real", "controls"]
     policy: Literal["raw", "bucket_hard", "window_hard"] = "bucket_hard"
     secret: Literal["A", "B"] = "A"
+
+
+class Recheck(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str = Field(max_length=64, pattern=r"^[a-z0-9-]+$")
 
 
 def create_app(saved=None, runtime=None, audit=None, eval_mode=None):
@@ -63,6 +69,34 @@ def create_app(saved=None, runtime=None, audit=None, eval_mode=None):
     @app.get("/story")
     async def story_page():
         return FileResponse(HERE / "static/story.html")
+
+    @app.get("/story/evidence")
+    async def story_evidence():
+        return FileResponse(HERE / "static/evidence.html")
+
+    @app.get("/history")
+    async def history_page():
+        return FileResponse(HERE / "static/history.html")
+
+    @app.get("/why")
+    async def why_page():
+        return FileResponse(HERE / "static/why.html")
+
+    @app.get("/api/why")
+    async def why_data():
+        return await asyncio.to_thread(why.snapshot, saved)
+
+    @app.get("/api/history")
+    async def history_list():
+        return await asyncio.to_thread(history.listing, saved, observations, runtime / "history-ledger.json")
+
+    @app.post("/api/history/recheck")
+    async def history_recheck(body: Recheck, request: Request):
+        origin = request.headers.get("origin")
+        if request.headers.get("x-demo-ui") != "1" or (origin and origin != str(request.base_url).rstrip("/")):
+            return JSONResponse({"status": "rejected"}, status_code=403)
+        row = await asyncio.to_thread(history.recheck, body.id, saved, observations, runtime / "history-ledger.json")
+        return row if row is not None else JSONResponse({"status": "unknown entry"}, status_code=404)
 
     @app.get("/api/story")
     async def story_snapshot():
@@ -113,6 +147,8 @@ def create_app(saved=None, runtime=None, audit=None, eval_mode=None):
         if job.policy == "raw" and not test_only:
             return JSONResponse({"status": "rejected", "reason": "raw requires EVAL_MODE=1 (test-only)"}, status_code=403)
         live = await asyncio.to_thread(public_observations, observations / "state.json")
+        if job.action == "real" and not live.get("real_provider_available"):
+            return JSONResponse({"status":"NOT RUN", "reason":"DEEPSEEK_API_KEY is unavailable in the host worker"}, status_code=409)
         if not live.get("heartbeat") or time.time() - live["heartbeat"] > 15 or live.get("matrix_active") or live["status"] == "running":
             return JSONResponse({"status": "NOT RUN", "reason": "Worker unavailable, busy, or timing matrix active"}, status_code=409)
         requests.mkdir(parents=True, exist_ok=True)
@@ -122,7 +158,7 @@ def create_app(saved=None, runtime=None, audit=None, eval_mode=None):
         temporary = requests / (job_id + ".tmp")
         temporary.write_text(job.model_dump_json(), encoding="utf-8")
         temporary.replace(requests / (job_id + ".json"))
-        return {"status": "queued"}
+        return {"status": "queued", "job_id": job_id}
 
     return app
 

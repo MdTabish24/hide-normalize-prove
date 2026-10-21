@@ -1,0 +1,8 @@
+{
+  "recorded_date": "2026-10-20",
+  "python": {"status": "PASS", "passed": 106, "failed": 0, "seconds": 88.57},
+  "javascript": {"status": "PASS", "passed": 13, "failed": 0},
+  "scope": "Local Windows prototype tests, including HTTP subprocesses and a local TLS fixture. No real API calls or Docker deployment.",
+  "real_provider_call": "NOT RUN",
+  "docker_isolation": "NOT RUN"
+}

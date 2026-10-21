@@ -84,7 +84,7 @@ def save(output, data):
     (output / "results_table.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-async def run_matrix(output, n, train_n, scale, concurrency, seed, audit, policies, max_minutes):
+async def run_matrix(output, n, train_n, scale, concurrency, seed, audit, policies, max_minutes, window_continue=False):
     started = time.monotonic()
     buckets = [3 * scale, 6 * scale, 9 * scale]
     data = {"label": LABEL, "status": "in_progress", "seed": seed, "scale": scale, "buckets": buckets,
@@ -101,7 +101,7 @@ async def run_matrix(output, n, train_n, scale, concurrency, seed, audit, polici
             ]}
     with tempfile.TemporaryDirectory(prefix="round2-matrix-") as directory:
         for policy in policies:
-            async with Lab(Path(directory) / policy, scale, policy, audit=audit) as lab:
+            async with Lab(Path(directory) / policy, scale, policy, audit=audit, window_continue=window_continue) as lab:
                 run_ids = {0: [], 1: []}
                 for cohort in cohorts_for(policy):
                     if (time.monotonic() - started) / 60 > max_minutes:
@@ -110,12 +110,18 @@ async def run_matrix(output, n, train_n, scale, concurrency, seed, audit, polici
                     print(f"{LABEL}: {cohort}/{policy} train={train_n} unseen={n}", flush=True)
                     t0 = time.monotonic()
                     cell = await timing_cell(lab, cohort, n, train_n, seed, concurrency)
-                    outcomes = {}
+                    outcomes, late = {}, 0
                     for world in (0, 1):
                         ids = [r["run_id"] for r in cell["samples"] if r["secret"] == world]
                         run_ids[world] += ids
                         outcomes |= lab.outcomes(world, ids)
+                        if window_continue:
+                            late += sum(lab.late_counts(world, ids).values())
                     summary = summarize_cell(cell, outcomes) | {"wall_seconds": round(time.monotonic() - t0, 1)}
+                    if window_continue:
+                        allowed = sum(row[1] for row in outcomes.values())
+                        summary |= {"variant": "window_hard+continue", "late": late,
+                                    "late_rate_of_allowed": late / allowed if allowed else 0.0}
                     data["cells"].append(summary)
                     with (output / "samples.jsonl").open("a", encoding="utf-8") as file:
                         file.write(json.dumps({"cohort": cohort, "policy": policy, "samples": cell["samples"]}) + "\n")
@@ -141,16 +147,20 @@ def main():
     parser.add_argument("--audit", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--policies", nargs="+", choices=POLICIES, default=list(POLICIES))
     parser.add_argument("--max-minutes", type=float, default=120)
+    parser.add_argument("--window-continue", action="store_true",
+                        help="window_hard variant: do not cancel at the deadline; compute continues up to 4x the window")
     parser.add_argument("--render-only", action="store_true", help="Rebuild tables from saved results.json")
     args = parser.parse_args()
     if args.render_only:
         return save(args.output, json.loads((args.output / "results.json").read_text(encoding="utf-8")))
+    if args.window_continue and args.policies != ["window_hard"]:
+        parser.error("--window-continue applies to window_hard only (use --policies window_hard)")
     if any(v < 2 or v % 2 for v in (args.n, args.train_n)):
         parser.error("Even n/train-n >= 2 required")
     args.output.mkdir(parents=True, exist_ok=True)
     (args.output / "samples.jsonl").unlink(missing_ok=True)
     data = asyncio.run(run_matrix(args.output, args.n, args.train_n, args.scale, args.concurrency, args.seed,
-                                  args.audit, args.policies, args.max_minutes))
+                                  args.audit, args.policies, args.max_minutes, args.window_continue))
     print(f"{LABEL}: {data['status']} in {data['total_minutes']} min; saved {args.output.resolve()}", flush=True)
 
 

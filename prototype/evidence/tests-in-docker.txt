@@ -1,8 +1,14 @@
-# docker compose run --rm --no-deps --entrypoint python verifier -m pytest tests -q -p no:cacheprovider  (2026-10-19T03:39:50Z, Phase 1+2 image)
-..................
-healthy {'n': 45, 'median': 0.15199182600008498, 'p95': 0.1526328885998737, 'max': 0.15331303699986165, 'min': 0.1511115449998215}
-slow {'n': 45, 'median': 0.15213452799980587, 'p95': 0.15294430839976486, 'max': 0.15395185599982142, 'min': 0.15091692700025305} KS D=0.178 p=0.437
-down {'n': 45, 'median': 0.1523016880000796, 'p95': 0.15380024520000007, 'max': 0.1551685780000298, 'min': 0.15099517099997684} KS D=0.244 p=0.115
-.....................                                  [100%]
-39 passed in 68.53s (0:01:08)
-exit=0
+﻿docker :  Container hide-normalize-prove-verifier-run-d8463201109c Creating 
+At line:1 char:328
++ ... ORT="8088"; docker compose run --rm --no-deps --entrypoint python ver ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ( Container hide...1109c Creating :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+ Container hide-normalize-prove-verifier-run-d8463201109c Created 
+......................
+healthy {'n': 45, 'median': 0.15213348899999346, 'p95': 0.15260671099998718, 'max': 0.1529209579999815, 'min': 0.15113064499999496}
+slow {'n': 45, 'median': 0.15194075799999496, 'p95': 0.1526794658000142, 'max': 0.1530613829999936, 'min': 0.15110033099998077} KS D=0.267 p=0.067
+down {'n': 45, 'median': 0.15206139200000734, 'p95': 0.1528186888000107, 'max': 0.15323461400001293, 'min': 0.1509770739999965} KS D=0.111 p=0.930
+...........................................        [100%]
+65 passed in 72.86s (0:01:12)

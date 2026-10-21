@@ -1,0 +1,17 @@
+# Optional override: give every service its own CPU cores (cgroup cpuset) so one tenant's
+# load cannot take the cores another service runs on.
+#   docker compose -f docker-compose.yml -f docker-compose.pinned.yml up -d
+# Core numbers assume at least 8 CPUs visible to Docker; adjust for your machine.
+services:
+  red-client:
+    cpuset: "0-1"
+  gateway:
+    cpuset: "2-3"
+  operator-proxy:
+    cpuset: "4"
+  blue-defense:
+    cpuset: "5"
+  model-mock:
+    cpuset: "6"
+  audit-collector:
+    cpuset: "7"

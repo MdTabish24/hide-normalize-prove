@@ -71,7 +71,18 @@ def test_raw_requires_explicit_test_flag(ui):
     assert response.status_code == 403
 
 
-def test_queue_only_allowlisted_jobs_and_guard(ui):
+def test_real_call_requires_worker_key_availability_and_never_falls_back(ui):
+    client, root = ui
+    state(root)
+    response=client.post('/api/jobs',headers={'x-demo-ui':'1'},json={'action':'real'})
+    assert response.status_code==409
+    assert not list((root/'runtime/requests').glob('*.json'))
+    state(root,real_provider_available=True)
+    assert client.post('/api/jobs',headers={'x-demo-ui':'1'},json={'action':'real'}).json()['status']=='queued'
+
+
+@pytest.mark.parametrize("action", ["audit", "controls"])
+def test_queue_only_allowlisted_jobs_and_guard(ui, action):
     client, root = ui
     state(root)
     assert client.post("/api/jobs",json={"action":"audit"}).status_code == 403
@@ -79,9 +90,14 @@ def test_queue_only_allowlisted_jobs_and_guard(ui):
     state(root,matrix_active=True)
     assert client.post("/api/jobs",headers={"x-demo-ui":"1"},json={"action":"audit"}).status_code == 409
     state(root)
-    assert client.post("/api/jobs",headers={"x-demo-ui":"1"},json={"action":"audit"}).json()["status"] == "queued"
-    assert len(list((root / "runtime/requests").glob("*.json"))) == 1
+    accepted = client.post("/api/jobs",headers={"x-demo-ui":"1"},json={"action":action}).json()
+    assert accepted["status"] == "queued"
+    assert [p.stem for p in (root / "runtime/requests").glob("*.json")] == [accepted["job_id"]]
     assert client.post("/api/jobs",headers={"x-demo-ui":"1"},json={"action":"audit"}).status_code == 409
+    # Completion correlation must survive the API allowlist, otherwise the UI
+    # stays QUEUED forever even after the worker has measured the result.
+    state(root,status="complete",job=dict(id=accepted["job_id"],action=action,started_at=1,finished_at=2))
+    assert client.get("/api/story").json()["job"] == dict(id=accepted["job_id"],action=action,started_at=1,finished_at=2)
 
 
 def test_raw_explicit_flag_and_no_external_assets(tmp_path):
@@ -146,3 +162,26 @@ def test_worker_guard_cannot_run_raw_by_accident(tmp_path, monkeypatch):
     worker.isolation()
     assert worker.state["scenarios"]["isolation"]["status"] == "FAIL"
     assert len(worker.state["scenarios"]["isolation"]["rows"]) == 11
+
+
+def test_job_completion_is_correlated_and_failure_cannot_reuse_old_pass(tmp_path, monkeypatch):
+    import asyncio
+    from dashboard.app import Job
+    from dashboard.worker import Worker
+    from dashboard.data import public_observations
+    monkeypatch.setattr("dashboard.worker.matrix_active", lambda: False)
+    worker = Worker(tmp_path)
+    worker.state["scenarios"]["isolation"] = dict(status="PASS", rows=[dict(name="Docker socket absent", result="PASS")])
+    def unavailable():
+        assert worker.state["job"]["finished_at"] is None
+        raise RuntimeError("private diagnostic must not be published")
+    monkeypatch.setattr(worker, "isolation", unavailable)
+    job_id = "a"*32
+    asyncio.run(worker.execute(Job(action="isolation"), job_id))
+    projected = public_observations(tmp_path / "observations/state.json")
+    assert projected["job"]["id"] == job_id
+    assert projected["job"]["finished_at"] >= projected["job"]["started_at"]
+    assert projected["status"] == "failed"
+    assert projected["scenarios"]["isolation"]["rows"] == []
+    assert projected["scenarios"]["isolation"]["recorded_at"] is not None
+    assert "private diagnostic" not in json.dumps(projected)

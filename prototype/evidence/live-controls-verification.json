@@ -1,0 +1,125 @@
+{
+  "label": "live gateway with mock model, local run",
+  "verified_at": "2026-10-19T17:02:32.7391085Z",
+  "python_checks": 37,
+  "javascript_checks": 12,
+  "comparison": {
+    "status": "complete",
+    "arms": [
+      {
+        "envelopes_verified": true,
+        "policy": "raw",
+        "audit": {
+          "status": "VALID",
+          "count": 11
+        },
+        "submissions": 4
+      },
+      {
+        "envelopes_verified": true,
+        "policy": "bucket_hard",
+        "audit": {
+          "status": "VALID",
+          "count": 12
+        },
+        "submissions": 4
+      }
+    ]
+  },
+  "audit": {
+    "status": "PASS",
+    "rows": [
+      {
+        "name": "unmodified",
+        "result": "VALID"
+      },
+      {
+        "name": "edit one event",
+        "result": "INVALID"
+      },
+      {
+        "name": "delete middle event",
+        "result": "INVALID"
+      },
+      {
+        "name": "delete last 3 events",
+        "result": "INVALID"
+      },
+      {
+        "name": "reorder two events",
+        "result": "INVALID"
+      },
+      {
+        "name": "duplicate/replay event",
+        "result": "INVALID"
+      },
+      {
+        "name": "rehash without signing key",
+        "result": "INVALID"
+      },
+      {
+        "name": "edit log and stored count",
+        "result": "INVALID"
+      }
+    ],
+    "recorded_at": 1792429112.4452682
+  },
+  "isolation": {
+    "status": "NOT RUN",
+    "rows": [],
+    "recorded_at": 1792429138.055347
+  },
+  "feedback": [
+    {
+      "audit": {
+        "status": "VALID",
+        "count": 19
+      },
+      "report": {
+        "safe_range": [
+          0,
+          2
+        ],
+        "repeat_equal": true,
+        "third_pending": true,
+        "budget_left": 0
+      }
+    },
+    {
+      "audit": {
+        "status": "VALID",
+        "count": 19
+      },
+      "report": {
+        "safe_range": [
+          0,
+          2
+        ],
+        "repeat_equal": true,
+        "third_pending": true,
+        "budget_left": 0
+      }
+    }
+  ],
+  "ab_smoke": {
+    "job": {
+      "id": "0bfcfdf7a75741069718ea08a76caedd",
+      "action": "traffic",
+      "started_at": 1792429212.990751,
+      "finished_at": 1792429241.1492167
+    },
+    "correct": 2,
+    "train_n": 4,
+    "unseen": 4,
+    "interval": [
+      0.15003898915214947,
+      0.8499610108478506
+    ]
+  },
+  "limitations": [
+    "Mock model, not live DeepSeek.",
+    "Docker Engine unavailable; isolation attempt produced no fresh result.",
+    "No full matrix rerun or security-gap resolution.",
+    "Saved model output and implementation inspection have no live action."
+  ]
+}

@@ -283,3 +283,117 @@ idle machine; attack 9b loads all CPU cores), then feedback, evidence, README.
   are exposed; original dashboard and gateway behavior unchanged.
 - 34 Python and six JavaScript checks pass, including failure/missing-data handling
   and retention of all planned arms. Local server remains available on :8090.
+
+## Paired explanatory story and implementation audit — 2026-10-19
+
+- Two synchronized panels, four seconds/step, play/pause + manual next. Shows
+  actual Blue decision/reason, known mock output, observed cancellation, compute
+  duration, release schedule and Red response. Inactive actors dim. All evidence
+  tables retained; implementation coverage lists 12 controls and honest gaps.
+- Added opt-in EVAL_MODE + DEMO_TRACE private telemetry after response release;
+  default gateway policy, replies and normal evaluation telemetry unchanged.
+  No arbitrary output/prompt/rule recording. Two trace gating/privacy tests pass.
+- New controller made eight actual submissions across raw timing / bucket_hard,
+  with same rule/prompts. Model remains mock; real DeepSeek output is separately
+  saved/offline. Both paired audits VALID (11/12 events). Protected blocked vs
+  allowed measured 0.342s/0.630s: timing equality is NOT established.
+- 41 selected non-timing Python checks, four existing timing checks and eight JS
+  checks pass. Prior collector timing failure unresolved. No new real API calls,
+  heavy matrix run, complete-security claim or changes to original dashboard.
+- Artifacts under evidence/paired-*. Implementation gaps documented in
+  IMPLEMENTATION_STATUS.md. Local server kept available for the requested demo.
+
+## English visual scenes, separate evidence page — 2026-10-19
+
+- Removed all tables/coverage from `/story`; moved them intact to a separate
+  English `/story/evidence` route. No changes to original `/` or gateway behavior.
+- Added seven selectable visual scene families for output, timing, isolation,
+  vault/identity, feedback, audit and A/B evaluation. Saved measurements supply
+  outcomes; unmeasured baselines and missing controls remain grey. No invented
+  insecure deployment or new API/matrix run.
+- Boundary diagram, sealed-config/identity icon, time/accuracy meters, report
+  range/budget and broken audit chain now show what the text described. Actor
+  emphasis and four-second playback remain; manual next and one scene picker.
+- Browser verified all seven scene families, zero tables on main page, English
+  rendered text, separate evidence tables (25 checks / 19 cases / 12 controls).
+- 36 Python UI checks and nine JS checks pass. Previous collector timing failure
+  remains unresolved. User-requested local server kept running.
+
+## Live actions on the visual demo — 2026-10-19
+
+- Connected `/story` to the existing allowlisted host worker: one Run test now
+  action for timing, Docker isolation, report budget, signed audit, tiny A/B.
+  Playback never executes tests; real DeepSeek replay and vault inspection have
+  no live action. No real API call or new gateway policy change.
+- Queue IDs correlate completion to the requested job. A failed fresh audit or
+  isolation attempt cannot reuse historical PASS. During a run, previous results
+  are hidden. Fresh smoke results do not borrow saved matrix numbers; playback
+  stays in the selected scenario. The mock backend label is always visible.
+- Browser executed paired timing (8 submissions, all exact envelopes, both audit
+  chains VALID), fresh audit (original VALID, 7 tampered copies INVALID), report
+  checks (stable range, third read pending, both run audits VALID), A/B smoke
+  (16 submissions, 4 train / 4 unseen groups, 2/4 correct). No matrix claim.
+- Docker isolation attempt failed because the Linux Engine was unavailable.
+  `docker desktop start --detach` was attempted; subsequent status/info still
+  failed. The UI showed no fresh result instead of the historical PASS.
+- 37 selected Python checks, 12 JS checks pass. Existing security gaps and the
+  earlier collector timing failure remain unresolved. Proof:
+  evidence/live-controls-verification.json, evidence/live-controls-browser.png.
+- Local UI/worker kept running at http://127.0.0.1:8090/story. Not committed/pushed.
+
+## Vault and opt-in real backend — 2026-10-20
+
+- Implemented gateway-only padded AES-GCM records for Red prompts, Blue config
+  and model outputs. 32 KiB per record, authenticated role/run/identity binding,
+  one cover read per operation; legacy Blue config migrates without key rotation.
+  Not ORAM: names, counts and host access patterns are not hidden.
+- Finished-run artifacts require evaluator authorization; Red/Blue get pending.
+  Actual Blue decision is distinct from downstream failure/cancellation.
+- Added DeepSeek adapter (official current endpoint, deepseek-flash default,
+  environment key, no history/tools, random first-message nonce, 128-token cap,
+  six-second deadline, at most one 429/503 retry). No mock fallback.
+- Optional real Compose overlay keeps the model on internal model-net; only an
+  authenticated, fixed-destination CONNECT broker has external egress. Key only
+  in adapter container. Overlay defaults to unscaled 3/6/9 buckets and EVAL_MODE=0.
+- `python -m dashboard.real_demo` prompts for the key privately and starts 8091
+  with a separate worker queue. Live DeepSeek compares private execution with
+  Red's view of the SAME real request. Model text stays in operator memory;
+  persisted demo evidence contains hashes/metadata only. `--docker` uses the
+  real Docker gateway instead of localhost subprocesses.
+- Full tests initially exposed collector checkpoint publication and event-loop
+  SQLite contention. Fixed locked-checkpoint retry/restart recovery without
+  re-signing unsigned tails; moved prompt I/O off loop, serialized Store commits,
+  published output ref + completion in one transaction, warmed startup resources.
+- Final full prototype suite: 106 passed, one TestClient deprecation warning.
+  Includes actual HTTP subprocess/restart tests and local TLS CONNECT contract.
+  JavaScript suite: 13 passed. No real model API request was made.
+- External blockers remain: no DEEPSEEK_API_KEY in process/user environment;
+  Docker Linux Engine unavailable, and this session cannot start com.docker.service.
+  Compose configuration validates; new real Docker image/isolation not run.
+- Remaining scope: hosted KV reset, attestation, independent witness, hardware/
+  host protection, full timing matrix. Historical measurements stay historical.
+- Refreshed mock HTTP comparison after the vault change: four submissions/arm,
+  all exact envelopes, both signed audit chains VALID (11/12 events). Browser
+  verified the unavailable-key guard, 32 KiB coverage and test evidence. Evidence
+  projection replaces the old host-suite NOT RUN with the recorded 106 PASS;
+  historical failures remain. Follow-up: 28 story tests and 13 JS checks pass.
+
+### Measured control comparisons
+- Added `dashboard.control_run`: actual temporary-file vault comparisons, local
+  HTTP role/report checks, persistent budget after process restart, and eight
+  copied-log JSON-read vs signed-verifier comparisons. No API key required.
+- `/story` now has a live controls action for Vault, Audit and Final report, with
+  measured pairs replacing their absent baselines. Exact counts are explicitly
+  private evaluator references; JSON-only parsing is a diagnostic baseline.
+- First run: encrypted marker absent, 32 KiB records, wrong owner rejected;
+  evaluator got two records, all three unauthorized callers got pending;
+  stable report, third read and post-restart read withheld; original audit VALID,
+  seven altered copies INVALID. Saved counts/booleans contain no dummy payloads.
+- Docker Engine and real DeepSeek calls are still unverified; they are not
+  relabelled PASS. Remaining matrix arms and missing controls remain visible.
+- Validation: 43 Python control/story/dashboard checks, 16 JavaScript checks
+  passed. Browser live job completed and displayed the measured audit pair.
+  Fixed completion projection for the new controls action (otherwise the UI
+  remained queued despite a completed worker). Evidence:
+  `evidence/measured-controls-verification.json`, `controls-comparison.json`,
+  `measured-controls-audit.png`.

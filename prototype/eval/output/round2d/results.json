@@ -1,0 +1,186 @@
+{
+  "label": "live gateway, mock model, local run",
+  "status": "complete",
+  "seed": 7391,
+  "scale": 0.1,
+  "buckets": [
+    0.30000000000000004,
+    0.6000000000000001,
+    0.9
+  ],
+  "window": 0.9,
+  "deadline": 0.7200000000000001,
+  "concurrency": 8,
+  "audit": true,
+  "n_test": 200,
+  "n_train": 200,
+  "platform": "Windows host processes, Python 3.11.15",
+  "cells": [
+    {
+      "label": "live gateway with mock model, local run",
+      "cohort": "ordinary",
+      "policy": "window_hard",
+      "train_runs": 200,
+      "test_runs": 200,
+      "test_runs_per_secret": 100,
+      "requests_per_run": 6,
+      "train_accuracy": 0.635,
+      "test_accuracy": 0.465,
+      "train_test_gap": 0.16999999999999998,
+      "wilson_95": [
+        0.3971856415700402,
+        0.5341335312763685
+      ],
+      "mean_latency_seconds": 0.9284866599999737,
+      "max_latency_seconds": 2.0599583000002895,
+      "attempts": 2400,
+      "allowed": 1800,
+      "cancelled": 0,
+      "timeout_rate_of_allowed": 0.0,
+      "distinct_response_shapes": 1,
+      "wall_seconds": 326.0,
+      "variant": "window_hard+continue",
+      "late": 0,
+      "late_rate_of_allowed": 0.0
+    },
+    {
+      "label": "live gateway with mock model, local run",
+      "cohort": "boundary",
+      "policy": "window_hard",
+      "train_runs": 200,
+      "test_runs": 200,
+      "test_runs_per_secret": 100,
+      "requests_per_run": 6,
+      "train_accuracy": 0.645,
+      "test_accuracy": 0.555,
+      "train_test_gap": 0.08999999999999997,
+      "wilson_95": [
+        0.4857330241280342,
+        0.6221939899704665
+      ],
+      "mean_latency_seconds": 0.9273126176249987,
+      "max_latency_seconds": 1.2163743999990402,
+      "attempts": 2400,
+      "allowed": 1200,
+      "cancelled": 0,
+      "timeout_rate_of_allowed": 0.0,
+      "distinct_response_shapes": 1,
+      "wall_seconds": 326.6,
+      "variant": "window_hard+continue",
+      "late": 7,
+      "late_rate_of_allowed": 0.005833333333333334
+    },
+    {
+      "label": "live gateway with mock model, local run",
+      "cohort": "overflow",
+      "policy": "window_hard",
+      "train_runs": 200,
+      "test_runs": 200,
+      "test_runs_per_secret": 100,
+      "requests_per_run": 6,
+      "train_accuracy": 0.67,
+      "test_accuracy": 0.535,
+      "train_test_gap": 0.135,
+      "wilson_95": [
+        0.4658664687236316,
+        0.6028143584299599
+      ],
+      "mean_latency_seconds": 0.9240325835000006,
+      "max_latency_seconds": 1.5700087000004714,
+      "attempts": 2400,
+      "allowed": 1200,
+      "cancelled": 0,
+      "timeout_rate_of_allowed": 0.0,
+      "distinct_response_shapes": 1,
+      "wall_seconds": 353.9,
+      "variant": "window_hard+continue",
+      "late": 1200,
+      "late_rate_of_allowed": 1.0
+    },
+    {
+      "label": "live gateway with mock model, local run",
+      "cohort": "deadline_near",
+      "policy": "window_hard",
+      "train_runs": 200,
+      "test_runs": 200,
+      "test_runs_per_secret": 100,
+      "requests_per_run": 6,
+      "train_accuracy": 0.585,
+      "test_accuracy": 0.51,
+      "train_test_gap": 0.07499999999999996,
+      "wilson_95": [
+        0.44118587678458643,
+        0.5784372166878682
+      ],
+      "mean_latency_seconds": 0.9231913370833377,
+      "max_latency_seconds": 1.5093837999993411,
+      "attempts": 2400,
+      "allowed": 1200,
+      "cancelled": 0,
+      "timeout_rate_of_allowed": 0.0,
+      "distinct_response_shapes": 1,
+      "wall_seconds": 326.0,
+      "variant": "window_hard+continue",
+      "late": 1199,
+      "late_rate_of_allowed": 0.9991666666666666
+    },
+    {
+      "label": "live gateway with mock model, local run",
+      "cohort": "deadline_far",
+      "policy": "window_hard",
+      "train_runs": 200,
+      "test_runs": 200,
+      "test_runs_per_secret": 100,
+      "requests_per_run": 6,
+      "train_accuracy": 0.685,
+      "test_accuracy": 0.54,
+      "train_test_gap": 0.14500000000000002,
+      "wilson_95": [
+        0.4708228918895333,
+        0.6076694820002854
+      ],
+      "mean_latency_seconds": 0.919672233125018,
+      "max_latency_seconds": 1.5095834999992803,
+      "attempts": 2400,
+      "allowed": 1200,
+      "cancelled": 0,
+      "timeout_rate_of_allowed": 0.0,
+      "distinct_response_shapes": 1,
+      "wall_seconds": 352.0,
+      "variant": "window_hard+continue",
+      "late": 1199,
+      "late_rate_of_allowed": 0.9991666666666666
+    }
+  ],
+  "not_run": [],
+  "audit_checks": {
+    "window_hard": {
+      "enabled": true,
+      "runs": 2000,
+      "valid": 2000,
+      "reasons": {},
+      "queue": [
+        {
+          "world": 0,
+          "pending_after_drain": 0,
+          "dead_letters": 0
+        },
+        {
+          "world": 1,
+          "pending_after_drain": 0,
+          "dead_letters": 0
+        }
+      ]
+    }
+  },
+  "notes": [
+    "Timings are scaled down 10x (scale 0.1); fixed HTTP/SQLite/OS overhead is NOT scaled, which likely inflates timing differences relative to 3/6/9 s production buckets.",
+    "Boundary and deadline cohorts use the EVAL_MODE sim_delay hook: the attacker controls compute time exactly (worst case, not a realistic Red).",
+    "Overflow and deadline cohorts also contain a per-position fast/slow channel (A's slow slots are mango probes, B's are pineapple). Bucket policies cannot hide WHICH request is slow.",
+    "Timeout rate = deadline/hard-timeout cancellations among Blue-allowed attempts, read by the trusted controller from the gateway DB.",
+    "Response shapes = distinct (status, body length, header set) seen by Red across the cell; 1 means no error/shape oracle.",
+    "Mean latency includes the policy's padding; added latency of a policy = its mean minus raw's mean for the same cohort.",
+    "Windows host processes request 1 ms timer resolution (Phase 1). Results are not comparable 1:1 with Round 1 for that reason too."
+  ],
+  "total_minutes": 29.6
+}

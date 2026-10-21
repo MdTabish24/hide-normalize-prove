@@ -25,6 +25,7 @@ import time
 import httpx
 
 from common import HEADERS, PENDING
+from dashboard.story import timing_verdict
 from eval.live import Server
 from stats import ks_2samp, percentile, wilson
 
@@ -178,7 +179,8 @@ def attack_filesystem():
         return add(2, "Filesystem / Docker socket / Blue config from red-client", "NOT RUN", reason, label=DOCKER, audit="n/a")
     check = ("import os, json; print(json.dumps({'docker_sock': os.path.exists('/var/run/docker.sock'),"
              "'defense_enc': any(os.path.exists(p) for p in ('/data/defense.enc','/gateway-data/defense.enc')),"
-             "'env_secrets': sorted(k for k in os.environ if k.endswith(('_KEY','SERVICE_TOKEN')) or k in "
+             # GPG_KEY is the public Python release-signing key id baked into python:3.11-slim, not a secret.
+             "'env_secrets': sorted(k for k in os.environ if (k.endswith(('_KEY','SERVICE_TOKEN')) and k != 'GPG_KEY') or k in "
              "('BLUE_TOKEN','EVALUATOR_TOKEN','AUDIT_TOKEN','GATEWAY_KEY')),"
              "'audit_dirs': [p for p in ('/audit-logs','/checkpoints','/audit-keys') if os.listdir(p)],"
              "'root_writable': os.access('/', os.W_OK), 'uid': os.getuid()}))")
@@ -393,6 +395,77 @@ async def attack_noisy_neighbor(base, n=60):
             f"KS D={d:.2f} p={p:.3f} (n={len(baseline)}/{len(under)})", policy)
 
 
+FLOOD = """import asyncio, os, sys, httpx
+async def main(seconds, workers):
+    stop = asyncio.get_running_loop().time() + seconds
+    async with httpx.AsyncClient(base_url=os.environ["GATEWAY_URL"], trust_env=False, timeout=30,
+                                 headers={"authorization": "Bearer " + os.environ["RED_TOKEN"]}) as client:
+        async def worker(w):
+            i = 0
+            while asyncio.get_running_loop().time() < stop:
+                i += 1
+                try:
+                    await client.post("/v1/submit", json={"run_id": f"flood-{w}-{i}", "prompt": f"load {w} {i}"})
+                except httpx.HTTPError:
+                    pass
+        await asyncio.gather(*(worker(w) for w in range(workers)))
+asyncio.run(main(float(sys.argv[1]), int(sys.argv[2])))"""
+
+
+def compose_env(files, policy, *args, timeout=240):
+    cmd = ["docker", "compose"] + [x for f in files for x in ("-f", f)] + list(args)
+    return subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, errors="replace", timeout=timeout,
+                          env=dict(os.environ, POLICY_MODE=policy, GATEWAY_PORT=os.environ.get("GATEWAY_PORT", "8088")))
+
+
+async def attack_noisy_docker(base, n=45):
+    """Red floods from INSIDE its limited container; Blue's release times are measured from outside, with and without CPU pinning."""
+    reason = docker_ready()
+    if reason and not reason.startswith("compose services not running"):
+        return add("9c", "Noisy neighbor inside Docker", "NOT RUN", reason, label=DOCKER)
+    from manage import env_file
+    env = env_file()
+    port = int(os.environ.get("GATEWAY_PORT", "8088"))
+    blue = {"authorization": "Bearer " + env["BLUE_TOKEN"]}
+    red = {"authorization": "Bearer " + env["RED_TOKEN"]}
+    for pinned in (False, True):
+        files = ["docker-compose.yml"] + (["docker-compose.pinned.yml"] if pinned else [])
+        for policy in ("bucket_hard", "window_hard"):
+            up = compose_env(files, policy, "up", "-d", "--force-recreate", "--no-build")
+            if up.returncode:
+                add("9c", "Noisy neighbor inside Docker", "NOT RUN", "compose up failed: " + up.stderr[-120:], policy, label=DOCKER)
+                continue
+            await asyncio.sleep(8)
+            async with httpx.AsyncClient(base_url=f"http://127.0.0.1:{port}", trust_env=False, timeout=30) as client:
+                await client.post("/v1/submit", headers=red, json={"run_id": "hold-" + secrets.token_hex(4), "prompt": "hello"})
+
+                async def blue_times(count):
+                    out = []
+                    for _ in range(count):
+                        t0 = time.perf_counter()
+                        await client.post("/v1/defense", headers=blue, json={"trigger": "x"})
+                        out.append(time.perf_counter() - t0)
+                    return out
+                baseline, under = [], []
+                for _ in range(3):  # Interleave quiet and flooded blocks.
+                    baseline += await blue_times(n // 3)
+                    flood = subprocess.Popen(["docker", "compose", *[x for f in files for x in ("-f", f)], "exec", "-T", "red-client",
+                                              "python", "-c", FLOOD, "12", "32"], cwd=ROOT, stdout=subprocess.DEVNULL,
+                                             stderr=subprocess.DEVNULL, env=dict(os.environ, POLICY_MODE=policy))
+                    await asyncio.sleep(1.5)
+                    under += await blue_times(n // 3)
+                    flood.terminate()
+                    flood.wait(timeout=30)
+                    await asyncio.sleep(1)
+            d, p = ks_2samp(baseline, under)
+            shift = percentile(under, 50) - percentile(baseline, 50)
+            add("9c", "Noisy neighbor inside Docker (Red flood from its own container, 32 workers)" + (", CPU pinned" if pinned else ", no pinning"),
+                "LEAKED" if p < 0.01 else "BOUNDED LEAK",
+                f"median shift {shift * 1000:+.1f} ms, p95 {percentile(baseline, 95) * 1000:.0f} -> {percentile(under, 95) * 1000:.0f} ms, "
+                f"KS D={d:.2f} p={p:.3f} (n={len(baseline)}/{len(under)})", policy, label=DOCKER + (" + cpuset" if pinned else ""))
+    compose_env(["docker-compose.yml"], "bucket_hard", "up", "-d", "--force-recreate", "--no-build")
+
+
 def burn(stop_at):
     while time.time() < stop_at:
         pass
@@ -440,9 +513,15 @@ def attack_timing_from_matrix():
         if not cells:
             add(5, "Timing A-vs-B", "NOT RUN", "no cells for this policy", policy, audit=audit)
             continue
-        leaks = [c for c in cells if c["wilson_95"][0] > 0.5]
+        # Same fixed thresholds as the README / dashboard (set before these results): LEAKED if the 95% lower
+        # bound is above 55% and accuracy >= 60%; no leak found if the upper bound is <= 60%; else bounded.
+        verdicts = [timing_verdict(c["test_accuracy"], c["test_runs"], c["wilson_95"])["status"] for c in cells]
+        above = [c["cohort"] for c in cells if c["wilson_95"][0] > 0.5]
         text = "; ".join(f"{c['cohort']} {c['test_accuracy']:.0%}" for c in cells) + f" (n={cells[0]['test_runs']} unseen runs/cell)"
-        add(5, "Timing A-vs-B (live matrix)", "LEAKED" if leaks else "BOUNDED LEAK", text, policy, audit=audit)
+        if above:
+            text += "; lower bound above 50% in: " + ", ".join(above)
+        result = "LEAKED" if "LEAKED" in verdicts else "BOUNDED LEAK" if "BOUNDED LEAK" in verdicts else "BLOCKED"
+        add(5, "Timing A-vs-B (live matrix)", result, text, policy, audit=audit)
 
 
 def not_covered():
@@ -454,7 +533,7 @@ def not_covered():
 async def run(selected):
     base = Path(tempfile.mkdtemp(prefix="attack-suite-"))
     jobs = {1: attack_network, 2: attack_filesystem, 3: attack_roles, 4: attack_error_oracle, 5: attack_timing_from_matrix,
-            6: attack_cache, 7: attack_feedback, 8: attack_scan, 9: attack_noisy_neighbor, "9b": attack_cpu_slip, 10: not_covered}
+            6: attack_cache, 7: attack_feedback, 8: attack_scan, 9: attack_noisy_neighbor, "9b": attack_cpu_slip, "9c": attack_noisy_docker, 10: not_covered}
     try:
         for key, job in jobs.items():
             if selected and str(key) not in selected:
@@ -480,7 +559,7 @@ def main():
     previous = []
     if args.only and args.output.exists():  # Partial re-run: replace only the selected attacks.
         previous = [r for r in json.loads(args.output.read_text(encoding="utf-8"))["results"] if str(r["attack"]) not in set(args.only)]
-    rows = sorted(previous + ROWS, key=lambda r: (float(str(r["attack"]).rstrip("b")) + (0.5 if str(r["attack"]).endswith("b") else 0)))
+    rows = sorted(previous + ROWS, key=lambda r: (float(str(r["attack"]).rstrip("bc")) + (0.5 if str(r["attack"]).endswith("b") else 0.7 if str(r["attack"]).endswith("c") else 0)))
     args.output.write_text(json.dumps({"generated": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "results": rows}, indent=2) + "\n",
                            encoding="utf-8")
     print(f"\n{'#':<3} {'Attack':<62} {'Policy':<12} {'Result':<13} Key number")
