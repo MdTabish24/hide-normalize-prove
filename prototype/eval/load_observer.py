@@ -11,9 +11,11 @@ Label: live gateway, mock model, local run (timings x0.1). Parameters are fixed 
 """
 import argparse
 import asyncio
+from contextlib import closing
 import json
 from pathlib import Path
 import random
+import sqlite3
 import statistics
 import tempfile
 import time
@@ -35,6 +37,8 @@ CELLS = {
     # Version 3 controls: identical except audit OFF, to separate the work channel from audit backlog.
     "bucket_hard_noaudit": dict(policy="bucket_hard", window_continue=False, audit=False),
     "window_continue_noaudit": dict(policy="window_hard", window_continue=True, audit=False),
+    # Version 3 addendum: throughput check of the opt-in audit batching under the same flood.
+    "window_continue_batch50": dict(policy="window_hard", window_continue=True, extra_env={"AUDIT_BATCH": "50"}),
 }
 
 
@@ -62,15 +66,38 @@ async def one_run(world, run_id):
     return observations, flood_requests
 
 
+def outbox_size(lab, index):
+    """Current number of undelivered audit events of one world (read-only; None if unreadable)."""
+    uri = (Path(lab.worlds[index].config["DATA_DIR"]) / "audit_queue.sqlite").resolve().as_uri() + "?mode=ro"
+    try:
+        with closing(sqlite3.connect(uri, uri=True, timeout=2)) as db:
+            return db.execute("SELECT COUNT(*) FROM audit_outbox").fetchone()[0]
+    except sqlite3.Error:
+        return None
+
+
+async def sample_outbox(lab, stop, seen):
+    while not stop.is_set():
+        for index in (0, 1):
+            size = outbox_size(lab, index)
+            if size is not None:
+                seen[index] = max(seen[index], size)
+        try:
+            await asyncio.wait_for(stop.wait(), 2)
+        except asyncio.TimeoutError:
+            pass
+
+
 async def run_cell(name, n_train, n_test, output):
     spec = CELLS[name]
     jobs = [(split, k % 2) for split, size in (("train", n_train), ("test", n_test)) for k in range(size)]
     random.Random(SEED).shuffle(jobs)
     started = time.time()
-    rows = []
+    rows, max_pending, sampler_stop = [], {0: 0, 1: 0}, asyncio.Event()
     with tempfile.TemporaryDirectory(prefix="load-observer-") as directory:
         async with Lab(Path(directory) / name, SCALE, spec["policy"], audit=spec.get("audit", True), window_continue=spec["window_continue"],
-                       capture_dir=output / "logs" / name) as lab:
+                       extra_env=spec.get("extra_env"), capture_dir=output / "logs" / name) as lab:
+            sampler = asyncio.create_task(sample_outbox(lab, sampler_stop, max_pending)) if spec.get("audit", True) else None
             for index, (split, secret) in enumerate(jobs):
                 run_id = f"obs-{name}-{index}"
                 observations, flood_requests = await one_run(lab.worlds[secret], run_id)
@@ -82,6 +109,9 @@ async def run_cell(name, n_train, n_test, output):
                     print(f"{LABEL}: {name} {index + 1}/{len(jobs)} runs", flush=True)
             queue = (await lab.audit_check({0: [], 1: []}, drain_seconds=20))["queue"]
             dead = lab.dead_servers()
+            sampler_stop.set()
+            if sampler:
+                await sampler
     train, test = [[r for r in rows if r["split"] == s] for s in ("train", "test")]
     tree = DecisionTreeClassifier(max_depth=3, random_state=SEED).fit([r["features"] for r in train], [r["secret"] for r in train])
     correct = sum(int(p == r["secret"]) for p, r in zip(tree.predict([r["features"] for r in test]), test))
@@ -97,7 +127,11 @@ async def run_cell(name, n_train, n_test, output):
                 mean_observer_attempts_recorded=round(statistics.mean(r["observer_attempts"] for r in rows), 3),
                 observer_cancelled=sum(r["observer_cancelled"] for r in rows),
                 mean_flood_requests_per_run=round(statistics.mean(r["flood_requests"] for r in rows), 1),
-                audit_queue_after_drain=queue, dead_servers=dead, minutes=round((time.time() - started) / 60, 1))
+                audit_queue_after_drain=queue, dead_servers=dead, minutes=round((time.time() - started) / 60, 1),
+                audit_batch=(spec.get("extra_env") or {}).get("AUDIT_BATCH"), max_outbox_sampled=max_pending if spec.get("audit", True) else None,
+                throughput_check=None if not spec.get("audit", True) else dict(
+                    passed=bool(max(max_pending.values()) < 10000 and all(q["dead_letters"] == 0 and q["pending_after_drain"] == 0 for q in queue) and not dead),
+                    rule="max sampled pending < 10000, 0 dead letters, 0 pending after the 20 s drain, no dead server (PARAMS v3 addendum)"))
 
 
 def main():

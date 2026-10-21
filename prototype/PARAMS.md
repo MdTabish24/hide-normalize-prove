@@ -83,3 +83,13 @@ Decision rule (fixed now, applied to the two noaudit cells):
 - Both cells have an upper bound <= 60%: the earlier leak came from the audit backlog. Build `AUDIT_BATCH` and re-run the version-2 cells (audit ON) with it.
 - Anything else (one leaked, or bounded): report it as bounded and build both; no claim beyond "the tested observer ...".
 Independently of this result, `AUDIT_BATCH` is built because the shipper's one-event-per-round-trip delivery was measured to be the audit bottleneck.
+
+### Version 3 addendum: cell 3 (`window_continue_batch50`) and its separate rule (fixed BEFORE any version-3 cell is run)
+- Cell 3 = the version-2 `window_continue` cell (audit ON) with `AUDIT_BATCH=50`; every other parameter unchanged.
+- It makes a THROUGHPUT claim, not a leak claim. The outbox of each world is sampled every 2 s (read-only) during the run and once after a 20 s drain.
+  - Success (both worlds): outbox never reaches the 10000-entry cap (maximum sampled pending < 10000), 0 dead letters, 0 pending after the 20 s drain, no dead server.
+  - Failure: any world violates one of these.
+- The observer accuracy of cell 3 is reported but is descriptive only. A leak comparison between batching and no batching is valid only when `AUDIT_BATCH`
+  is later re-run against the worst-case flood cells under the same parameters.
+- Run order: `window_continue_noaudit`, `bucket_hard_noaudit`, `window_continue_batch50`. All three are run whatever the first two show; the decision rule above
+  decides which fix is built next, not whether cell 3 is run.
