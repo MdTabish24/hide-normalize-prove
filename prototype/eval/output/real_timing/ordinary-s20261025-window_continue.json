@@ -1,0 +1,52 @@
+{
+  "label": "real model run, small sample, local",
+  "cell": "window_continue",
+  "cohort": "ordinary",
+  "policy": "window_hard",
+  "window_seconds": 3.0,
+  "deadline_seconds": 2.4,
+  "max_output_tokens": 128,
+  "params_version": 5,
+  "seed": 20261025,
+  "train_runs": 60,
+  "test_runs": 60,
+  "accuracy": 0.43333333333333335,
+  "wilson_95": [
+    0.3157239680468677,
+    0.5589656122387444
+  ],
+  "train_accuracy": 0.7333333333333333,
+  "train_test_gap": 0.3,
+  "verdict": "NO LEAK FOUND",
+  "release_seconds": {
+    "median": 3.023,
+    "p95": 3.124,
+    "p99": 3.319,
+    "min": 3.007,
+    "max": 3.517
+  },
+  "blue_allowed_attempts": 540,
+  "cancelled": 0,
+  "late_after_deadline": 0,
+  "late_share_of_allowed": 0.0,
+  "distinct_response_shapes": 1,
+  "audit": {
+    "runs": 120,
+    "valid": 120,
+    "reasons": {},
+    "queue": [
+      {
+        "world": 0,
+        "pending_after_drain": 0,
+        "dead_letters": 0
+      },
+      {
+        "world": 1,
+        "pending_after_drain": 0,
+        "dead_letters": 0
+      }
+    ]
+  },
+  "dead_servers": [],
+  "minutes": 11.1
+}

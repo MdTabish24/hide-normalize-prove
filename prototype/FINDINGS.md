@@ -72,7 +72,9 @@ Update (same day, PARAMS v3 controls): audit OFF gives `window_hard + continue` 
 and bucket_hard has a real load channel. With the opt-in `AUDIT_BATCH=50` the same flood leaves the audit outbox at most 24 events (before: the 10000 cap, 829-888 dead letters), 0 dead letters, and the observer
 at 47.0% (37.5-56.7%, one run, N=100). One run per cell, mock model: "the tested observer could not reliably distinguish" is the strongest honest wording.
 
-## 9. Real-model timing test (PARAMS v4, run 2026-10-21; R)
-DeepSeek `deepseek-flash`, localhost, ordinary cohort, 60 train + 60 unseen test runs per cell: `raw` 100.0% (94.0-100%) LEAKED; `window_hard + continue` (W = 3 s) 33.3% (22.7-45.9%), "no leak found" but below chance with a
-train/test gap of +45 points (overfit; not evidence of a leak). 540 allowed attempts per cell, none later than the 2.4 s deadline, 0 cancelled; releases 3.008-3.297 s; audit 120/120 valid in both cells (AUDIT_BATCH=50).
-One run per cell, one cohort, no flood, localhost only.
+## 9. Real-model timing tests (PARAMS v4 and v5, run 2026-10-21; R)
+DeepSeek `deepseek-flash`, localhost (plus one Docker check), audit ON with AUDIT_BATCH=50. Ordinary cohort, 60 + 60 runs: `raw` 100.0% (94.0-100%) twice; `window_hard + continue` (W = 3 s) 33.3% (22.7-45.9%) and 43.3% (31.6-55.9%), both
+"no leak found" but below chance with train/test gaps of +45 and +30 points (overfit, not a leak, cause not investigated). Long-answer cohort (`max_tokens` 512, 40 + 40 runs): `raw` 95.0% (83.5-98.6%) LEAKED, `window_hard + continue`
+45.0% (30.7-60.2%) BOUNDED LEAK, 105 of 240 allowed attempts late (kept alive), 1 cancelled. The fixed release SLIPPED in that cohort: p99 5.719 s, maximum 6.020 s for W = 3 s (ordinary maximum 3.517 s, Docker 3.511 s); cause unknown.
+Latency of allowed probes on `raw` ordinary: no sign of bimodality (BC 0.378); repeats of the same prompt 1.05 / 1.025 / 1.023 s (no sign of a hosted-cache speed-up). Docker with the real model: isolation 11/11, 30/30 identical replies,
+20 DeepSeek outputs, audit VALID. Audit valid in every real cell. One run per cell; no flood with the real model.

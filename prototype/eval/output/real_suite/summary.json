@@ -1,0 +1,40 @@
+{
+  "label": "real model run, small sample, local",
+  "params_version": 5,
+  "steps": [
+    {
+      "step": "1 raw, ordinary, seed 20261025",
+      "attempts": 1,
+      "file": "eval\\output\\real_timing\\ordinary-s20261025-raw.json",
+      "result": "accuracy 100.0% (94.0-100.0%), LEAKED, train 100%, release 0.068-2.342 s, cancelled 0, late None, audit 120/120; latency no sign of bimodality (BC 0.378), median by repetition {'1': 1.05, '2': 1.025, '3': 1.023}",
+      "minutes": 2.9
+    },
+    {
+      "step": "2 window_continue, ordinary, seed 20261025 (repeat)",
+      "attempts": 1,
+      "file": "eval\\output\\real_timing\\ordinary-s20261025-window_continue.json",
+      "result": "accuracy 43.3% (31.6-55.9%), NO LEAK FOUND, train 73%, release 3.007-3.517 s, cancelled 0, late 0, audit 120/120",
+      "minutes": 11.1
+    },
+    {
+      "step": "3 raw, real_long, seed 20261026",
+      "attempts": 1,
+      "file": "eval\\output\\real_timing\\real_long-s20261026-raw.json",
+      "result": "accuracy 95.0% (83.5-98.6%), LEAKED, train 100%, release 0.035-5.22 s, cancelled 0, late None, audit 80/80; latency possibly bimodal (BC 0.898), median by repetition {'1': 1.189, '2': 1.334, '3': 1.325}",
+      "minutes": 2.9
+    },
+    {
+      "step": "4 window_continue, real_long, seed 20261026",
+      "attempts": 1,
+      "file": "eval\\output\\real_timing\\real_long-s20261026-window_continue.json",
+      "result": "accuracy 45.0% (30.7-60.2%), BOUNDED LEAK, train 92%, release 3.006-6.02 s, cancelled 1, late 105, audit 80/80",
+      "minutes": 8.1
+    },
+    {
+      "step": "5 Docker real check",
+      "minutes": 3.2,
+      "result": "complete; isolation {'passed': 11, 'total': 11}; traffic {'min': 3.002, 'median': 3.008, 'max': 3.511}; envelope exact 30/30; evaluation {'attempts': 30, 'safe': 20, 'cancelled': 0}; outputs {'allowed_with_output': 20, 'backends': ['DeepSeek']}; audit VALID"
+    }
+  ],
+  "total_minutes": 28.2
+}

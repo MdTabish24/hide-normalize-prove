@@ -561,3 +561,11 @@ Not run: batching against the 2000-run matrix (audit VALID rate), attack 9c with
 Results (R): raw 100.0% (94.0-100%) LEAKED, release 0.049-1.841 s; window_hard + continue, W = 3 s: 33.3% (22.7-45.9%) "no leak found" (below chance; train 78.3%, gap +45 points, overfit), release 3.008-3.297 s, 0 late of 540 allowed, 0 cancelled,
 one reply shape; audit 120/120 valid in both cells; no dead server; no key in the result files (checked). FINAL_REPORT.md P5 and section 4 updated.
 NOT RUN: other cohorts and a flood with the real model, a repeat, latency-modality analysis, Docker isolation with the real model.
+
+### Complete real-model suite (PARAMS v5 fixed before it was built; run by the user with `python -m eval.real_suite`, 2026-10-21, 28.2 minutes)
+New: `eval/real_suite.py` (five steps, one key prompt, keeps Windows awake, one retry on a transport error with identical parameters), `eval/real_timing.py` (cohort/seed options, `real_long` cohort, latency modality analysis),
+`dashboard/real_docker_check.py` (isolation from inside red-client, fixed release time, reply shape, signed audit, with the real overlay). A Docker smoke test also found and fixed a real bug: `Dockerfile` did not copy `meter.py`, so the Docker
+gateway crashed at import since the feedback meter was added (commit 9dd1f02).
+Results (R): see FINAL_REPORT.md section 4. Highlights: raw 100% / 100% (ordinary) and 95.0% (real_long); window_hard + continue 33.3% and 43.3% (ordinary, both below chance, train 78% and 73%) and 45.0% BOUNDED (real_long, 105 of 240 allowed late,
+1 cancelled); the fixed release slipped to p99 5.719 s / max 6.020 s in real_long (W = 3 s); Docker real check passed (isolation 11/11, 30/30 identical replies, audit VALID); no sign of a hosted-cache speed-up on repeats.
+No key in any result file (checked). NOT RUN: a flood with the real model, per-request release data of the window cells (so the slip is undiagnosed), an explanation of the below-chance accuracies.

@@ -1,7 +1,7 @@
 # Final report: what is measured, and the open PROBLEMS (no solutions on purpose)
 
-> **STATUS:** P5 and section 4 were rewritten after the real-model timing test (PARAMS v4) was RUN on 2026-10-21. The other problems are unchanged.
-> One run per cell; see the limits listed in P5.
+> **STATUS:** P5, P11 and section 4 reflect the real-model runs of 2026-10-21 (PARAMS v4 and v5). The other problems are unchanged.
+> Every real-model cell is one run; see the limits in P5 and P11.
 
 Snapshot 2026-10-21. Purpose: give a solver (Opus) the exact problems, their mechanisms, the evidence and the constraints. Labels: **L** = live gateway, mock model, local run (timings x0.1);
 **R** = real model run, small sample, local; **S** = simulated with production code. "50% = the tested attacker could not tell Blue's rule A from B" (not proof of no leak).
@@ -39,16 +39,18 @@ cache guess 95% -> 45-48% with a per-run namespace (L); model-text rule disclosu
 `bucket_hard` is the default and fails boundary/overflow/deadline cohorts (98-100%) and the flood (76%). The better profile (`window_hard + continue + AUDIT_BATCH=50`, `docker-compose.recommended.yml`) is opt-in.
 Costs of continue: background compute is bounded by a hard maximum of 4W; with a real model it spends tokens.
 
-### P5. Real-model evidence: one small A-vs-B test exists; gaps remain
-- RUN (PARAMS v4, R: DeepSeek `deepseek-flash`, localhost, ordinary cohort, 60 train + 60 unseen test runs per cell, seed 20261024, audit ON with `AUDIT_BATCH=50`):
-  `raw` 100.0% (94.0-100%) LEAKED; `window_hard + continue` (W = 3 s) 33.3% (22.7-45.9%), verdict "no leak found" (README thresholds).
-- Real latency: raw release times ran from 0.049 s (blocked) to 1.841 s (median 0.957, p95 1.433, p99 1.661 over all probes). Over 540 allowed attempts per cell none exceeded the 2.4 s deadline
-  (0 late, 0 cancelled). The window cell released at 3.008-3.297 s (p99 3.126 s) with one reply shape; audit was 120 of 120 valid in both cells.
-- Anomaly, not resolved: the window cell's test accuracy is BELOW chance (33.3%, the interval excludes 50%) while its train accuracy was 78.3% (gap +45 points; the mock window cells had gaps of +5 to +17).
-  The tree learned a pattern in train noise that did not transfer. It is not evidence of a leak (nothing was distinguished above chance), but it shows overfitting at N=60 and that a verdict on the upper bound alone
-  ignores a two-sided deviation. Not investigated (per-run samples were not saved).
-- Still open: a single run per cell; ordinary cohort only (no boundary, overflow, deadline or flood cohort with the real model); localhost processes, not Docker isolation; N=60 test runs;
-  the hosted prefix cache is not under our control (we send a fresh random 64-hex system prefix) and the modality of the latency distribution was NOT analysed.
+### P5. Real-model evidence: now several small tests; remaining gaps
+All R, DeepSeek `deepseek-flash`, localhost processes, audit ON with `AUDIT_BATCH=50`, 95% Wilson, README thresholds; files in `eval/output/real_timing/` and `eval/output/real_suite/`.
+- Ordinary cohort (60 train + 60 unseen test runs per cell): `raw` 100.0% (94.0-100%) in both seeds (LEAKED); `window_hard + continue` (W = 3 s) 33.3% (22.7-45.9%) and 43.3% (31.6-55.9%), both "no leak found", 0 late, 0 cancelled.
+- Long-answer cohort `real_long` (40 + 40 runs; the real-model analogue of the attacker controlling compute time, `max_tokens` 512): `raw` 95.0% (83.5-98.6%) LEAKED; `window_hard + continue` 45.0% (30.7-60.2%) BOUNDED LEAK
+  (upper bound above 60%). 105 of 240 allowed attempts finished after the 2.4 s deadline (late) and 1 was cancelled; so continue kept long answers alive, and the signal dropped from 95% to 45%.
+- Anomaly, not resolved: both ordinary `window_continue` cells are BELOW chance on the unseen runs (33.3% and 43.3%) while their train accuracy was 78% and 73% (gaps +45 and +30 points; mock window cells had gaps of +5 to +17).
+  The tree learns a pattern in the train runs that does not transfer. This is not evidence of a leak, but a verdict from the upper bound alone ignores a two-sided deviation, and the cause was not investigated (per-run samples of the window cells were not saved).
+- Hosted cache: our own latency observable only. Ordinary `raw`: allowed-probe latencies show no sign of bimodality (bimodality coefficient 0.378, median 1.036 s) and the median latency of the 1st, 2nd and 3rd repetition of the same prompt was 1.05, 1.025 and 1.023 s
+  (no sign of a hosted-cache speed-up on repeats; we send a fresh random 64-hex system prefix). The `real_long` coefficient (0.898, "possibly bimodal") comes from mixing short and long answers in the probe design, not from a cache. This says nothing about the provider's internals.
+- Docker with the real model (30 requests through the operator proxy, W = 3 s): isolation 11 of 11 from inside `red-client`; reply identical in 30 of 30 requests (one status/body); release 3.002-3.511 s (median 3.008); 20 outputs from the DeepSeek backend; 0 cancelled; audit VALID.
+- Audit in every real cell: all runs valid (120/120, 120/120, 80/80, 80/80), no dead server.
+- Still open: one run per cell; no flood with the real model (thousands of provider calls per cell; the flood is a gateway property measured with the mock); no boundary/deadline cohorts as such; N = 40-60 test runs; the hosted cache is not under our control.
 
 ### P6. Audit limits
 - 247 of 2000 runs were INVALID in one `window_continue` repeat (delivery failure, no integrity failure); batching removed the backlog in the flood test, but the 2000-run matrix has not been re-run with batching.
@@ -67,12 +69,22 @@ Exactly three role tokens exist (red, blue, evaluator); multiple Red identities 
 ### P10. Out of scope
 Kernel/container escape, hardware and shared-GPU side channels, a compromised gateway or collector.
 
+### P11. The fixed release time can slip under real long outputs (new)
+- `window_hard + continue`, `real_long` cohort (W = 3 s): release time median 3.017 s and p95 3.139 s, but p99 5.719 s and maximum 6.020 s (about 2 x W) over 480 requests; 1 attempt cancelled. Ordinary cells: maximum 3.517 s (p99 3.319 s) and 3.511 s in the Docker check.
+- The design promises one fixed release time for every request. These slips exceed it; per-request release data for the window cells was not saved, so which requests slipped and why is unknown. The late long answers (105 of 240 allowed) were NOT cancelled, as intended.
+- Unknown: whether the slip comes from the event loop being blocked (several synchronous store/vault/audit operations run on the loop thread), from in-flight accounting of continuing background tasks, from the laptop, or from the real provider path.
+
 ## 3. Claims allowed and not allowed
 Allowed: "the tested attacker could not reliably distinguish" with the label, N and interval; the list of open problems above. Not allowed: "secure", "zero leakage", "formally private", "proves", or any claim about a hosted provider's internals.
 
-## 4. Real-model timing test (RUN 2026-10-21)
-Parameters fixed in `PARAMS.md` v4 before the run; results in `eval/output/real_timing/{raw,window_continue}.json` (label "real model run, small sample, local"). About 1080 DeepSeek calls in total.
-| Cell | Red's A-vs-B accuracy (95% Wilson) | Train accuracy | Verdict | Release time median / p95 / p99 / max | Late / cancelled | Audit |
-|---|---:|---:|---|---|---|---|
-| raw | 100.0% (94.0-100%) | 100% | LEAKED | 0.957 / 1.433 / 1.661 / 1.841 s | n/a / 0 | 120/120 valid |
-| window_hard + continue, W = 3 s | 33.3% (22.7-45.9%) | 78.3% | no leak found (below chance, see P5) | 3.033 / 3.082 / 3.126 / 3.297 s | 0 / 0 | 120/120 valid |
+## 4. Real-model results (RUN 2026-10-21; PARAMS v4 and v5; label "real model run, small sample, local")
+| Cell | Cohort / seed | Red's A-vs-B accuracy (95% Wilson) | Train | Verdict | Release median / p95 / max | Late / cancelled | Audit |
+|---|---|---:|---:|---|---|---|---|
+| raw | ordinary, v4 seed | 100.0% (94.0-100%) | 100% | LEAKED | 0.957 / 1.433 / 1.841 s | n/a / 0 | 120/120 |
+| window_hard + continue | ordinary, v4 seed | 33.3% (22.7-45.9%) | 78% | no leak found (below chance) | 3.033 / 3.082 / 3.297 s | 0 / 0 | 120/120 |
+| raw | ordinary, 20261025 | 100.0% (94.0-100%) | 100% | LEAKED | 0.943 / 1.500 / 2.342 s | n/a / 0 | 120/120 |
+| window_hard + continue | ordinary, 20261025 | 43.3% (31.6-55.9%) | 73% | no leak found (below chance) | 3.023 / 3.124 / 3.517 s | 0 / 0 | 120/120 |
+| raw | real_long, 20261026 | 95.0% (83.5-98.6%) | 100% | LEAKED | 0.497 / 4.746 / 5.220 s | n/a / 0 | 80/80 |
+| window_hard + continue | real_long, 20261026 | 45.0% (30.7-60.2%) | 93% | BOUNDED LEAK | 3.017 / 3.139 / 6.020 s | 105 / 1 | 80/80 |
+| Docker real check | 30 requests | n/a | n/a | isolation 11/11, 30/30 identical replies | 3.008 median, 3.002-3.511 s | 0 cancelled | VALID |
+Total suite time 28.2 minutes; about 1300 provider calls.
