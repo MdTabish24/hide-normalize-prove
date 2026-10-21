@@ -131,6 +131,8 @@ def parse_real(data):
         if isinstance(r, dict):
             rows.append(f"{r.get('case')}: Red saw HTTP {r.get('status')}, envelope exact={r.get('envelope_exact')}, "
                         f"Blue allowed={r.get('blue_allowed')}, backend={r.get('backend') or 'model not completed'}")
+    if isinstance(data.get("summary_lines"), list):  # Batch runs carry the six-point summary first.
+        rows = [str(line)[:240] for line in data["summary_lines"]] + rows
     audit, status = data.get("audit"), data.get("status")
     ok = status == "complete" and audit == "VALID"
     return ("PASS" if ok else "FAIL" if status == "failed" else "PARTIAL", f"real model run {status}; audit {audit}", rows)
