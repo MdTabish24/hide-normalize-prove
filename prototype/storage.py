@@ -8,6 +8,7 @@ from pathlib import Path
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from audit_queue import AuditQueue
+from meter import batch_digest, publish, transition
 from common import MAX_ATTEMPTS_PER_RUN, RANGE_WIDTH, REPORT_BUDGET
 from range_feedback import generate_range, probe_digest
 from vault import PayloadVault, RECORD_BYTES
@@ -41,6 +42,23 @@ class Store:
                 CREATE TABLE IF NOT EXISTS budgets (
                     owner TEXT, run_id TEXT, used INTEGER NOT NULL,
                     PRIMARY KEY(owner, run_id)
+                );
+                CREATE TABLE IF NOT EXISTS meter_state (
+                    owner TEXT, run_id TEXT, batches INTEGER NOT NULL DEFAULT 0, state TEXT NOT NULL DEFAULT 'STABLE',
+                    reference REAL, published TEXT NOT NULL DEFAULT 'STABLE', PRIMARY KEY(owner, run_id)
+                );
+                CREATE TABLE IF NOT EXISTS meter_batches (
+                    owner TEXT, digest TEXT, published TEXT NOT NULL, PRIMARY KEY(owner, digest)
+                );
+                CREATE TABLE IF NOT EXISTS meter_log (
+                    owner TEXT, run_id TEXT, batch INTEGER, score REAL, true_state TEXT, published TEXT, reused INTEGER,
+                    PRIMARY KEY(owner, run_id, batch)
+                );
+                CREATE TABLE IF NOT EXISTS meter_reads (
+                    owner TEXT, run_id TEXT, reads INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(owner, run_id)
+                );
+                CREATE TABLE IF NOT EXISTS meter_identity (
+                    owner TEXT PRIMARY KEY, last_returned TEXT NOT NULL DEFAULT 'STABLE'
                 );
             """)
             for table, column, kind in (("runs", "defense_version", "TEXT"), ("attempts", "prompt_hash", "TEXT"),
@@ -150,6 +168,70 @@ class Store:
                 db.execute("UPDATE runs SET report=? WHERE run_id=?", (result, run_id))
             db.execute("UPDATE budgets SET used=used+1 WHERE owner=? AND run_id=?", (owner, run_id))
             return result.encode().ljust(64, b" ")
+
+    # ---- Opt-in feedback meter (see meter.py / PARAMS.md). Never on the request path of Red's submits. ----
+    def meter_update(self, run_id, owner, params, key):
+        """Publish the state of every completed batch of this run, in order. Idempotent; safe to call any number of times."""
+        size = params.batch
+        with self.connect() as db:
+            rows = db.execute("SELECT prompt_hash, safe, done FROM attempts WHERE run_id=? ORDER BY id", (run_id,)).fetchall()
+            current = db.execute("SELECT batches, state, reference, published FROM meter_state WHERE owner=? AND run_id=?",
+                                 (owner, run_id)).fetchone() or (0, "STABLE", None, "STABLE")
+            batches, state, reference, published = current
+            moved = False
+            while True:
+                group = rows[batches * size:(batches + 1) * size]
+                if len(group) < size or not all(row[2] for row in group):
+                    break  # Nothing changes inside a batch.
+                score = sum(row[1] for row in group) / size
+                digest = batch_digest(key, [(row[0], row[1]) for row in group])
+                cached = db.execute("SELECT published FROM meter_batches WHERE owner=? AND digest=?", (owner, digest)).fetchone()
+                if cached:  # Same content, same published state; the reference chain does not move.
+                    shown, reused, true_state = cached[0], 1, state
+                else:
+                    state, reference = ("STABLE", score) if reference is None else transition(state, reference, score, params)
+                    shown, reused, true_state = publish(state, digest, key, params), 0, state
+                    db.execute("INSERT INTO meter_batches(owner, digest, published) VALUES (?, ?, ?)", (owner, digest, shown))
+                db.execute("INSERT OR REPLACE INTO meter_log VALUES (?, ?, ?, ?, ?, ?, ?)",
+                           (owner, run_id, batches, score, true_state, shown, reused))
+                published, batches, moved = shown, batches + 1, True
+            if moved:
+                db.execute("INSERT OR REPLACE INTO meter_state VALUES (?, ?, ?, ?, ?, ?)", (owner, run_id, batches, state, reference, published))
+
+    def meter_read(self, owner, run_id, params):
+        """The published state while inside both read budgets, otherwise the identity's last returned state (same shape)."""
+        with self.connect() as db:
+            row = db.execute("SELECT published FROM meter_state WHERE owner=? AND run_id=?", (owner, run_id)).fetchone()
+            current = row[0] if row else "STABLE"
+            last = (db.execute("SELECT last_returned FROM meter_identity WHERE owner=?", (owner,)).fetchone() or ("STABLE",))[0]
+            used = (db.execute("SELECT reads FROM meter_reads WHERE owner=? AND run_id=?", (owner, run_id)).fetchone() or (0,))[0]
+            total = db.execute("SELECT COALESCE(SUM(reads), 0) FROM meter_reads WHERE owner=?", (owner,)).fetchone()[0]
+            if used >= params.reads_per_run or total >= params.reads_total:
+                return last
+            db.execute("INSERT INTO meter_reads(owner, run_id, reads) VALUES (?, ?, 1) "
+                       "ON CONFLICT(owner, run_id) DO UPDATE SET reads=reads+1", (owner, run_id))
+            db.execute("INSERT INTO meter_identity(owner, last_returned) VALUES (?, ?) "
+                       "ON CONFLICT(owner) DO UPDATE SET last_returned=excluded.last_returned", (owner, current))
+            return current
+
+    def meter_evaluation(self, run_id):
+        """Evaluator-only, finished runs: true per-batch score, the true and the published state, and reads used."""
+        with self.connect() as db:
+            run = db.execute("SELECT finished FROM runs WHERE run_id=?", (run_id,)).fetchone()
+            if not run or not run[0]:
+                return None
+            batches = db.execute("SELECT batch, score, true_state, published, reused FROM meter_log WHERE run_id=? ORDER BY batch",
+                                 (run_id,)).fetchall()
+            reads = db.execute("SELECT COALESCE(SUM(reads), 0) FROM meter_reads WHERE run_id=?", (run_id,)).fetchone()[0]
+        return json.dumps({"batches": [dict(batch=b, score=s, true_state=t, published=p, reused=bool(r)) for b, s, t, p, r in batches],
+                           "reads": reads}, separators=(",", ":")).encode()
+
+    def last_attempt_safe(self, run_id, owner):
+        """EVAL_MODE=1 baseline only: exact pass/fail of the most recent finished attempt."""
+        with self.connect() as db:
+            row = db.execute("SELECT a.safe FROM attempts a JOIN runs r ON r.run_id=a.run_id WHERE a.run_id=? AND r.owner=? AND a.done=1 "
+                             "ORDER BY a.id DESC LIMIT 1", (run_id, owner)).fetchone()
+        return None if row is None else bool(row[0])
 
     def seal(self, config):
         self.vault.cover_read()

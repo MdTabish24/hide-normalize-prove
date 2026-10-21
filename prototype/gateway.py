@@ -20,6 +20,7 @@ from common import HEADERS, PENDING
 from audit_forwarder import Forwarder
 from storage import Store
 from range_feedback import generate_range
+from meter import Params as MeterParams, body as meter_body
 
 
 RunId = Annotated[str, Path(pattern="^[A-Za-z0-9_-]{1,64}$")]
@@ -195,6 +196,15 @@ def create_app(settings=None, transport=None):
     if continue_mode and not (math.isfinite(continue_max) and window < continue_max <= 60):
         raise ValueError("WINDOW_CONTINUE_MAX_SECONDS must be greater than the window and at most 60")
     background = set()
+    # Opt-in feedback: none (default) | meter (3 states, batched, budgeted) | exact (per-prompt baseline, EVAL_MODE=1 only).
+    feedback_mode = config.get("FEEDBACK_MODE", "none")
+    if feedback_mode not in ("none", "meter", "exact"):
+        raise ValueError("Invalid FEEDBACK_MODE")
+    if feedback_mode == "exact" and config.get("EVAL_MODE") != "1":
+        metadata("feedback_ignored_without_eval_mode")
+        feedback_mode = "none"
+    meter_params = MeterParams.from_config(config) if feedback_mode == "meter" else None
+    meter_tasks = set()
     tokens = {role: config[role.upper() + "_TOKEN"] for role in ("red", "blue", "evaluator")}
     if any(len(token) < 16 for token in tokens.values()) or len(set(tokens.values())) != 3:
         raise ValueError("Three distinct role tokens of at least 16 characters required")
@@ -359,6 +369,11 @@ def create_app(settings=None, transport=None):
             finally:
                 late = continue_mode and not cancelled and time.perf_counter() - started > deadline
                 store.end(attempt, safe, cancelled, blue_allowed=blue_allowed, output_ref=output_ref, late=late)
+                if meter_params is not None:
+                    # Off the request path: a worker thread publishes completed batches; nothing waits for it.
+                    task = asyncio.create_task(asyncio.to_thread(store.meter_update, body.run_id, owner, meter_params, key))
+                    meter_tasks.add(task)
+                    task.add_done_callback(lambda done: (meter_tasks.discard(done), done.cancelled() or done.exception()))
         return Response(status_code=202)
 
     @api.post("/v1/defense")
@@ -393,6 +408,29 @@ def create_app(settings=None, transport=None):
         request.state.audit_report = True
         body = store.report(run_id, owner)
         return Response(body or PENDING, status_code=200)
+
+    @api.get("/v1/run/{run_id}/feedback")
+    async def feedback(run_id: RunId, request: Request):
+        # Same envelope for every mode: Red always gets the standard 64-byte body at the policy's fixed release time.
+        owner = authorize(request, "red")
+        request.state.run_id = run_id
+        if feedback_mode == "meter":
+            return Response(meter_body(store.meter_read(owner, run_id, meter_params)), status_code=200)
+        if feedback_mode == "exact":
+            last = store.last_attempt_safe(run_id, owner)
+            return Response(json.dumps({"exact": last}, separators=(",", ":")).encode().ljust(64, b" "), status_code=200)
+        return Response(PENDING, status_code=200)
+
+    @api.get("/v1/run/{run_id}/meter-evaluation")
+    async def meter_evaluation(run_id: RunId, request: Request):
+        # Evaluator-only: true per-batch score next to what Red was shown. Red/Blue keep the 64-byte envelope.
+        authorize(request, "evaluator")
+        request.state.run_id = run_id
+        data = store.meter_evaluation(run_id)
+        if data is None:
+            return Response(PENDING, status_code=200)
+        request.state.operator_artifacts = True
+        return Response(data, status_code=200)
 
     @api.get("/v1/run/{run_id}/evaluation")
     async def evaluation(run_id: RunId, request: Request):

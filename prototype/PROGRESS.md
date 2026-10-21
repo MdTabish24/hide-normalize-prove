@@ -450,3 +450,42 @@ sqlite error); (4) keep the audit directories of any matrix with INVALID runs; (
 report how often it recurs. Until then, the variant's audit is reported as FAIL (1 of 2 repeats).
 Tests: none run (read-only). NOT RUN: reproduction of the failure.
 Next: Step 2 (feedback meter). First commit PARAMS.md with all new parameters before any evaluation.
+
+### Step 2: feedback meter (opt-in) and its evaluation
+What changed
+- `PARAMS.md` v1 committed BEFORE any run (`f8da51c`): B=10, delta_up/down 0.30, inner band 0.10, reads 3 per run / 12 across runs,
+  noise arm q=0.15, N 300 train + 300 unseen, 300 utility trials, seeds 20261021/22, query limit 150.
+- `meter.py` (pure logic), `storage.py` (tables `meter_state/_batches/_log/_reads/_identity` and `meter_update`, `meter_read`,
+  `meter_evaluation`, `last_attempt_safe`), `gateway.py` (`FEEDBACK_MODE=none|meter|exact`, default `none`).
+  Score of a batch = share of its probes recorded `safe=1` (Blue allowed). State recomputed only after a completed batch, in a worker
+  thread after the response (never on Red's submit path). Hysteresis with two thresholds and an inner band; reference moves only on a
+  state change; batch content hashed with the gateway key so the same batch always gives the same state (cached per identity, the
+  reference chain does not move); optional keyed noise q (default 0); read budgets persisted in SQLite, beyond budget the identity's last
+  returned state is repeated (same 64-byte envelope). `exact` is ignored (treated as `none`) unless `EVAL_MODE=1`.
+  Red-visible endpoint `GET /v1/run/{id}/feedback` returns the standard envelope in every mode; evaluator-only
+  `GET /v1/run/{id}/meter-evaluation` shows true per-batch scores next to what Red saw.
+- `eval/meter_eval.py` (simulation with the production `Store` and `meter.py`), results in `eval/output/meter/` (json, table, chart).
+Tests: 10 new in `tests/test_meter.py` (hysteresis, batching, idempotence, restart-proof budgets, one probe cannot flip the state,
+identical envelopes, exact unreachable without EVAL_MODE, end-to-end through the gateway). Existing gateway/window/audit tests unchanged and passing.
+Results (simulated, production meter code; 50% = guessing):
+| Arm | Red's A-vs-B accuracy (95% Wilson) | Finds planted bypass within 150 probes | Median probes |
+|---|---:|---:|---:|
+| none | 50.0% (44.4-55.6) | 10.3% (7.4-14.3) | n/a |
+| exact (EVAL only) | 100.0% (98.7-100) | 100.0% (98.7-100) | 7 |
+| meter q=0 | 100.0% (98.7-100) | 100.0% (98.7-100) | 60 (4 reads) |
+| meter q=0.15 | 89.0% (85.0-92.1) | 68.7% (63.2-73.7) | 60 |
+| meter repeated reads | 50.0% (44.4-55.6) | NOT RUN | n/a |
+Honest reading: the meter does NOT hide Blue's rule from a targeted attacker. With q=0 Red tells rule A from B perfectly (same as exact)
+and still finds the planted bypass every time, but needs about 8-9x more probes (median 60 vs 7) and 4 reads. Noise q=0.15 lowers both
+the leak (89%) and the success (68.7%). "Repeated reads" reaches 50% only because that schedule spends the 3-read budget on the
+uninformative first batch; it is not the worst case (use the "meter q=0" arm for that). The meter is a utility/leak trade-off, not a fix.
+NOT RUN: real model, release-time measurement of the feedback endpoint, Sybil identities (each simulated run uses a fresh identity),
+repeated-reads utility arm, an attacker that adapts beyond the scripted Red. The chart script had a plotting bug (error bar of -1e-16);
+fixed and the chart re-rendered from the saved results without re-running the evaluation.
+Reproduce: `python -m eval.meter_eval` (about 17 min, CPU only); `pytest tests/test_meter.py`.
+Next: Step 3 (side-by-side dashboard story view).
+Full suite after Step 2: 147 passed, 2 failed (`test_collector_healthy_slow_down_give_same_release_times`, and
+`eval/tests/test_eval.py::test_tiny_live_http_full_harness` with an httpx ReadTimeout). The suite took 14 min instead of ~4: Defender, Chrome
+(~80% CPU) and WMI were busy. On a re-run the eval test passed; `test_full_queue_flags_run_and_never_delays_release` failed once under load and
+passed alone (4 s); `test_collector_healthy_slow_down_give_same_release_times` still failed on the loaded machine (it passed on an idle
+machine earlier today). These are the known load-sensitive timing tests; no test was weakened. JS tests 16/16.

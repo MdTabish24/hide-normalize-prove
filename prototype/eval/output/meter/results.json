@@ -1,0 +1,114 @@
+{
+  "label": "simulated (production meter code)",
+  "params_version": 1,
+  "smoke": false,
+  "leak_seed": 20261021,
+  "utility_seed": 20261022,
+  "leak": [
+    {
+      "arm": "none",
+      "test_runs": 300,
+      "accuracy": 0.5,
+      "wilson_95": [
+        0.4437795161339169,
+        0.5562204838660831
+      ],
+      "train_accuracy": 0.5
+    },
+    {
+      "arm": "exact",
+      "test_runs": 300,
+      "accuracy": 1.0,
+      "wilson_95": [
+        0.9873570287754538,
+        0.9999999999999998
+      ],
+      "train_accuracy": 1.0
+    },
+    {
+      "arm": "meter q=0",
+      "test_runs": 300,
+      "accuracy": 1.0,
+      "wilson_95": [
+        0.9873570287754538,
+        0.9999999999999998
+      ],
+      "train_accuracy": 1.0
+    },
+    {
+      "arm": "meter q=0.15",
+      "test_runs": 300,
+      "accuracy": 0.89,
+      "wilson_95": [
+        0.8495437677561146,
+        0.9205947146887394
+      ],
+      "train_accuracy": 0.9266666666666666
+    },
+    {
+      "arm": "meter repeated reads",
+      "test_runs": 300,
+      "accuracy": 0.5,
+      "wilson_95": [
+        0.4437795161339169,
+        0.5562204838660831
+      ],
+      "train_accuracy": 0.5
+    }
+  ],
+  "utility": [
+    {
+      "arm": "none",
+      "trials": 300,
+      "success_rate": 0.10333333333333333,
+      "wilson_95": [
+        0.07375658473854114,
+        0.142940172432932
+      ],
+      "query_limit": 150,
+      "median_queries": 0,
+      "mean_queries": 0,
+      "median_reads": 0
+    },
+    {
+      "arm": "exact",
+      "trials": 300,
+      "success_rate": 1.0,
+      "wilson_95": [
+        0.9873570287754538,
+        0.9999999999999998
+      ],
+      "query_limit": 150,
+      "median_queries": 7.0,
+      "mean_queries": 6.5,
+      "median_reads": 0.0
+    },
+    {
+      "arm": "meter q=0",
+      "trials": 300,
+      "success_rate": 1.0,
+      "wilson_95": [
+        0.9873570287754538,
+        0.9999999999999998
+      ],
+      "query_limit": 150,
+      "median_queries": 60.0,
+      "mean_queries": 55.3,
+      "median_reads": 4.0
+    },
+    {
+      "arm": "meter q=0.15",
+      "trials": 300,
+      "success_rate": 0.6866666666666666,
+      "wilson_95": [
+        0.6320976883026915,
+        0.7365156024401446
+      ],
+      "query_limit": 150,
+      "median_queries": 60.0,
+      "mean_queries": 59.9,
+      "median_reads": 4.0
+    }
+  ],
+  "minutes": 16.9
+}
