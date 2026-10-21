@@ -425,3 +425,28 @@ real-model timing matrix at scale, attack suite 8b (Docker volume scan).
 Checked `.env` and `dashboard/runtime/` are git-ignored (`git check-ignore`), scanned the diff for keys/tokens,
 committed the real-batch summary (aggregate only, no model text) and pushed `round2-fixes`. Not merged into main.
 Next: Step 1 (read-only analysis of the 247 INVALID runs).
+
+### Step 1: why 247 of 2000 runs were INVALID in `window_continue` run 1 (read-only, no code changed)
+Data: `eval/output/round2c/results.json` (audit_checks), `matrix_continue_out.txt`, `verify_audit.py`, `eval/run.py`, `gateway.py`.
+Counts by verifier reason (2000 runs, 1000 per world): VALID 1753; "missing or unreadable audit/checkpoint/key/status file" 247;
+sequence gap 0; event hash mismatch 0; checkpoint signature invalid 0; duplicate/replay 0; "audit_unavailable recorded" 0;
+"gateway audit events still pending" 0; "gateway audit status missing" 0. All 247 are in world 0 (world 1: 1000/1000 VALID,
+queue empty, 0 dead letters).
+Gateway queue after the 120 s drain, world 0: 3164 events pending + 518 dead letters (expired after the 30 s give-up) = 3682
+undelivered events. Each matrix run emits 14 gateway events (6 submits x [submit_received + bucket_released] + finish
+[bucket_released + run_finished]); 3682 / 14 = 263 runs' worth, close to but not exactly the 247 invalid runs (about 16
+runs' worth unexplained).
+What this means: the failures are delivery failures (queue not drained), not integrity failures. No hash, signature,
+sequence or duplicate problem was found in any run. The reason string is a catch-all (`except OSError, ValueError, TypeError,
+KeyError, sqlite3.Error`), so it merges "log missing" and "no checkpoint because the chain never reached `complete`";
+the saved data cannot separate those two. The collector's stderr was discarded (`stderr=DEVNULL` in `eval/live.py`
+Server.start) and the temporary audit directories were deleted, so the cause (collector hang/crash, or a stalled gateway
+shipper behind a FIFO head) is NOT determined. Run 2 (same settings) had 2000/2000 VALID, so it is not deterministic.
+FIFO retry in `audit_forwarder.py` means one undeliverable head holds back everything behind it, which matches a large
+pending count plus a slowly growing dead-letter count.
+Proposed fixes (NOT implemented): (1) keep the collector's stdout/stderr in the matrix harness; (2) poll collector liveness
+during a matrix and fail loudly; (3) split the verifier's catch-all into separate reasons (log missing / checkpoint missing /
+sqlite error); (4) keep the audit directories of any matrix with INVALID runs; (5) re-run window_continue with (1)-(4) and
+report how often it recurs. Until then, the variant's audit is reported as FAIL (1 of 2 repeats).
+Tests: none run (read-only). NOT RUN: reproduction of the failure.
+Next: Step 2 (feedback meter). First commit PARAMS.md with all new parameters before any evaluation.
