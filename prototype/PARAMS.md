@@ -141,3 +141,30 @@ Not covered (stated as limits, not run): a flood with the real model (thousands 
 
 Version 5 addendum (before the run): a step that fails with a transport error (network or local connection reset) is retried ONCE with identical parameters and seed; the number of attempts is recorded.
 Any other failure is recorded and the step is skipped. No parameter is changed after seeing a result.
+
+---
+
+# PARAMS (version 6: overnight real-model suite, fixed BEFORE it is built or run; versions 1-5 are unchanged)
+
+One command (`python -m eval.real_overnight`), one key prompt, about 3-4 hours. It closes what version 5 left open: a flood with the real model, the cause of the release-time slip (P11), more repeats with saved samples, and a check of the below-chance accuracies.
+All steps: DeepSeek `deepseek-flash`, localhost processes, audit ON with `AUDIT_BATCH=50`, depth-3 tree on `eval.run.features`, 95% Wilson, README thresholds, label "real model run, small sample, local". A step that fails with a transport error is retried once with identical parameters; any other failure is recorded and skipped.
+
+| Step | Cell | Parameters |
+|---|---|---|
+| A1 | `window_continue`, ordinary cohort, seed 20261027, diagnostics | 60 train + 60 test runs, W = 3 s, deadline 2.4 s, hard maximum 12 s, `MAX_OUTPUT_TOKENS` 128 |
+| A2 | `window_continue`, ordinary cohort, seed 20261028, diagnostics | same as A1 |
+| A3 | `window_continue`, `real_long` cohort, seed 20261029, diagnostics | 40 + 40 runs, `MAX_OUTPUT_TOKENS` 512 |
+| B1 | real-model flood, `window_continue` | load observer of version 2 with the real provider: 12 flood workers sending prompts that contain the world-0 keyword (world 0 blocks them, world 1 allows them = real provider calls), 6 sequential neutral observer probes, 60 train + 60 test runs, runs one at a time, seed 20261030, W = 3 s, diagnostics |
+| B2 | real-model flood, `bucket_hard` | same as B1 with the default policy (real buckets 3 / 6 / 9 s) |
+
+Diagnostics (A1-A3, B1-B2): demo trace (`EVAL_MODE=1`, `DEMO_TRACE=1`; numeric fields only, no model text) gives the server-side lateness of every request = actual release minus scheduled release;
+an opt-in event-loop lag monitor (`LOOP_LAG_LOG=1`, honoured only with `EVAL_MODE=1`, off by default) samples the loop every 50 ms and records every lag above 0.1 s with wall time, the number of background tasks, in-flight count and total asyncio tasks.
+Each observation also records its wall-clock start time. Definitions: a request "slipped" if its client release time exceeds W + 0.5 s; it is "gateway-side" if its server-side lateness exceeds 0.25 s, otherwise "outside the gateway" (client, network, OS);
+a slipped request "overlaps a loop-lag event" if the request interval contains the time of an event. Reported: quantiles of server-side lateness, counts of slipped requests by class, share overlapping a loop-lag event, maximum loop lag.
+Per-run samples (secret, split, release times, start times) of every cell are saved.
+
+Below-chance check (every cell with saved samples): 500 label permutations (labels permuted within the train set and within the test set, tree retrained, seed 20261031) give a null distribution of test accuracy;
+reported: null mean and standard deviation and the two-sided p-value of |accuracy - 0.5|; and the swapped-split accuracy (train on the test runs, score on the train runs). Descriptive; no verdict is changed by it.
+
+Budget: about 540 + 540 + 360 provider calls for A1-A3 and up to about 4500 calls for each of B1 and B2 (world-1 runs only; one retry at most each); outputs up to 128 tokens (512 for A3). Time: A about 30 minutes, B about 40 minutes each (6 probes x 3 s x 120 runs plus flood).
+Not covered (stated as limits): a Docker flood, other models, a real-model flood without audit, Sybil identities, more than one run per B cell.
