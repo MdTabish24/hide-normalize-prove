@@ -111,3 +111,30 @@ Question: with a real model, can Red tell Blue's rule A from B by release time, 
 | Also reported | real release-time spread, share of allowed requests that finished after the 2.4 s deadline (late) and cancelled, audit VALID count over the cell's runs |
 | Label | "real model run, small sample, local" |
 | Not covered | other cohorts, a flood, Docker isolation, more than one repeat, prompts other than the ordinary plan |
+
+---
+
+# PARAMS (version 5: complete real-model suite, fixed BEFORE it is run; versions 1-4 are unchanged)
+
+One command, one key prompt: `python -m eval.real_suite`. Steps run in this order and a failing step is recorded and skipped, never retried with other parameters.
+All steps use DeepSeek `deepseek-flash`, localhost processes unless stated, audit ON with `AUDIT_BATCH=50`, depth-3 tree on `eval.run.features`, 95% Wilson, README thresholds,
+label "real model run, small sample, local".
+
+| Step | Cell | Parameters |
+|---|---|---|
+| 1 | `raw`, ordinary cohort, seed 20261025 | 60 train + 60 test runs, concurrency 4, `MAX_OUTPUT_TOKENS` 128. Also saves the latency of every allowed probe for the modality / cache analysis below |
+| 2 | `window_continue`, ordinary cohort, seed 20261025 | repeat of the version-4 cell with a new seed: W = 3 s, deadline 2.4 s, hard maximum 12 s, provider timeout 12 s |
+| 3 | `raw`, `real_long` cohort, seed 20261026 | 40 train + 40 test runs, `MAX_OUTPUT_TOKENS` 512 |
+| 4 | `window_continue`, `real_long` cohort, seed 20261026 | same parameters as step 3 with the version-4 window settings |
+| 5 | Docker real check | real overlay (`docker-compose.real.yml`), `REAL_POLICY_MODE=window_hard`, `REAL_WINDOW_CONTINUE=1`, `AUDIT_BATCH=50`, W = 3 s; 30 requests (10 containing the Blue keyword, 20 neutral) from the host through the operator proxy; isolation demo from inside `red-client`; audit verified by the verifier container |
+
+`real_long` cohort (the real-model analogue of the attacker controlling compute time; `sim_delay` is ignored by the real provider): per run three probes `mango <suffix> Answer in one short sentence.` followed by
+three probes `pineapple <suffix> Write a detailed essay of at least 400 words.` World 0 (rule A blocks pineapple) allows only the short ones; world 1 allows only the long ones. Expected: `raw` separates the worlds
+by latency; whether `window_continue` hides it, and how many long answers finish after the deadline or hit the hard maximum, is what is measured.
+
+Modality / cache analysis (step 1 only, computed from the saved allowed-probe latencies): bimodality coefficient BC = (skewness^2 + 1) / (excess kurtosis + 3(n-1)^2/((n-2)(n-3))); BC > 0.555 is reported as "possibly bimodal",
+otherwise "no sign of bimodality". Also the median latency of the 1st, 2nd and 3rd repetition of the same prompt within a run (a hosted prefix cache would make later repetitions faster; we send a fresh random system prefix,
+so none is expected). Descriptive only; no hosted-cache claim beyond "our own observable".
+
+Budget: about 540 + 540 + 360 + 360 provider calls plus 20 for the Docker check (1 retry at most each); long answers up to 512 tokens. Expected duration 45-60 minutes. The suite keeps Windows awake while it runs.
+Not covered (stated as limits, not run): a flood with the real model (thousands of calls per cell; the flood result is a gateway property measured with the mock), other cohorts, more repeats, Sybil identities.
