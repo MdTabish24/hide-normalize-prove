@@ -1,0 +1,35 @@
+{
+  "label": "live gateway with mock model, local run",
+  "cell": "bucket_hard_noaudit",
+  "policy": "bucket_hard",
+  "window_continue": false,
+  "audit": false,
+  "params_version": 3,
+  "seed": 20261023,
+  "flood_workers": 12,
+  "observer_probes": 6,
+  "scale": 0.1,
+  "train_runs": 100,
+  "test_runs": 100,
+  "accuracy": 0.76,
+  "wilson_95": [
+    0.6676766365018553,
+    0.8330867444305122
+  ],
+  "train_accuracy": 0.88,
+  "verdict": "LEAKED",
+  "observer_release_seconds": {
+    "median": 0.3115,
+    "p95": 0.6835,
+    "max": 1.8245
+  },
+  "mean_observer_attempts_recorded": 6,
+  "observer_cancelled": 2,
+  "mean_flood_requests_per_run": 77.0,
+  "audit_queue_after_drain": [],
+  "dead_servers": [],
+  "minutes": 10.1,
+  "audit_batch": null,
+  "max_outbox_sampled": null,
+  "throughput_check": null
+}

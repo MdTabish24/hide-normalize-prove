@@ -1,0 +1,52 @@
+{
+  "label": "live gateway with mock model, local run",
+  "cell": "window_continue_batch50",
+  "policy": "window_hard",
+  "window_continue": true,
+  "audit": true,
+  "params_version": 2,
+  "seed": 20261023,
+  "flood_workers": 12,
+  "observer_probes": 6,
+  "scale": 0.1,
+  "train_runs": 100,
+  "test_runs": 100,
+  "accuracy": 0.47,
+  "wilson_95": [
+    0.3751081795934127,
+    0.5671114302990063
+  ],
+  "train_accuracy": 0.77,
+  "verdict": "NO LEAK FOUND",
+  "observer_release_seconds": {
+    "median": 0.9381,
+    "p95": 1.0318,
+    "max": 2.3265
+  },
+  "mean_observer_attempts_recorded": 6,
+  "observer_cancelled": 0,
+  "mean_flood_requests_per_run": 83.8,
+  "audit_queue_after_drain": [
+    {
+      "world": 0,
+      "pending_after_drain": 0,
+      "dead_letters": 0
+    },
+    {
+      "world": 1,
+      "pending_after_drain": 0,
+      "dead_letters": 0
+    }
+  ],
+  "dead_servers": [],
+  "minutes": 23.5,
+  "audit_batch": "50",
+  "max_outbox_sampled": {
+    "0": 24,
+    "1": 23
+  },
+  "throughput_check": {
+    "passed": true,
+    "rule": "max sampled pending < 10000, 0 dead letters, 0 pending after the 20 s drain, no dead server (PARAMS v3 addendum)"
+  }
+}

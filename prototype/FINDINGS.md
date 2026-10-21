@@ -67,3 +67,7 @@ Worst-case flood (prompts that world 0 blocks and world 1 allows), observer = Re
 `window_hard + continue` 73.0% (63.6-80.7%), both LEAKED by the README thresholds. Confound: one world's audit pipeline backed up in each cell, so audit-off controls are required
 before concluding it is the work difference. Audit: the shipper sends one event per HTTP round trip (about 10-30 events/s under load) while the collector itself handles >1000 events/s;
 the outbox fills to its 10000 cap and about 830-890 entries dead-letter; no server died. This is the best explanation so far for the 247 INVALID runs (not yet confirmed by a fix).
+
+Update (same day, PARAMS v3 controls): audit OFF gives `window_hard + continue` 55.0% (45.2-64.4%, bounded) and `bucket_hard` 76.0% (66.8-83.3%, leaked), so the audit backlog was a confound for the 73%
+and bucket_hard has a real load channel. With the opt-in `AUDIT_BATCH=50` the same flood leaves the audit outbox at most 24 events (before: the 10000 cap, 829-888 dead letters), 0 dead letters, and the observer
+at 47.0% (37.5-56.7%, one run, N=100). One run per cell, mock model: "the tested observer could not reliably distinguish" is the strongest honest wording.

@@ -538,3 +538,20 @@ while the flood offers about 30+ events/s; the outbox grows to its 10000-entry c
 `/append_batch`, order and per-run chain preserved), opt-in. Per-run lanes are the alternative.
 NOT RUN: audit-OFF control cells, any mitigation cell, attack 9c re-run, a no-flood control.
 Next: fix PARAMS v3 (audit-off controls + mitigation cells), then build the opt-in fixes and measure them; the long runs need an idle laptop.
+
+### Step 4, part 2: audit-OFF controls and AUDIT_BATCH (PARAMS v3, rules fixed before the runs)
+Opt-in `AUDIT_BATCH=N` built (commit `373dd89`): the shipper sends up to N consecutive `/append` events per request to a new collector `/append_batch` (validated as a whole, appended in
+order, retries deduplicated by gw_seq; `/finish` stays single; default 0 = unchanged). Tests: `tests/test_audit_batch.py` (6) plus the existing audit/gateway tests.
+Results, same worst-case flood, 100 unseen test runs per cell, "live gateway, mock model, local run", 95% Wilson:
+| Cell | Audit | Observer's A-vs-B accuracy | Verdict | Audit outcome |
+|---|---|---:|---|---|
+| bucket_hard | ON | 78.0% (68.9-85.0%) | LEAKED | world 1: 9973 pending, 888 dead letters |
+| bucket_hard_noaudit | OFF | 76.0% (66.8-83.3%) | LEAKED | n/a |
+| window_hard + continue | ON | 73.0% (63.6-80.7%) | LEAKED | world 0: 9980 pending, 829 dead letters |
+| window_hard + continue, noaudit | OFF | 55.0% (45.2-64.4%) | BOUNDED LEAK | n/a |
+| window_hard + continue + AUDIT_BATCH=50 | ON | 47.0% (37.5-56.7%) | no leak found (descriptive) | max outbox sampled 24 / 23, 0 pending after drain, 0 dead letters, no dead server: throughput rule PASSED |
+Reading: (1) the audit backlog was a confound for the 73%: with audit off the window_hard + continue cell drops to 55% (bounded), and with batching the backlog disappears (outbox never above 24 of
+10000; before it hit the cap) and the observer is at 47%. (2) bucket_hard keeps leaking with audit off (76%): its bucket edges and hard cap turn small load-induced slips into discrete jumps; this is a real
+load channel, not an audit artifact. (3) By the pre-registered rule (one cell leaked, one bounded) both fixes were to be built; AUDIT_BATCH is built and passes its throughput rule; LOOP_OFFLOAD and
+FAIR_ADMIT are NOT built. Caveats: one run per cell, N=100 (wide intervals), mock model, one laptop, worst-case flood only; the cell-3 accuracy is a single run and must not be read as proof of no leak.
+Not run: batching against the 2000-run matrix (audit VALID rate), attack 9c with batching, LOOP_OFFLOAD / FAIR_ADMIT cells.

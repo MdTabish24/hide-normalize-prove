@@ -1,0 +1,35 @@
+{
+  "label": "live gateway with mock model, local run",
+  "cell": "window_continue_noaudit",
+  "policy": "window_hard",
+  "window_continue": true,
+  "audit": false,
+  "params_version": 3,
+  "seed": 20261023,
+  "flood_workers": 12,
+  "observer_probes": 6,
+  "scale": 0.1,
+  "train_runs": 100,
+  "test_runs": 100,
+  "accuracy": 0.55,
+  "wilson_95": [
+    0.45244602997442135,
+    0.6438546202048803
+  ],
+  "train_accuracy": 0.74,
+  "verdict": "BOUNDED LEAK",
+  "observer_release_seconds": {
+    "median": 0.9095,
+    "p95": 0.9779,
+    "max": 1.8686
+  },
+  "mean_observer_attempts_recorded": 6,
+  "observer_cancelled": 0,
+  "mean_flood_requests_per_run": 83.9,
+  "audit_queue_after_drain": [],
+  "dead_servers": [],
+  "minutes": 22.7,
+  "audit_batch": null,
+  "max_outbox_sampled": null,
+  "throughput_check": null
+}
