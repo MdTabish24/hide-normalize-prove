@@ -61,3 +61,9 @@ A local checkpoint is not an independent witness; events omitted before collecti
 ## 7. Decisions and constraints
 Deadline 24 Oct 2026 23:59 IST. New features are opt-in and off by default. Claims use "the tested attacker could not reliably distinguish", never "secure" or "no leak".
 Parameters for new evaluations are fixed in `PARAMS.md` before any run. Key lives only in `.env` or the process environment and is never committed or printed.
+
+## 8. Load observer (added 2026-10-21; PARAMS v2): does shared load carry Blue's secret?
+Worst-case flood (prompts that world 0 blocks and world 1 allows), observer = Red's own six neutral probes, N=100 unseen runs (L): `bucket_hard` 78.0% (68.9-85.0%) and
+`window_hard + continue` 73.0% (63.6-80.7%), both LEAKED by the README thresholds. Confound: one world's audit pipeline backed up in each cell, so audit-off controls are required
+before concluding it is the work difference. Audit: the shipper sends one event per HTTP round trip (about 10-30 events/s under load) while the collector itself handles >1000 events/s;
+the outbox fills to its 10000 cap and about 830-890 entries dead-letter; no server died. This is the best explanation so far for the 247 INVALID runs (not yet confirmed by a fix).

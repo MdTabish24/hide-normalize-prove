@@ -514,3 +514,27 @@ the end; `percent(null)` drew a 1% bar for a NOT RUN value). 77 related Python t
 NOT RUN: a live (not recorded) demo batch from the UI button, real model in this view, a separate dashboard container run of the new page.
 Reproduce: `python -m dashboard.duel_run` (about a minute), then `uvicorn dashboard.app:app --port 8095` and open `/duel`.
 Next: Step 4 (noisy neighbour, only when the machine is idle).
+
+### Step 4, part 1: does overload carry Blue's secret? (load-observer, PARAMS v2) and the audit finding
+Harness `eval/load_observer.py` (fixed in PARAMS.md v2 before the run): world 0 (rule A) blocks the flood prompts, world 1 (rule B) allows them (worst case for a
+work difference); the observer is Red itself (the system has only three role tokens, so no second Red identity exists). 12 flood workers + 6 neutral observer
+probes per run, 100 train + 100 unseen test runs per cell, timings x0.1, window 0.9 s, mock model, seed 20261023, audit ON.
+Results (label "live gateway, mock model, local run"; 95% Wilson; 50% = guessing):
+| Cell | Observer's A-vs-B accuracy | Verdict (README thresholds) | Observer release time median / p95 / max | Observer requests cancelled | Audit after a 20 s drain |
+|---|---:|---|---|---:|---|
+| bucket_hard (default) | 78.0% (68.9-85.0%) | LEAKED | 0.626 / 1.334 / 3.154 s | 80 | world 1: 9973 pending, 888 dead letters |
+| window_hard + continue | 73.0% (63.6-80.7%) | LEAKED | 0.946 / 1.107 / 2.631 s | 0 | world 0: 9980 pending, 829 dead letters |
+(An earlier attempt at the window_continue cell crashed at 40/200 runs with an httpx ReadTimeout when the laptop went to sleep; it produced no result and was rerun
+with a keep-awake process.)
+Reading: under a worst-case flood the tested observer separated rule A from B even with the fixed window + continue, so the earlier hope that
+window_hard + continue is immune to the shared-load channel is NOT supported by this test. CAUTION (confound): in both cells ONE world's audit pipeline
+backed up (a different world each time) while the other stayed healthy, so the classifier may partly be reading audit trouble, not the work difference. This
+must be separated with audit-OFF control cells (to be fixed in PARAMS v3 before they are run).
+Audit root cause (new, supported by measurement, not yet fixed): no server died (`dead_servers` empty, stderr empty except a harmless Windows socket reset in the
+model). The collector alone appends >1000 events/s even across 250 runs (micro-benchmark, same code). But the gateway shipper (`audit_forwarder.py`) delivers
+strictly one event per HTTP round trip (head -> POST -> ack), so under load its throughput is limited by the round-trip time (tens of ms, about 10-30 events/s)
+while the flood offers about 30+ events/s; the outbox grows to its 10000-entry cap and entries expire after the 30 s give-up (dead letters). This matches the
+247-INVALID repeat (delivery failures, no integrity failures). Candidate fix (NOT built): batch delivery (`head(limit=N)` already exists; a collector
+`/append_batch`, order and per-run chain preserved), opt-in. Per-run lanes are the alternative.
+NOT RUN: audit-OFF control cells, any mitigation cell, attack 9c re-run, a no-flood control.
+Next: fix PARAMS v3 (audit-off controls + mitigation cells), then build the opt-in fixes and measure them; the long runs need an idle laptop.

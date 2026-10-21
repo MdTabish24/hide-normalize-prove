@@ -1,0 +1,42 @@
+{
+  "label": "live gateway with mock model, local run",
+  "cell": "window_continue",
+  "policy": "window_hard",
+  "window_continue": true,
+  "params_version": 2,
+  "seed": 20261023,
+  "flood_workers": 12,
+  "observer_probes": 6,
+  "scale": 0.1,
+  "train_runs": 100,
+  "test_runs": 100,
+  "accuracy": 0.73,
+  "wilson_95": [
+    0.6356788323205499,
+    0.8073041585042365
+  ],
+  "train_accuracy": 0.76,
+  "verdict": "LEAKED",
+  "observer_release_seconds": {
+    "median": 0.9461,
+    "p95": 1.1071,
+    "max": 2.631
+  },
+  "mean_observer_attempts_recorded": 6,
+  "observer_cancelled": 0,
+  "mean_flood_requests_per_run": 83.7,
+  "audit_queue_after_drain": [
+    {
+      "world": 0,
+      "pending_after_drain": 9980,
+      "dead_letters": 829
+    },
+    {
+      "world": 1,
+      "pending_after_drain": 0,
+      "dead_letters": 0
+    }
+  ],
+  "dead_servers": [],
+  "minutes": 24.2
+}
