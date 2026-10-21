@@ -34,7 +34,10 @@ def configure_docker(url, tokens):
 async def deployment(directory):
     from eval.live import Lab, World
     if _docker is None:
-        async with Lab(directory, scale=1, policy="bucket_hard", audit=True, backend="deepseek") as lab:
+        async with Lab(directory, scale=1, policy=os.environ.get("REAL_POLICY_MODE", "bucket_hard"), audit=True, backend="deepseek",
+                       window_continue=os.environ.get("REAL_WINDOW_CONTINUE") == "1",
+                       window_seconds=float(os.environ.get("REAL_WINDOW_SECONDS", "3"))
+                       if os.environ.get("REAL_POLICY_MODE") == "window_hard" else None) as lab:
             async def checked(rid):
                 result=await lab.audit_check({0:[rid]},drain_seconds=5)
                 return result["valid"]==1

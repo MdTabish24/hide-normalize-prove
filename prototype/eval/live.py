@@ -137,8 +137,9 @@ class World:
 class Lab:
     """Trusted controller owns labels/configuration; observations never include them."""
     def __init__(self, directory, scale=0.1, policy="bucket_hard", seed_mode="run", audit=False, demo_trace=False, backend="mock",
-                 window_continue=False):
+                 window_continue=False, window_seconds=None):
         self.window_continue = window_continue
+        self.window_seconds = window_seconds
         self.directory, self.scale, self.policy = Path(directory), scale, policy
         self.seed_mode, self.audit_enabled = seed_mode, audit
         self.demo_trace = demo_trace
@@ -170,6 +171,8 @@ class Lab:
             if self.backend == "deepseek":
                 # Provider credential goes ONLY to the adapter child. No .env load.
                 model_env["DEEPSEEK_API_KEY"] = os.environ["DEEPSEEK_API_KEY"]
+                if self.window_continue:  # The adapter must not cut the call before the gateway's hard maximum.
+                    model_env["PROVIDER_TIMEOUT_SECONDS"] = str(4 * (self.window_seconds or self.buckets[-1]))
             model = start("provider:factory" if self.backend == "deepseek" else "model:app", model_env)
             for index, trigger in enumerate(("pineapple", "mango")):
                 # Each world is its own deployment with its own collector: two
@@ -182,9 +185,11 @@ class Lab:
                               RANGE_SEED_MODE=self.seed_mode, DATA_DIR=str(self.directory / f"world-{index}"),
                               BLUE_URL=blue.url, MODEL_URL=model.url, BUCKETS=",".join(map(str, self.buckets)),
                               AUDIT_URL=collector.url, AUDIT_GIVE_UP_SECONDS="30", AUDIT_TIMEOUT_SECONDS="1")
+                if self.window_seconds:
+                    config["WINDOW_SECONDS"] = str(self.window_seconds)
                 if self.window_continue:
                     config["WINDOW_CONTINUE"] = "1"
-                    config["WINDOW_CONTINUE_MAX_SECONDS"] = str(4 * self.buckets[-1])
+                    config["WINDOW_CONTINUE_MAX_SECONDS"] = str(4 * (self.window_seconds or self.buckets[-1]))
                 if not self.audit_enabled:
                     config["AUDIT_MODE"] = "off"  # Explicit; honored only because EVAL_MODE=1.
                 config["DEMO_TRACE"] = "1" if self.demo_trace else "0"

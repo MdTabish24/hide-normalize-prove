@@ -73,6 +73,9 @@ services:
       WINDOW_SECONDS: ${WINDOW_SECONDS:-}
       DEADLINE_FRACTION: ${DEADLINE_FRACTION:-0.8}
       MAX_INFLIGHT_PER_IDENTITY: ${MAX_INFLIGHT_PER_IDENTITY:-16}
+      # window_hard only, opt-in: do not cancel at the deadline; compute continues up to the hard maximum.
+      WINDOW_CONTINUE: ${WINDOW_CONTINUE:-0}
+      WINDOW_CONTINUE_MAX_SECONDS: ${WINDOW_CONTINUE_MAX_SECONDS:-}
       RANGE_SEED_MODE: ${RANGE_SEED_MODE:-run}
       EVAL_MODE: ${EVAL_MODE:-0}
     volumes: ["gateway-data:/data"]

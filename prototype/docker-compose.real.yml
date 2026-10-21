@@ -7,6 +7,11 @@ services:
       # Never inherit the scaled mock-demo buckets from an existing .env.
       BUCKETS: ${REAL_BUCKETS:-3,6,9}
       POLICY_MODE: ${REAL_POLICY_MODE:-bucket_hard}
+      # Opt-in: REAL_POLICY_MODE=window_hard REAL_WINDOW_CONTINUE=1 (window 3 s; compute may run to 4x the window).
+      # Keep PROVIDER_TIMEOUT_SECONDS >= the hard maximum (12 s by default) or the adapter cuts the call first.
+      WINDOW_SECONDS: ${REAL_WINDOW_SECONDS:-3}
+      WINDOW_CONTINUE: ${REAL_WINDOW_CONTINUE:-0}
+      WINDOW_CONTINUE_MAX_SECONDS: ${REAL_WINDOW_CONTINUE_MAX_SECONDS:-}
       EVAL_MODE: "0"
   model-mock:
     command: ["uvicorn", "provider:factory", "--factory", "--host", "0.0.0.0", "--port", "8000", "--no-access-log", "--no-server-header", "--no-date-header", "--log-level", "critical"]
