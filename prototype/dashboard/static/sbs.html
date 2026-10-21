@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Side by side | BAYORA</title>
+<link rel="stylesheet" href="/static/story.css"><link rel="stylesheet" href="/static/simple.css"><link rel="stylesheet" href="/static/sbs.css">
+<script src="/static/sbs_logic.js" defer></script><script src="/static/sbs.js" defer></script></head>
+<body><main>
+<nav class="simple-header"><a class="brand" href="/duel">BAYORA / HIDE · NORMALIZE · PROVE</a>
+<span class="nav-links"><a href="/why">Why pass/fail</a><a href="/history">History</a><a href="/story/evidence">Evidence</a><button id="presenter" type="button" aria-pressed="false">Presenter mode</button></span></nav>
+
+<section class="screen" data-screen="1" id="screen-1" aria-labelledby="t1">
+<div class="sbs-heading"><span class="eyebrow">SAME ATTACK · TWO OUTCOMES</span><h1 id="t1">Dekho: same requests, bina defense aur hamare solution ke saath</h1>
+<p id="sbs-note">Loading recorded run…</p></div>
+<div class="player" role="group" aria-label="Step player">
+<button id="play" type="button">▶ Play</button><button id="step" type="button">Step ▸</button><button id="back" type="button">◂ Back</button><button id="reset" type="button">Reset</button>
+<label for="speed">Speed</label><select id="speed" aria-label="Speed"><option value="0.25">0.25x</option><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>
+<span id="progress" aria-live="polite">Press Play</span>
+<button id="record" type="button" class="quiet" title="Needs the host worker; do not use while a timing run is active">Record a fresh run</button><span id="record-status" class="muted"></span></div>
+<div class="panels">
+<article class="panel" id="panel-raw" aria-label="Without defense"></article>
+<article class="panel ours" id="panel-ours" aria-label="With our solution"></article></div>
+</section>
+
+<section class="screen" data-screen="2" id="screen-2" aria-labelledby="t2"><div class="sbs-heading"><span class="eyebrow">ISOLATION · AUDIT</span><h2 id="t2">Red Blue tak nahi pahunch sakta, aur badla hua log pakda jata hai</h2></div>
+<div class="cards"><article class="card"><h3>Isolation checks (from inside Red's container)</h3><p class="big" id="iso-head">…</p><ul id="iso-list"></ul><p class="muted" id="iso-when"></p></article>
+<article class="card"><h3>Audit tamper test</h3><p class="big" id="tamper-head">…</p><ul id="tamper-list"></ul><p class="muted" id="tamper-when"></p></article></div></section>
+
+<section class="screen" data-screen="3" id="screen-3" aria-labelledby="t3"><div class="sbs-heading"><span class="eyebrow">MEASURED</span><h2 id="t3">Red ka A-vs-B guess, har policy aur traffic par</h2>
+<p class="muted">live gateway, mock model, local run. Dashed line = 50% (guessing). Hatched grey = NOT RUN.</p></div><div id="chart" class="chart" role="img" aria-label="Grouped bars of Red's accuracy"></div><div id="legend" class="legend"></div></section>
+
+<section class="screen" data-screen="4" id="screen-4" aria-labelledby="t4"><div class="sbs-heading"><span class="eyebrow">LIMITS</span><h2 id="t4">Ye kya nahi rokta</h2></div>
+<div class="cards"><article class="card"><h3>Still leaks or not covered</h3><ul id="notstopped"></ul></article><article class="card"><h3>Honest limits</h3><ul id="limits"></ul></article></div></section>
+
+<div id="presenter-nav" class="presenter-nav" hidden><button id="prev" type="button">◂ Prev</button><span id="screen-label"></span><span id="caption"></span><button id="nextscreen" type="button">Next ▸</button></div>
+</main></body></html>

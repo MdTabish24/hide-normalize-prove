@@ -140,7 +140,7 @@ def parse_real(data):
 
 JOB_TITLES = dict(traffic="Demo traffic run (mock model)", isolation="Isolation check run from the UI",
                   audit="Audit tamper check run from the UI", story="Story run", comparison="Paired raw vs protected run",
-                  controls="Measured controls run")
+                  controls="Measured controls run", duel="Side-by-side recording (raw vs window_hard + continue)")
 
 
 def parse_job(data):

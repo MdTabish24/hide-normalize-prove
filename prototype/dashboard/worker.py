@@ -202,6 +202,9 @@ class Worker:
             elif job.action == "controls":
                 from .control_run import run_controls
                 await run_controls(self.runtime / "observations/controls.json")
+            elif job.action == "duel":
+                from .duel_run import run_duel
+                await run_duel(self.runtime / "observations/duel.json")
             elif job.action == "comparison":
                 from .compare_run import run_comparison
                 await run_comparison(self.runtime / "observations/comparison.json")
@@ -232,7 +235,7 @@ class Worker:
         if action == "real":
             return  # run_real already writes its own dated archive and private record
         stamp = int(self.state["job"]["finished_at"])
-        name = dict(comparison="comparison", controls="controls", story="story").get(action)
+        name = dict(comparison="comparison", controls="controls", story="story", duel="duel").get(action)
         source = read_json(self.runtime / f"observations/{name}.json") if name else self.state
         if source:
             atomic_json(self.runtime / f"observations/history/{action}-{stamp}.json", dict(source, action=action, recorded_at=source.get("recorded_at") or stamp))

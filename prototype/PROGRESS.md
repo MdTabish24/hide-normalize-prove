@@ -489,3 +489,28 @@ Full suite after Step 2: 147 passed, 2 failed (`test_collector_healthy_slow_down
 (~80% CPU) and WMI were busy. On a re-run the eval test passed; `test_full_queue_flags_run_and_never_delays_release` failed once under load and
 passed alone (4 s); `test_collector_healthy_slow_down_give_same_release_times` still failed on the loaded machine (it passed on an idle
 machine earlier today). These are the known load-sensitive timing tests; no test was weakened. JS tests 16/16.
+
+### Step 3: side-by-side dashboard view (`/duel`)
+What changed
+- `dashboard/duel_run.py`: records ONE 20-request sequence under two policies, each on a fresh live gateway with the mock model
+  (label "live gateway, mock model, local run", scale 0.1): left `raw` timing, right `window_hard` + continue + feedback meter. Same auth, Blue
+  filter, encryption, output shaping and audit in both. Per request it keeps what Red saw (status, size, release time, exact envelope) and, from the
+  gateway database, what the evaluator knows (Blue allowed, model called/completed, late, cancelled). `eval/live.py` Lab gained an `extra_env`
+  parameter (empty by default) so the meter can be switched on for the right arm only.
+- `dashboard/duel.py`: allowlisted projection. No prompt text and no keyword is ever served (only "keyword rule A"); Red-visible text never says
+  blocked or allowed; missing or partial recordings show NOT RUN / PARTIAL and never fill the missing arm. Accuracy under each panel is read from the
+  saved matrix (raw: 98-100% over 3 cohorts; window_hard + continue: 51-56%, worse of two repeats, 5 cohorts; 200 unseen runs per cohort).
+- `/duel` (`static/sbs.html|js|css`, pure logic in `sbs_logic.js`): slow-motion player (Play/Pause/Step/Back/Reset, 0.25x-2x) that reveals 6 steps per
+  probe (Red sends, fixed clock, Blue decides [evaluator only], model, what Red sees, report/meter) in plain Hinglish with the reason for every decision;
+  per-probe release-time bars (colour = evaluator only); meter state and reads left in the Red panel and the true per-batch score in the evaluator-only
+  box; audit status per arm. Presenter mode: 4 screens (side-by-side, isolation + audit tamper, comparison chart with NOT RUN hatched, limits).
+  Playback of a recorded run, not live. Job action `duel` and a "Record a fresh run" button use the existing worker queue. Metadata only, localhost,
+  same CSP; the gateway request path is untouched.
+Recording made on 2026-10-21 (`dashboard/runtime/observations/duel.json`, git-ignored): raw release 0.04-1.15 s (blocked median 0.05 s vs allowed median 0.27 s,
+gap 222 ms; the slow probe 1.15 s); window_hard + continue 0.91-0.94 s for all 20 (gap 1 ms), probe 13 finished after the window (late) without cancel;
+meter read STABLE after probe 10 (true batch score 20%) and IMPROVING after probe 20 (90%), 1 of 3 reads left; both audits VALID (43 events each).
+Tests: `tests/test_duel.py` (7, including the recorder end-to-end), `tests/sbs_logic.test.cjs` (5, found and fixed two bugs: playback needed one extra tick at
+the end; `percent(null)` drew a 1% bar for a NOT RUN value). 77 related Python tests, 16 + 5 JS tests pass.
+NOT RUN: a live (not recorded) demo batch from the UI button, real model in this view, a separate dashboard container run of the new page.
+Reproduce: `python -m dashboard.duel_run` (about a minute), then `uvicorn dashboard.app:app --port 8095` and open `/duel`.
+Next: Step 4 (noisy neighbour, only when the machine is idle).

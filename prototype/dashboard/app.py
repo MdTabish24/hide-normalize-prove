@@ -14,7 +14,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
 
-from . import history, why
+from . import duel, history, why
 from .data import LABEL, audit_events, evidence, matrix, public_observations
 
 HERE = Path(__file__).parent
@@ -22,7 +22,7 @@ HERE = Path(__file__).parent
 
 class Job(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    action: Literal["traffic", "isolation", "audit", "story", "comparison", "real", "controls"]
+    action: Literal["traffic", "isolation", "audit", "story", "comparison", "real", "controls", "duel"]
     policy: Literal["raw", "bucket_hard", "window_hard"] = "bucket_hard"
     secret: Literal["A", "B"] = "A"
 
@@ -77,6 +77,14 @@ def create_app(saved=None, runtime=None, audit=None, eval_mode=None):
     @app.get("/history")
     async def history_page():
         return FileResponse(HERE / "static/history.html")
+
+    @app.get("/duel")
+    async def duel_page():
+        return FileResponse(HERE / "static/sbs.html")
+
+    @app.get("/api/duel")
+    async def duel_data():
+        return await asyncio.to_thread(duel.snapshot, saved, observations)
 
     @app.get("/why")
     async def why_page():

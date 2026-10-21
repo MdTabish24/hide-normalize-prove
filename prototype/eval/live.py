@@ -137,8 +137,9 @@ class World:
 class Lab:
     """Trusted controller owns labels/configuration; observations never include them."""
     def __init__(self, directory, scale=0.1, policy="bucket_hard", seed_mode="run", audit=False, demo_trace=False, backend="mock",
-                 window_continue=False, window_seconds=None):
+                 window_continue=False, window_seconds=None, extra_env=None):
         self.window_continue = window_continue
+        self.extra_env = dict(extra_env or {})  # Opt-in gateway settings, e.g. FEEDBACK_MODE; empty by default.
         self.window_seconds = window_seconds
         self.directory, self.scale, self.policy = Path(directory), scale, policy
         self.seed_mode, self.audit_enabled = seed_mode, audit
@@ -190,6 +191,7 @@ class Lab:
                 if self.window_continue:
                     config["WINDOW_CONTINUE"] = "1"
                     config["WINDOW_CONTINUE_MAX_SECONDS"] = str(4 * (self.window_seconds or self.buckets[-1]))
+                config.update(self.extra_env)
                 if not self.audit_enabled:
                     config["AUDIT_MODE"] = "off"  # Explicit; honored only because EVAL_MODE=1.
                 config["DEMO_TRACE"] = "1" if self.demo_trace else "0"
