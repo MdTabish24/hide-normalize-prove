@@ -6,6 +6,9 @@ function cell(tag,v){var c=document.createElement(tag);if(v instanceof Node)c.ap
 function stack(map){var d=document.createElement('div');Object.keys(map).forEach(function(k){var line=document.createElement('div');line.append(document.createTextNode((k==='ours'?'':k+': ')+map[k].value+' '),pill(map[k].verdict));d.append(line);});return d;}
 function fill(id,rows){el(id).replaceChildren(...rows);}
 function render(d){
+  fill('stopped',d.summary.stopped.map(function(r){var tr=document.createElement('tr');tr.append(cell('th',r.attack),cell('td',r.without),cell('td',r['with']),cell('td',pill(r.result)));return tr;}));
+  fill('notstopped',d.summary.not_stopped.map(function(r){var tr=document.createElement('tr');tr.append(cell('th',r.attack),cell('td',r.why),cell('td',pill(r.result)));return tr;}));
+  el('limits').replaceChildren(...d.summary.limits.map(function(t){var li=document.createElement('li');li.textContent=t;return li;}));
   el('note').textContent=d.note;
   fill('steps',d.steps.map(function(s){var tr=document.createElement('tr');tr.append(cell('td',s.n+'. '+s.what),cell('td',s.how),cell('td',s.control),cell('td',s.result==='—'?'—':pill(s.result)));return tr;}));
   fill('channels',d.channels.map(function(c){var tr=document.createElement('tr');var b=document.createElement('div');b.append(document.createTextNode(c.baseline.value+' '),pill(c.baseline.verdict));

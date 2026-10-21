@@ -116,3 +116,12 @@ def test_why_names_the_failed_channels_per_policy(tmp_path):
     soft = rows["bucket (soft)"]
     assert soft["verdict"] == "INVALID" and soft["failed"] == ["Timing: boundary traffic"]
     assert rows["window_hard (one fixed window)"]["verdict"] == "INCOMPLETE"
+
+
+def test_why_summary_has_stopped_and_not_stopped_and_marks_missing_as_not_run(tmp_path):
+    summary = client(tmp_path).get("/api/why").json()["summary"]
+    assert {"attack", "without", "with", "result"} <= set(summary["stopped"][0])
+    by_attack = {r["attack"]: r for r in summary["stopped"]}
+    assert by_attack["Network, files, host, internet"]["result"] == "NOT RUN"  # no attack_suite_results.json here
+    assert by_attack["Timing: Red learns Blue's rule from response time"]["result"] == "NOT RUN"
+    assert any("CPU" in r["attack"] for r in summary["not_stopped"]) and summary["limits"]

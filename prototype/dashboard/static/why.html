@@ -1,6 +1,12 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Why | BAYORA</title><link rel="stylesheet" href="/static/story.css"><link rel="stylesheet" href="/static/simple.css"><link rel="stylesheet" href="/static/duel.css"><script src="/static/why.js" defer></script></head><body><main>
 <nav class="simple-header"><a class="brand" href="/story">BAYORA / BACK TO VISUAL DEMO</a><a href="/history">History</a><a href="/story/evidence">Evidence</a></nav>
 <section class="full-report"><div class="report-heading"><span class="eyebrow">WHY IT PASSED OR FAILED</span><h2>One request, step by step, and every place it can break</h2><p id="note">Loading…</p></div>
+<article class="report-section"><div class="report-section-title"><span>0</span><div><h3>Short version: what the solution stopped, and why</h3><p>Without our solution: why it leaks. With it: why it holds. Numbers are measured on a mock model, one laptop.</p></div></div>
+<div class="table-scroll"><table class="evidence-table"><thead><tr><th scope="col">Attack</th><th scope="col">Without our solution</th><th scope="col">With our solution</th><th scope="col">Result</th></tr></thead><tbody id="stopped"></tbody></table></div>
+<h3>Not stopped</h3>
+<div class="table-scroll"><table class="evidence-table"><thead><tr><th scope="col">Attack</th><th scope="col">Why it still leaks</th><th scope="col">Result</th></tr></thead><tbody id="notstopped"></tbody></table></div>
+<h3>Honest limits</h3><ul id="limits"></ul></article>
+<details class="simple-proof"><summary>Full technical detail (steps, every channel, per-policy verdicts, cost, uncovered channels)</summary>
 <article class="report-section"><div class="report-section-title"><span>1</span><div><h3>What happens to one request</h3><p>The steps run for every request. The last column is the saved result of the check that covers that step.</p></div></div>
 <div class="table-scroll"><table class="evidence-table"><thead><tr><th scope="col">Step</th><th scope="col">What our design does</th><th scope="col">Control</th><th scope="col">Saved result</th></tr></thead><tbody id="steps"></tbody></table></div></article>
 <article class="report-section"><div class="report-section-title"><span>2</span><div><h3>Without our solution vs with it, and why</h3><p>Each channel is tested on its own. Tags: MEASURED = a saved number, NOTE = written in the saved results, DESIGN = how it is built, not separately measured.</p></div></div>
@@ -13,4 +19,5 @@
 <div class="table-scroll"><table class="evidence-table"><thead><tr><th scope="col">Check in the same run</th><th scope="col">Result</th></tr></thead><tbody id="checks"></tbody></table></div>
 <h3>Not covered by any check yet</h3><p class="report-context">Passing the checks above says nothing about these.</p>
 <div class="table-scroll"><table class="evidence-table"><thead><tr><th scope="col">Channel</th><th scope="col">Status</th></tr></thead><tbody id="uncovered"></tbody></table></div></article>
+</details>
 </section></main></body></html>

@@ -265,6 +265,128 @@ def shapes(saved):
                 ours_why="Every outcome returns the same HTTP 202 with the same body size and headers, so Red cannot tell blocked from allowed by the reply itself.  [MEASURED]")
 
 
+def attack_lookup(saved):
+    results = [r for r in read_json(Path(saved) / "attack_suite_results.json").get("results", []) if isinstance(r, dict)]
+
+    def find(attack, policy=None, contains=None):
+        for r in results:
+            if str(r.get("attack")) == attack and (policy is None or r.get("policy") == policy) and \
+                    (contains is None or contains in str(r.get("name", "")) + " " + str(r.get("summary", ""))):
+                return r
+        return None
+    return find
+
+
+def span(values):
+    lo, hi = round(min(values)), round(max(values))
+    return f"{lo}%" if lo == hi else f"{lo}-{hi}%"
+
+
+def accuracy_range(rows, policy, cohorts=None):
+    values = [r["accuracy"] * 100 for r in rows if r["policy"] == policy and r.get("accuracy") is not None
+              and (cohorts is None or r["cohort"] in cohorts)]
+    return span(values) if values else None
+
+
+def worst_timing(rows, policies_cohorts):
+    """Worst verdict (same fixed thresholds as the dashboard) across the given (policy, cohorts) cells."""
+    order = ("NO LEAK FOUND", "BOUNDED LEAK", "LEAKED")
+    found = [timing_verdict(r["accuracy"], r["n"], r["interval"])["status"] for r in rows
+             if r["status"] == "SAVED" and any(r["policy"] == p and r["cohort"] in c for p, c in policies_cohorts)]
+    found = [v for v in found if v in order]
+    return max(found, key=order.index) if found else "NOT RUN"
+
+
+def summary(saved):
+    """Short attack-by-attack story: why it fails without the solution, why it holds with it. Numbers come from saved files."""
+    find = attack_lookup(saved)
+    mx = matrix(saved)["rows"] + variant_rows(saved)
+    costs = cost_rows(saved)
+    other = {r["channel"]: r for r in other_rows(saved)}
+    nr = "NOT RUN"
+
+    def cancelled(policy, cohorts):
+        values = [r["cancelled"] for r in costs if r["policy"] == policy and r["cohort"] in cohorts]
+        return span(values) if values else None
+
+    real_cohorts = ("ordinary", "boundary")  # window_hard cancels everything on the stress cohorts, so only these are meaningful
+    raw_acc, cont_acc = accuracy_range(mx, "raw"), accuracy_range(mx, "window_continue")
+    win_acc = accuracy_range(mx, "window_hard", real_cohorts)
+    timing_verdict_now = worst_timing(mx, [("window_hard", real_cohorts), ("window_continue", COHORTS)])
+    stress = ("overflow", "deadline_near", "deadline_far")
+    cache_off, cache_on = find("6", contains="namespace off"), find("6", contains="namespace on")
+    net, roles, scan = find("1"), find("3", "window_hard"), find("8", "window_hard")
+    leak = other["Model text leaking Blue's rule"]
+    tamper = other["Audit tampering"]
+    shape = shapes(saved)["ours"]["ours"]
+    short = lambda r: (r["summary"].split(";")[0] if r else nr)  # noqa: E731
+
+    def row(attack, without, with_, result):
+        return dict(attack=attack, without=without, **{"with": with_}, result=result)
+
+    stopped = [
+        row("Timing: Red learns Blue's rule from response time",
+            f"Blocked prompts return fast (they never reach the model); allowed ones wait for the model. Red's stopwatch tells secret A from B: {raw_acc or nr} accuracy.",
+            f"window_hard releases every reply at one fixed time, so blocked and allowed look the same. Red's accuracy: {win_acc or nr} on ordinary and boundary traffic "
+            f"(window_hard), {cont_acc or nr} on all five traffic types (window_continue); 50% = guessing. Worst case by our fixed thresholds: {timing_verdict_now}.",
+            timing_verdict_now),
+        row("Long requests getting cancelled",
+            f"The fixed window cancels compute past the deadline: {cancelled('window_hard', stress) or nr} cancelled on long-compute traffic.",
+            f"Opt-in WINDOW_CONTINUE: the reply is still released on time while compute continues in the background. Cancelled: {cancelled('window_continue', stress) or nr}; Red's accuracy {cont_acc or nr}. Mock model only.",
+            "PASS" if cancelled("window_continue", stress) is not None else nr),
+        row("Cache prefix guessing",
+            f"A shared cache answers faster on a hit, so Red can guess Blue's prompt prefix. Measured with the namespace off: {short(cache_off)}.",
+            f"A per-run cache namespace removes the shared cache. Measured with it on: {short(cache_on)}.",
+            "PASS" if cache_on and cache_on["result"] == "BLOCKED" else nr),
+        row("Error oracle (blocked vs allowed look different)",
+            "By design (not separately measured): an error that names the rule tells Red what Blue filters.",
+            f"Every outcome returns the same HTTP 202, size and headers. {shape['value']}.",
+            shape["verdict"]),
+        row("Network, files, host, internet",
+            "By design (not separately measured): containers on one network can call each other directly.",
+            f"Red sits on its own internal network. {short(net)}; files and Docker socket not visible.",
+            "PASS" if net and net["result"] == "BLOCKED" else nr),
+        row("Token / role confusion",
+            "By design (not separately measured): one shared token would expose everything.",
+            f"Role-bound tokens. {short(roles)}.", "PASS" if roles and roles["result"] == "BLOCKED" else nr),
+        row("Secrets in logs and files",
+            "By design (not separately measured): prompts or rules written to logs leak.",
+            f"Metadata-only logs. {short(scan)}.", "PASS" if scan and scan["result"] == "BLOCKED" else nr),
+        row("Model text revealing Blue's rule",
+            f"A real model sometimes repeats or paraphrases the rule: {leak['baseline']['value']}.",
+            f"The gateway never returns model text to Red, only a noisy range after the run: {leak['ours']['ours']['value']}. Offline replay of the same outputs.",
+            leak["ours"]["ours"]["verdict"]),
+        row("Audit tampering",
+            "By design (not separately measured): a plain log can be edited silently.",
+            "Signed hash chain. " + tamper["ours"]["ours"]["value"].replace("tamper", "tampered copies detected") + ".",
+            tamper["ours"]["ours"]["verdict"]),
+    ]
+    noisy, cpu, docker_np = find("9", "window_hard"), find("9b", "window_hard"), find("9c", "window_hard", "no pinning")
+    docker_p = find("9c", "window_hard", "CPU pinned")
+    extreme, average = find("7", contains="extreme"), find("7", "run", "cross-run")
+    not_stopped = [
+        dict(attack="Noisy neighbour / CPU load",
+             why="Red's burst shares CPU and the single gateway worker with Blue, so Blue's reply tail grows. "
+                 f"Local processes: {short(noisy)}. Inside Docker: {short(docker_np)}; with CPU pinning: {short(docker_p)}. "
+                 f"CPU slip: {short(cpu)}. A per-identity rate budget is not built yet.",
+             result=(noisy or {}).get("result", nr)),
+        dict(attack="Extreme counts (0 or 16 safe)",
+             why="The noisy range is deterministic at the edges, so Red can tell an all-blocked or all-allowed set. " + short(extreme),
+             result=(extreme or {}).get("result", nr)),
+        dict(attack="Averaging over many fresh runs",
+             why="Averaging noisy ranges lowers Red's error. " + short(average), result=(average or {}).get("result", nr)),
+        dict(attack="Hosted KV cache, Blue seeing Red's payloads, kernel/hardware",
+             why="Not measured. The cache test used a mock model; the reverse direction was only encrypted, not tested.", result="NOT COVERED"),
+    ]
+    limits = [
+        "Real LLM: only one small run so far; the no-cancel variant has not been run against a real model.",
+        "One WINDOW_CONTINUE repeat lost audit events (1753/2000 valid); cause not found.",
+        "The default policy is still bucket_hard, which fails boundary and overflow traffic; the fix is opt-in.",
+        "Everything is a mock model on one laptop with scaled timings.",
+    ]
+    return dict(stopped=stopped, not_stopped=not_stopped, limits=limits)
+
+
 def snapshot(saved):
     saved = Path(saved)
     timing, other = channel_rows(saved), other_rows(saved)
@@ -302,7 +424,7 @@ def snapshot(saved):
         worst = min(mine, key=lambda r: r["completed"]) if mine else None
         p["usability"] = "NOT RUN" if worst is None else f"worst case {worst['completed']}% completed ({worst['cohort']})"
         p["unusable"] = [r["cohort"] for r in mine if r["usable"] == "NO"]
-    return dict(costs=costs, policies=policies, steps=steps, channels=channels, checks=checks, validity=run_validity, not_covered=[dict(channel=a, note=b) for a, b in NOT_COVERED],
+    return dict(summary=summary(saved), costs=costs, policies=policies, steps=steps, channels=channels, checks=checks, validity=run_validity, not_covered=[dict(channel=a, note=b) for a, b in NOT_COVERED],
                 matrix_saved=mx["saved"], matrix_total=mx["total"],
                 note="Reasons are fixed explanations tagged MEASURED, NOTE or DESIGN. A run is VALID only if every covered check passes; "
                      "passing one channel says nothing about the channels in the last table.")
