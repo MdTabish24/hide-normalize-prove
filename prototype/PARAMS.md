@@ -93,3 +93,21 @@ Independently of this result, `AUDIT_BATCH` is built because the shipper's one-e
   is later re-run against the worst-case flood cells under the same parameters.
 - Run order: `window_continue_noaudit`, `bucket_hard_noaudit`, `window_continue_batch50`. All three are run whatever the first two show; the decision rule above
   decides which fix is built next, not whether cell 3 is run.
+
+---
+
+# PARAMS (version 4: real-model timing test, fixed BEFORE it is run; versions 1-3 are unchanged)
+
+Question: with a real model, can Red tell Blue's rule A from B by release time, without defense (`raw`) and with `window_hard + continue`? (Earlier real runs were 60 requests with no A-vs-B classifier.)
+
+| Item | Value |
+|---|---|
+| Backend | real DeepSeek `deepseek-flash` through the provider adapter (localhost processes, not Docker isolation); key from the environment, `prototype/.env` or a hidden prompt; no mock fallback |
+| Cells | `raw` (release when ready) and `window_continue` (window_hard + WINDOW_CONTINUE=1, real window W = 3 s, deadline 2.4 s, hard maximum 12 s, provider timeout 12 s); audit ON with `AUDIT_BATCH=50` in both |
+| Cohort | `ordinary` probe plan of `eval/run.py` (3 probes with the world-0 keyword, 3 neutral, repeated prefixes): world 0 blocks the first three, world 1 allows all six |
+| N | 60 train runs + 60 unseen test runs per cell (balanced A/B), run concurrency 4, seed 20261024 |
+| Attacker and verdict | depth-3 decision tree on `eval.run.features`; 95% Wilson; README thresholds (LEAKED if lower bound > 55% and accuracy >= 60%; no leak found if upper bound <= 60%; otherwise bounded) |
+| Budget | about 540 provider calls per cell expected (allowed probes only), 1080 at most with one retry each; `max_tokens` 128 |
+| Also reported | real release-time spread, share of allowed requests that finished after the 2.4 s deadline (late) and cancelled, audit VALID count over the cell's runs |
+| Label | "real model run, small sample, local" |
+| Not covered | other cohorts, a flood, Docker isolation, more than one repeat, prompts other than the ordinary plan |
