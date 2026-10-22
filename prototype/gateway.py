@@ -196,6 +196,8 @@ def create_app(settings=None, transport=None):
     if continue_mode and not (math.isfinite(continue_max) and window < continue_max <= 60):
         raise ValueError("WINDOW_CONTINUE_MAX_SECONDS must be greater than the window and at most 60")
     background = set()
+    # Opt-in (BLUE_INLINE=1): the keyword rule is evaluated inside the gateway as DATA, so no Blue-side code ever receives Red's prompt.
+    blue_inline = config.get("BLUE_INLINE") == "1"
     # Opt-in feedback: none (default) | meter (3 states, batched, budgeted) | exact (per-prompt baseline, EVAL_MODE=1 only).
     feedback_mode = config.get("FEEDBACK_MODE", "none")
     if feedback_mode not in ("none", "meter", "exact"):
@@ -347,7 +349,10 @@ def create_app(settings=None, transport=None):
             # Disk creation/encryption must not serialize unrelated requests on
             # the event loop. Only published, complete record refs are readable.
             prompt = await asyncio.to_thread(store.save_prompt, attempt, body.run_id, owner, body.prompt)
-            result = await internal("blue", "/check", {"prompt": prompt, "filter": api.state.defense})
+            if blue_inline:  # Same casefolded substring rule as blue.py, with no request to the Blue service.
+                result = {"allowed": api.state.defense["trigger"].casefold() not in prompt.casefold()}
+            else:
+                result = await internal("blue", "/check", {"prompt": prompt, "filter": api.state.defense})
             if not isinstance(result.get("allowed"), bool):
                 raise ValueError("Invalid defense response")
             safe = result["allowed"]
