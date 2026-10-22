@@ -37,6 +37,7 @@ cache guess 95% -> 45-48% with a per-run namespace (L); model-text rule disclosu
 ### P3. Blue's service sees every Red prompt in plaintext (not tested)
 - The gateway sends the Blue service the prompt AND the decrypted rule on every request; the rule is a casefolded substring match. The Blue team (people) is not given access, but no test shows what the Blue side can observe or retain.
 - The problem statement requires that Red's payloads are not observable by Blue until the test ends.
+- Read-only code check (2026-10-22): `blue.py` has no logging, no storage and no outbound call; it returns only `{allowed: bool}` (blue.py:21-25); uvicorn runs with `--no-access-log --log-level critical`; the container is read-only with `blue-net` (internal) as its only network (docker-compose.yml:119-124, 183-185); the Blue token is accepted only by `POST /v1/defense` (gateway.py:401), so it cannot read Red data. Residual risk that remains by design: the Blue SERVICE code receives the plaintext prompt in memory on every request, and the gateway audit chain carries a SHA-256 of each prompt. Not tested: what a malicious Blue service could retain or send (blue-net is internal, but no test tries it).
 
 ### P4. The default policy still leaks under load
 `bucket_hard` is the default and fails boundary/overflow/deadline cohorts (98-100%) and the flood (76%, L; 66.7% bounded leak with the real model, R). The better profile (`window_hard + continue + AUDIT_BATCH=50`, `docker-compose.recommended.yml`) is opt-in.
