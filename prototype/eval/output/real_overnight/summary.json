@@ -1,0 +1,42 @@
+{
+  "label": "real model run, small sample, local",
+  "params_version": 6,
+  "steps": [
+    {
+      "step": "A1 window_continue, ordinary, seed 20261027",
+      "attempts": 1,
+      "file": "eval\\output\\real_overnight\\ordinary-s20261027-window_continue.json",
+      "result": "accuracy 41.7% (30.1-54.3%), NO LEAK FOUND, train 80%, release 3.012 median / 3.225 max s; slipped 0/720, gateway-side late>0.25s 0, loop-lag events 3 (max 0.205 s); permutation p 0.23",
+      "minutes": 11.4
+    },
+    {
+      "step": "A2 window_continue, ordinary, seed 20261028",
+      "attempts": 1,
+      "file": "eval\\output\\real_overnight\\ordinary-s20261028-window_continue.json",
+      "result": "accuracy 46.7% (34.6-59.1%), NO LEAK FOUND, train 80%, release 3.044 median / 3.167 max s; slipped 0/720, gateway-side late>0.25s 0, loop-lag events 4 (max 0.115 s); permutation p 0.673",
+      "minutes": 11.4
+    },
+    {
+      "step": "A3 window_continue, real_long, seed 20261029",
+      "attempts": 1,
+      "file": "eval\\output\\real_overnight\\real_long-s20261029-window_continue.json",
+      "result": "accuracy 57.5% (42.2-71.5%), BOUNDED LEAK, train 80%, release 3.025 median / 3.077 max s; slipped 0/480, gateway-side late>0.25s 0, loop-lag events 0 (max 0.0 s); permutation p 0.389",
+      "minutes": 8.1
+    },
+    {
+      "step": "B1 real-model flood, window_continue",
+      "attempts": 1,
+      "file": "eval\\output\\real_overnight\\real_window_continue.json",
+      "result": "accuracy 48.3% (36.2-60.7%), BOUNDED LEAK, train 83%, release 3.0661 median / 3.7029 max s; slipped 21/720, gateway-side late>0.25s 31, loop-lag events 391 (max 3.151 s); permutation p 0.351",
+      "minutes": 481.9
+    },
+    {
+      "step": "B2 real-model flood, bucket_hard",
+      "attempts": 2,
+      "result": "accuracy 66.7% (54.1-77.3%), BOUNDED LEAK, train 78%, release 3.12 median / 9.9087 max s; slipped 44/720, gateway-side late>0.25s 83, loop-lag events 639 (max 1.339 s); permutation p 0.134",
+      "file": "eval\\output\\real_overnight\\real_bucket_hard.json",
+      "minutes": 84.4
+    }
+  ],
+  "total_minutes": 597.3
+}

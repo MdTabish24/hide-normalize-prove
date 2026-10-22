@@ -78,3 +78,9 @@ DeepSeek `deepseek-flash`, localhost (plus one Docker check), audit ON with AUDI
 45.0% (30.7-60.2%) BOUNDED LEAK, 105 of 240 allowed attempts late (kept alive), 1 cancelled. The fixed release SLIPPED in that cohort: p99 5.719 s, maximum 6.020 s for W = 3 s (ordinary maximum 3.517 s, Docker 3.511 s); cause unknown.
 Latency of allowed probes on `raw` ordinary: no sign of bimodality (BC 0.378); repeats of the same prompt 1.05 / 1.025 / 1.023 s (no sign of a hosted-cache speed-up). Docker with the real model: isolation 11/11, 30/30 identical replies,
 20 DeepSeek outputs, audit VALID. Audit valid in every real cell. One run per cell; no flood with the real model.
+
+## 10. Overnight real-model suite (PARAMS v6, run 2026-10-21/22; R; 597 minutes)
+window_hard + continue (W = 3 s, DeepSeek): ordinary seeds 41.7% (30.1-54.3%) and 46.7% (34.6-59.1%) no leak found; real_long 57.5% (42.2-71.5%) BOUNDED LEAK; 0 slips in 1920 requests.
+Real flood (60 + 60 runs, ~84 flood requests per run): window_continue 48.3% (36.2-60.7%) BOUNDED LEAK, 21/720 slipped (max 3.703 s), audit outbox max 25, 0 dead; default bucket_hard 66.7% (54.1-77.3%) BOUNDED LEAK, 44/720 slipped (max 9.909 s),
+audit outbox 4146, 4090 pending and 1305 dead letters after drain (throughput check failed). Intervals overlap: no proven difference. Slips coincide with event-loop stalls (21/21 and 35/44 overlapped a loop-lag event). Permutation p 0.13-0.67.
+The laptop slept after the first flood's traffic (482 min step); keep-awake did not prevent it. Details: FINAL_REPORT.md, REAL_MODEL_REPORT.md.

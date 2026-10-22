@@ -569,3 +569,9 @@ gateway crashed at import since the feedback meter was added (commit 9dd1f02).
 Results (R): see FINAL_REPORT.md section 4. Highlights: raw 100% / 100% (ordinary) and 95.0% (real_long); window_hard + continue 33.3% and 43.3% (ordinary, both below chance, train 78% and 73%) and 45.0% BOUNDED (real_long, 105 of 240 allowed late,
 1 cancelled); the fixed release slipped to p99 5.719 s / max 6.020 s in real_long (W = 3 s); Docker real check passed (isolation 11/11, 30/30 identical replies, audit VALID); no sign of a hosted-cache speed-up on repeats.
 No key in any result file (checked). NOT RUN: a flood with the real model, per-request release data of the window cells (so the slip is undiagnosed), an explanation of the below-chance accuracies.
+
+### Overnight real-model suite (PARAMS v6, `python -m eval.real_overnight`, started 2026-10-21 23:01, finished 2026-10-22 09:01, 597 min)
+Steps A1-A3 (window_continue, ordinary x2 + real_long) and B1/B2 (real-model flood with window_continue and with the default bucket_hard), each with diagnostics; every request saved (public JSONL, private answers git-ignored).
+Results (R): A1 41.7%, A2 46.7% (no leak found), A3 57.5% (bounded); B1 48.3% (bounded, 21/720 slipped), B2 66.7% (bounded, 44/720 slipped, max release 9.909 s, audit 1305 dead letters). See FINAL_REPORT.md P1/P4/P5/P6/P11 and section 4.
+Problems found while running: the laptop went to sleep after B1's traffic (step took 482 min instead of ~45; keep-awake call ineffective); `eval/real_report.py` crashed on flood cells (audit is a bool there) - fixed, REAL_MODEL_REPORT.md generated from the saved files.
+A key was pasted into the terminal and chat during the session; the user was told to revoke it. NOT done: LOOP_OFFLOAD / FAIR_ADMIT / other proposed fixes; causes of the audit loss in the bucket_hard flood and of the 9 unexplained slips.

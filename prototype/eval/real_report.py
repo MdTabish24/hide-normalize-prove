@@ -41,7 +41,7 @@ def cell_rows(results):
              "|---|---|---|---:|---:|---:|---|---|---|---|"]
     for name, d in results:
         release = d.get("release_seconds") or d.get("observer_release_seconds") or {}
-        audit = d.get("audit") or {}
+        audit = d.get("audit") if isinstance(d.get("audit"), dict) else {}
         queue = d.get("audit_queue_after_drain")
         audit_text = f"{audit.get('valid')}/{audit.get('runs')} valid" if audit else (
             "; ".join(f"world {x['world']}: {x['pending_after_drain']} pending, {x['dead_letters']} dead" for x in queue) if queue else "n/a")
