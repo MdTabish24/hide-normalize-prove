@@ -66,17 +66,17 @@ services:
       AUDIT_TIMEOUT_SECONDS: ${AUDIT_TIMEOUT_SECONDS:-1}
       AUDIT_QUEUE_MAX: ${AUDIT_QUEUE_MAX:-10000}
       # Opt-in: deliver up to N audit events per request (0 = one per request, the default).
-      AUDIT_BATCH: ${AUDIT_BATCH:-0}
+      AUDIT_BATCH: ${AUDIT_BATCH:-50}
       BUCKETS: ${BUCKETS:-3,6,9}
       DATA_DIR: /data
-      POLICY_MODE: ${POLICY_MODE:-bucket_hard}
+      POLICY_MODE: ${POLICY_MODE:-window_hard}
       # window_hard only: release at WINDOW_SECONDS (default: last bucket),
       # cancel compute at DEADLINE_FRACTION * window, no per-identity queue.
       WINDOW_SECONDS: ${WINDOW_SECONDS:-}
       DEADLINE_FRACTION: ${DEADLINE_FRACTION:-0.8}
       MAX_INFLIGHT_PER_IDENTITY: ${MAX_INFLIGHT_PER_IDENTITY:-16}
       # window_hard only, opt-in: do not cancel at the deadline; compute continues up to the hard maximum.
-      WINDOW_CONTINUE: ${WINDOW_CONTINUE:-0}
+      WINDOW_CONTINUE: ${WINDOW_CONTINUE:-1}
       BLUE_INLINE: ${BLUE_INLINE:-0}
       WINDOW_CONTINUE_MAX_SECONDS: ${WINDOW_CONTINUE_MAX_SECONDS:-}
       RANGE_SEED_MODE: ${RANGE_SEED_MODE:-run}

@@ -37,8 +37,8 @@ attacker and publish what still leaks, instead of claiming it is gone.
 |---|---|---|
 | `raw` | actual compute time | evaluation baseline only, honored only with `EVAL_MODE=1` |
 | `bucket` | smallest of 3/6/9 s that fits; late = actual time | evaluation baseline only (`EVAL_MODE=1`) |
-| `bucket_hard` | smallest of 3/6/9 s; gateway wait cancelled at 9 s | **default**; remote provider termination is unverified |
-| `window_hard` | target W (default 9 s); gateway wait cancelled at D = 0.8 W | Round 2 proposal; select explicitly; OS scheduling jitter remains |
+| `bucket_hard` | smallest of 3/6/9 s; gateway wait cancelled at 9 s | previous default (still the built-in code default; the Docker compose default is now `window_hard`); remote provider termination is unverified |
+| `window_hard` | target W (default 9 s); gateway wait cancelled at D = 0.8 W | **Docker compose default** (with `WINDOW_CONTINUE=1`, `AUDIT_BATCH=50`); OS scheduling jitter remains; still bounded leaks under load, see FINAL_REPORT.md |
 
 `window_hard` removes the bucket boundary: a request that finishes at 0.1 s,
 one that is blocked, one that errors and one cancelled at D are all released
@@ -110,7 +110,7 @@ docker compose ps
 python manage.py configure                  # Blue sets its rule (default trigger: pineapple)
 ```
 
-To run the Round 2 policy instead of the default: `$env:POLICY_MODE = "window_hard"; docker compose up -d`.
+The Docker default is now `window_hard` + `WINDOW_CONTINUE=1` + `AUDIT_BATCH=50` (a local `.env` that sets `POLICY_MODE` overrides it). To run the old policy: `$env:POLICY_MODE = "bucket_hard"; $env:WINDOW_CONTINUE = "0"; $env:AUDIT_BATCH = "0"; docker compose up -d`.
 
 **Recommended opt-in profile** (fixed-window release without cancelling long requests, plus batched audit delivery; the default stays `bucket_hard`):
 
