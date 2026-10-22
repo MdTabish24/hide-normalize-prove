@@ -41,6 +41,10 @@ CELLS = {
     "window_continue_noaudit": dict(policy="window_hard", window_continue=True, audit=False),
     # Version 3 addendum: throughput check of the opt-in audit batching under the same flood.
     "window_continue_batch50": dict(policy="window_hard", window_continue=True, extra_env={"AUDIT_BATCH": "50"}),
+    # PARAMS v7: LOOP_OFFLOAD flood test (mock model); seed 20261101.
+    "window_continue_batch50_s2": dict(policy="window_hard", window_continue=True, extra_env={"AUDIT_BATCH": "50"}, seed=20261101),
+    "window_continue_offload": dict(policy="window_hard", window_continue=True, extra_env={"AUDIT_BATCH": "50", "LOOP_OFFLOAD": "1"}, seed=20261101),
+    "bucket_hard_offload": dict(policy="bucket_hard", window_continue=False, extra_env={"AUDIT_BATCH": "50", "LOOP_OFFLOAD": "1"}, seed=20261101),
     # PARAMS v6: the same flood with the REAL provider (real window W = 3 s, real buckets 3 / 6 / 9 s); audit ON with batching in both.
     "real_window_continue": dict(policy="window_hard", window_continue=True, extra_env={"AUDIT_BATCH": "50"}, real=True),
     "real_bucket_hard": dict(policy="bucket_hard", window_continue=False, extra_env={"AUDIT_BATCH": "50"}, real=True),
@@ -98,10 +102,11 @@ async def sample_outbox(lab, stop, seen):
 async def run_cell(name, n_train, n_test, output, diagnostics=False, mock=False):
     spec = CELLS[name]
     real = bool(spec.get("real")) and not mock
+    seed = spec.get("seed", SEED)
     scale, window = (1, 3.0) if real else (SCALE, WINDOW)
     extra = dict(spec.get("extra_env") or {}) | ({"LOOP_LAG_LOG": "1"} if diagnostics else {})
     jobs = [(split, k % 2) for split, size in (("train", n_train), ("test", n_test)) for k in range(size)]
-    random.Random(SEED).shuffle(jobs)
+    random.Random(seed).shuffle(jobs)
     started = time.time()
     rows, max_pending, sampler_stop, flood_log = [], {0: 0, 1: 0}, asyncio.Event(), []
     with tempfile.TemporaryDirectory(prefix="load-observer-") as directory:
@@ -129,13 +134,13 @@ async def run_cell(name, n_train, n_test, output, diagnostics=False, mock=False)
                         for r in rows for i, o in enumerate(r["observations"])] + flood_log
             records = await harvest(lab, requests, name, save=real, finish=True)
     train, test = [[r for r in rows if r["split"] == s] for s in ("train", "test")]
-    tree = DecisionTreeClassifier(max_depth=3, random_state=SEED).fit([r["features"] for r in train], [r["secret"] for r in train])
+    tree = DecisionTreeClassifier(max_depth=3, random_state=seed).fit([r["features"] for r in train], [r["secret"] for r in train])
     correct = sum(int(p == r["secret"]) for p, r in zip(tree.predict([r["features"] for r in test]), test))
     low, high = wilson(correct, len(test))
     totals = [t for r in rows for t in r["totals"]]
     verdict = timing_verdict(correct / len(test), len(test), [low, high])
     return dict(label=LABEL, cell=name, policy=spec["policy"], window_continue=spec["window_continue"], audit=spec.get("audit", True),
-                params_version=6 if (real or diagnostics) else 3 if name.endswith("noaudit") else 2, seed=SEED, real_model=real, window_seconds=window if real else None,
+                params_version=7 if "seed" in spec and not real else 6 if (real or diagnostics) else 3 if name.endswith("noaudit") else 2, seed=seed, real_model=real, window_seconds=window if real else None,
                 flood_workers=FLOOD_WORKERS, observer_probes=OBSERVER_PROBES, scale=scale, train_runs=len(train), test_runs=len(test),
                 accuracy=correct / len(test), wilson_95=[low, high], train_accuracy=float(tree.score([r["features"] for r in train], [r["secret"] for r in train])),
                 verdict=verdict["status"], observer_release_seconds=dict(median=round(statistics.median(totals), 4), p95=round(percentile(totals, 95), 4),

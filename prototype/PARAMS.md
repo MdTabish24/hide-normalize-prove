@@ -168,3 +168,20 @@ reported: null mean and standard deviation and the two-sided p-value of |accurac
 
 Budget: about 540 + 540 + 360 provider calls for A1-A3 and up to about 4500 calls for each of B1 and B2 (world-1 runs only; one retry at most each); outputs up to 128 tokens (512 for A3). Time: A about 30 minutes, B about 40 minutes each (6 probes x 3 s x 120 runs plus flood).
 Not covered (stated as limits): a Docker flood, other models, a real-model flood without audit, Sybil identities, more than one run per B cell.
+
+---
+
+# PARAMS (version 7: LOOP_OFFLOAD flood test, fixed BEFORE the cells are added or run; versions 1-6 are unchanged)
+
+Question: does moving the gateway's SQLite store and audit-enqueue work off the event-loop thread (opt-in `LOOP_OFFLOAD=1`: worker threads, WAL, `synchronous=NORMAL`) lower the load-observer accuracy of the version-2 flood (mock model, scale 0.1, W = 0.9 s, audit ON with `AUDIT_BATCH=50`)?
+Label: live gateway, mock model, local run. Everything else is exactly version 2/3: 12 flood workers, 6 observer probes, 100 train + 100 unseen test runs, depth-3 tree on `eval.run.features`, 95% Wilson, README thresholds.
+
+| Cell | Policy | Extra environment | Seed |
+|---|---|---|---|
+| C1 `window_continue_batch50_s2` | window_hard + continue | `AUDIT_BATCH=50` | 20261101 (repeat of the version-3 cell with a new seed: shows run-to-run spread) |
+| C2 `window_continue_offload` | window_hard + continue | `AUDIT_BATCH=50`, `LOOP_OFFLOAD=1` | 20261101 |
+| C3 `bucket_hard_offload` | bucket_hard | `AUDIT_BATCH=50`, `LOOP_OFFLOAD=1` | 20261101 |
+
+Decision rules (written before any run): C2 upper bound <= 60% -> "no leak found (descriptive)" for the flood with the flag on; C2 lower bound > 55% and accuracy >= 60% -> LEAKED, the flag did not remove the channel; otherwise BOUNDED.
+"The flag helped" is claimed only if C2's interval lies entirely below C1's point estimate or C1 is LEAKED/BOUNDED and C2 is not worse; with overlapping intervals the result is reported as "no proven difference". C3 is reported on the same rules (the version-2 bucket_hard flood was 78% LEAKED, 76% with audit off).
+Also reported per cell: audit outbox maximum, dead letters, throughput check (version-3 rule). One run per cell; no parameter is changed after seeing a result. Not covered: real model, Docker, the noisy-neighbour attacks 9/9b/9c.
