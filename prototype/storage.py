@@ -16,7 +16,8 @@ from vault import PayloadVault, RECORD_BYTES
 
 class Store:
     def __init__(self, directory, key, *, range_seed_mode="run", range_generator=generate_range, range_randbelow=None,
-                 audit_queue_max=10000):
+                 audit_queue_max=10000, wal=False):
+        self.wal = wal
         if range_seed_mode not in {"run", "probeset"}:
             raise ValueError("Invalid RANGE_SEED_MODE")
         self.range_seed_mode, self.range_generator = range_seed_mode, range_generator
@@ -72,11 +73,14 @@ class Store:
             db.execute("UPDATE attempts SET done=1 WHERE done=0")
         # Separate file: audit enqueue/ack never waits on run/budget locks.
         # Replay after a crash is safe: the collector drops duplicates by gw_seq.
-        self.audit_queue = AuditQueue(self.directory / "audit_queue.sqlite", audit_queue_max)
+        self.audit_queue = AuditQueue(self.directory / "audit_queue.sqlite", audit_queue_max, wal=wal)
 
     @contextmanager
     def connect(self):
         with self.lock, closing(sqlite3.connect(self.database, timeout=5)) as db, db:
+            if self.wal:  # LOOP_OFFLOAD: write-ahead log + synchronous=NORMAL (see FINAL_REPORT.md for the durability trade-off).
+                db.execute("PRAGMA journal_mode=WAL")
+                db.execute("PRAGMA synchronous=NORMAL")
             db.execute("BEGIN IMMEDIATE")
             yield db
 

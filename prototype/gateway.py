@@ -152,14 +152,14 @@ class Boundary:
         audit = state.get("audit")
         if audit:
             run_id = state.get("audit_run_id", state.get("run_id"))
-            audit.emit("bucket_released", run_id, state.get("role"), bucket, state.get("prompt_hash"))
+            await audit.aemit("bucket_released", run_id, state.get("role"), bucket, state.get("prompt_hash"))
             if state.get("cancelled"):
-                audit.emit("deadline_cancelled", run_id, state.get("role"), bucket, state.get("prompt_hash"))
+                await audit.aemit("deadline_cancelled", run_id, state.get("role"), bucket, state.get("prompt_hash"))
             if state.get("audit_report"):
-                audit.emit("report_served", run_id, state.get("role"), bucket)
+                await audit.aemit("report_served", run_id, state.get("role"), bucket)
             if state.get("audit_finish"):
-                audit.emit("run_finished", run_id, state.get("role"), bucket)
-                audit.finish(run_id)
+                await audit.aemit("run_finished", run_id, state.get("role"), bucket)
+                await audit.afinish(run_id)
 
 
 def fine_timer():
@@ -198,6 +198,11 @@ def create_app(settings=None, transport=None):
     background = set()
     # Opt-in (BLUE_INLINE=1): the keyword rule is evaluated inside the gateway as DATA, so no Blue-side code ever receives Red's prompt.
     blue_inline = config.get("BLUE_INLINE") == "1"
+    # Opt-in (LOOP_OFFLOAD=1): SQLite store/audit work for a request runs in worker threads, with WAL + synchronous=NORMAL.
+    loop_offload = config.get("LOOP_OFFLOAD") == "1"
+
+    async def off(function, *args, **kwargs):
+        return await asyncio.to_thread(function, *args, **kwargs) if loop_offload else function(*args, **kwargs)
     # Opt-in feedback: none (default) | meter (3 states, batched, budgeted) | exact (per-prompt baseline, EVAL_MODE=1 only).
     feedback_mode = config.get("FEEDBACK_MODE", "none")
     if feedback_mode not in ("none", "meter", "exact"):
@@ -215,7 +220,7 @@ def create_app(settings=None, transport=None):
         raise ValueError("GATEWAY_KEY must be a 32-byte hex key")
     store = Store(config.get("DATA_DIR", "/data"), key,
                   range_seed_mode=config.get("RANGE_SEED_MODE", "run"), range_generator=generate_range,
-                  audit_queue_max=int(config.get("AUDIT_QUEUE_MAX", "10000")))
+                  audit_queue_max=int(config.get("AUDIT_QUEUE_MAX", "10000")), wal=loop_offload)
     demo_trace = config.get("EVAL_MODE") == "1" and config.get("DEMO_TRACE") == "1"
     # Opt-in diagnosis only (EVAL_MODE=1): record every event-loop stall above 0.1 s with wall time and load counters.
     lag_log = config.get("EVAL_MODE") == "1" and config.get("LOOP_LAG_LOG") == "1"
@@ -335,12 +340,12 @@ def create_app(settings=None, transport=None):
             request.state.demo_trace_file = str(store.directory / "demo-trace.jsonl")
         request.state.prompt_hash = hashlib.sha256(body.prompt.encode()).hexdigest()
         request.state.audit = api.state.audit
-        api.state.audit.emit("submit_received", body.run_id, "red", prompt_hash=request.state.prompt_hash)
+        await api.state.audit.aemit("submit_received", body.run_id, "red", prompt_hash=request.state.prompt_hash)
         version = hashlib.sha256(json.dumps(api.state.defense, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-        attempt = store.begin(body.run_id, owner, request.state.prompt_hash, version)
+        attempt = await off(store.begin, body.run_id, owner, request.state.prompt_hash, version)
         if attempt is None or api.state.defense is None:
             if attempt is not None:
-                store.end(attempt, False)
+                await off(store.end, attempt, False)
             raise HTTPException(403)
         safe = cancelled = False
         blue_allowed = None
@@ -388,17 +393,23 @@ def create_app(settings=None, transport=None):
                 trace["reason"] = "internal_error"
             raise
         finally:
-            output_ref = None
-            try:
-                output_ref = store.seal_output(body.run_id, owner, output)
-            finally:
-                late = continue_mode and not cancelled and time.perf_counter() - started > deadline
-                store.end(attempt, safe, cancelled, blue_allowed=blue_allowed, output_ref=output_ref, late=late)
-                if meter_params is not None:
-                    # Off the request path: a worker thread publishes completed batches; nothing waits for it.
-                    task = asyncio.create_task(asyncio.to_thread(store.meter_update, body.run_id, owner, meter_params, key))
-                    meter_tasks.add(task)
-                    task.add_done_callback(lambda done: (meter_tasks.discard(done), done.cancelled() or done.exception()))
+            late = continue_mode and not cancelled and time.perf_counter() - started > deadline
+
+            def settle():
+                output_ref = None
+                try:
+                    output_ref = store.seal_output(body.run_id, owner, output)
+                finally:
+                    store.end(attempt, safe, cancelled, blue_allowed=blue_allowed, output_ref=output_ref, late=late)
+            if loop_offload:  # Shielded: a cancellation must never leave the attempt unfinished.
+                await asyncio.shield(asyncio.to_thread(settle))
+            else:
+                settle()
+            if meter_params is not None:
+                # Off the request path: a worker thread publishes completed batches; nothing waits for it.
+                task = asyncio.create_task(asyncio.to_thread(store.meter_update, body.run_id, owner, meter_params, key))
+                meter_tasks.add(task)
+                task.add_done_callback(lambda done: (meter_tasks.discard(done), done.cancelled() or done.exception()))
         return Response(status_code=202)
 
     @api.post("/v1/defense")

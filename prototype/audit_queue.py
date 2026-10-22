@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS audit_dead (
 
 
 class AuditQueue:
-    def __init__(self, path, max_entries=10000):
-        self.path, self.max_entries = Path(path), max_entries
+    def __init__(self, path, max_entries=10000, wal=False):
+        self.path, self.max_entries, self.wal = Path(path), max_entries, wal
         # Enqueue (event loop) and the shipper (worker thread) would otherwise
         # collide in SQLite's busy-wait, which measured multi-second stalls.
         # One process-local lock keeps every wait to a few milliseconds.
@@ -41,6 +41,9 @@ class AuditQueue:
     @contextmanager
     def connect(self):
         with self.lock, closing(sqlite3.connect(self.path, timeout=5)) as db, db:
+            if self.wal:  # LOOP_OFFLOAD: cheaper commits; a crash may lose the last events, which the collector sees as a gap.
+                db.execute("PRAGMA journal_mode=WAL")
+                db.execute("PRAGMA synchronous=NORMAL")
             db.execute("BEGIN IMMEDIATE")
             yield db
 

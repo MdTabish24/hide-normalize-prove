@@ -26,6 +26,7 @@ class Forwarder:
         # Opt-in: deliver up to this many consecutive /append events per HTTP round trip (0 or 1 = one event per request).
         self.batch = max(0, min(200, int(config.get("AUDIT_BATCH") or 0)))
         self.first_seen = {}  # row id -> monotonic time this process first saw it
+        self.offload = config.get("LOOP_OFFLOAD") == "1"  # Opt-in: enqueue in a worker thread instead of on the event loop.
         self.wakeup = asyncio.Event()
         self.task = self.client = None
 
@@ -37,11 +38,25 @@ class Forwarder:
             self.wakeup.set()  # Resume persisted deliveries on startup.
             self.task = asyncio.create_task(self.worker())
 
-    def _enqueue(self, run_id, path, payload):
-        row = self.queue.enqueue(run_id, path, payload, self.enabled)
+    def _queued(self, row):
         if row is not None:
             self.first_seen[row] = time.monotonic()
         self.wakeup.set()
+
+    def _enqueue(self, run_id, path, payload):
+        self._queued(self.queue.enqueue(run_id, path, payload, self.enabled))
+
+    async def _aenqueue(self, run_id, path, payload):
+        if not self.offload:
+            return self._enqueue(run_id, path, payload)
+        self._queued(await asyncio.to_thread(self.queue.enqueue, run_id, path, payload, self.enabled))
+
+    async def aemit(self, event_type, run_id, role=None, bucket=None, prompt_hash=None):
+        await self._aenqueue(run_id, "/append", {"type": event_type, "run_id": run_id, "role": role,
+                                                 "bucket": bucket, "timestamp": time.time(), "prompt_hash": prompt_hash})
+
+    async def afinish(self, run_id):
+        await self._aenqueue(run_id, "/finish", {"run_id": run_id})
 
     def emit(self, event_type, run_id, role=None, bucket=None, prompt_hash=None):
         self._enqueue(run_id, "/append", {"type": event_type, "run_id": run_id, "role": role,
