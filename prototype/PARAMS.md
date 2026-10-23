@@ -185,3 +185,21 @@ Label: live gateway, mock model, local run. Everything else is exactly version 2
 Decision rules (written before any run): C2 upper bound <= 60% -> "no leak found (descriptive)" for the flood with the flag on; C2 lower bound > 55% and accuracy >= 60% -> LEAKED, the flag did not remove the channel; otherwise BOUNDED.
 "The flag helped" is claimed only if C2's interval lies entirely below C1's point estimate or C1 is LEAKED/BOUNDED and C2 is not worse; with overlapping intervals the result is reported as "no proven difference". C3 is reported on the same rules (the version-2 bucket_hard flood was 78% LEAKED, 76% with audit off).
 Also reported per cell: audit outbox maximum, dead letters, throughput check (version-3 rule). One run per cell; no parameter is changed after seeing a result. Not covered: real model, Docker, the noisy-neighbour attacks 9/9b/9c.
+
+---
+
+# PARAMS (version 8: `RANGE_SEED_MODE=coarse`, fixed BEFORE it is measured; versions 1-7 are unchanged)
+
+Question: does the opt-in `coarse` report range (same width 12, NOT clamped to [0, total], offset keyed by the probe set) stop Red from recovering the exact safe count, in particular at the extreme counts 0 and 16 of 16?
+Simulation with production `generate_range` (`eval/coarse_report.py`), label "simulated (Monte Carlo)": total 16, 4000 draws per count for training and 4000 for testing, 17 counts, seed 20261102, uniform prior over counts, maximum-a-posteriori attacker that learns P(range | count) from the training draws.
+Compared against the current `run` mode. Decision rule (written before running): the extreme-count leak is "closed" only if exact recovery at BOTH count 0 and count 16 is <= 25% in coarse mode and the true count is inside the range in 100% of draws (utility kept);
+otherwise it is reported as reduced (lower than `run`) or not reduced. Also reported: overall exact recovery, and that repeating one probe set gives one output (no averaging). Not covered: a smarter attacker (several probe sets, rewording), total other than 16, real model.
+The Red-visible report shape stays `{"status","safe_range"}` in a 64-byte envelope; ranges may contain values outside [0, total] by design (documented in FINAL_REPORT.md).
+
+---
+
+# PARAMS (version 9: attacks 9 and 9b with the version-7 flags, fixed BEFORE they are re-run; versions 1-8 are unchanged)
+
+Question: do `LOOP_OFFLOAD=1`, `WINDOW_CONTINUE=1` and `AUDIT_BATCH=50` change the two shared-load measurements of the attack suite? Attack 9 = Blue's `/v1/defense` release times, 60 quiet vs 60 under a 32-worker Red burst; attack 9b = release slip with all host cores busy (60 requests idle, 60 loaded).
+Run twice with the unchanged measurement code of `attack_suite.py`: (a) baseline flags, (b) `ATTACK_EXTRA_ENV={"LOOP_OFFLOAD":"1","WINDOW_CONTINUE":"1","AUDIT_BATCH":"50"}`, each policy of the attack (`bucket_hard`, `window_hard`); results in `eval/output/loop_offload/attack9_baseline.json` and `attack9_offload.json`. Label: live gateway, mock model, local run; the laptop must be idle.
+Decision rule (before running): an attack counts as "no shift found" only if the KS test gives p >= 0.05 AND the under-load p95 is at most 1.5 times the quiet p95 (attack 9), or the share of requests released more than 20 ms late under load is at most 1.5 times the idle share (attack 9b); otherwise it stays as measured (LEAKED / BOUNDED LEAK). A lower number with the flags on that does not meet this rule is reported as "reduced", not as closed. One run per cell; no parameter is changed after seeing a result. Not covered: Docker (attack 9c), real model.

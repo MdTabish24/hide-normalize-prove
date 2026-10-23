@@ -51,7 +51,8 @@ class Stack:
 
     def __init__(self, directory, policy, cache_namespace="on", trigger=None, extra=None):
         self.directory, self.policy = Path(directory), policy
-        self.cache_namespace, self.extra = cache_namespace, extra or {}
+        # ATTACK_EXTRA_ENV (JSON object) adds gateway settings to every local stack, e.g. {"LOOP_OFFLOAD": "1"} (PARAMS v9).
+        self.cache_namespace, self.extra = cache_namespace, dict(json.loads(os.environ.get("ATTACK_EXTRA_ENV") or "{}"), **(extra or {}))
         self.trigger = trigger or "canary" + secrets.token_hex(6)
         self.servers = []
 
@@ -560,7 +561,7 @@ def main():
     if args.only and args.output.exists():  # Partial re-run: replace only the selected attacks.
         previous = [r for r in json.loads(args.output.read_text(encoding="utf-8"))["results"] if str(r["attack"]) not in set(args.only)]
     rows = sorted(previous + ROWS, key=lambda r: (float(str(r["attack"]).rstrip("bc")) + (0.5 if str(r["attack"]).endswith("b") else 0.7 if str(r["attack"]).endswith("c") else 0)))
-    args.output.write_text(json.dumps({"generated": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "results": rows}, indent=2) + "\n",
+    args.output.write_text(json.dumps({"generated": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "extra_env": json.loads(os.environ.get("ATTACK_EXTRA_ENV") or "{}"), "results": rows}, indent=2) + "\n",
                            encoding="utf-8")
     print(f"\n{'#':<3} {'Attack':<62} {'Policy':<12} {'Result':<13} Key number")
     for r in rows:

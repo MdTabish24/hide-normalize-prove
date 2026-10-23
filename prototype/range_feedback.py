@@ -14,8 +14,21 @@ def probe_digest(hashes):
 
 def generate_range(safe_count, total, *, mode="run", key, identity, probes, version,
                    randbelow=None):
-    if not 0 <= safe_count <= total <= 100 or mode not in {"run", "probeset"}:
+    if not 0 <= safe_count <= total <= 100 or mode not in {"run", "probeset", "coarse"}:
         raise ValueError("Invalid feedback inputs")
+    if mode == "coarse":
+        # Opt-in. Same width, but NOT clamped to [0, total] and the offset is keyed by the probe set: an extreme count does not
+        # produce a fixed edge range, and repeating the same probes cannot be averaged. Positions outside [0, total] are legal values.
+        width = RANGE_WIDTH
+        payload = json.dumps(["range-coarse-v1", identity, probes, version], separators=(",", ":")).encode()
+        counter, size = 0, width + 1
+        ceiling = (1 << 256) - ((1 << 256) % size)
+        while True:
+            value = int.from_bytes(hmac.new(key, payload + counter.to_bytes(4, "big"), hashlib.sha256).digest(), "big")
+            if value < ceiling:
+                lower = safe_count - width + value % size
+                return {"status": "complete", "safe_range": [lower, lower + width]}
+            counter += 1
     width = min(RANGE_WIDTH, total)
     low, high = max(0, safe_count - width), min(safe_count, total - width)
     size = high - low + 1
