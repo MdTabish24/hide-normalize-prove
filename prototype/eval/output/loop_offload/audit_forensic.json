@@ -1,0 +1,86 @@
+{
+  "world": 0,
+  "outbox": 2048,
+  "wall": "21:37:45",
+  "by_path": [
+    [
+      "/append",
+      2048
+    ]
+  ],
+  "distinct_runs": 156,
+  "dead": [
+    [
+      "collector unreachable",
+      144,
+      1910,
+      2053
+    ]
+  ],
+  "head_ids": [
+    [
+      2054,
+      "obs-window_continue_batch50_s2-27-f3",
+      "/append",
+      223
+    ],
+    [
+      2055,
+      "obs-window_continue_batch50_s2-27-f3",
+      "/append",
+      224
+    ],
+    [
+      2056,
+      "obs-window_continue_batch50_s2-27-f8",
+      "/append",
+      223
+    ],
+    [
+      2057,
+      "obs-window_continue_batch50_s2-27-f11",
+      "/append",
+      224
+    ],
+    [
+      2058,
+      "obs-window_continue_batch50_s2-27-f8",
+      "/append",
+      224
+    ]
+  ],
+  "tail_ids": [
+    [
+      4101
+    ],
+    [
+      4100
+    ],
+    [
+      4099
+    ]
+  ],
+  "direct_collector_tests": {
+    "single": {
+      "status": 200,
+      "body": "{\"ok\":true}",
+      "seconds": 0.008,
+      "events": 1
+    },
+    "batch": {
+      "status": 200,
+      "body": "{\"ok\":true}",
+      "seconds": 0.054,
+      "events": 50
+    }
+  },
+  "collector_log_files": null,
+  "server_alive": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ]
+}

@@ -1,0 +1,804 @@
+{
+  "generated": "2026-10-23T23:10:36+0530",
+  "extra_env": {},
+  "results": [
+    {
+      "attack": 4,
+      "name": "Error oracle (12 request kinds)",
+      "policy": "bucket_hard",
+      "result": "BOUNDED LEAK",
+      "summary": "1 response shape; 3 release times [0.30000000000000004, 0.6000000000000001, 0.9]: Red can tell its own malformed/unauthorized requests from processed ones by time (not shown to carry Blue's secret)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {
+        "observations": [
+          {
+            "case": "valid allowed",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.6186,
+            "release_point": 0.6000000000000001
+          },
+          {
+            "case": "valid blocked",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.3344,
+            "release_point": 0.30000000000000004
+          },
+          {
+            "case": "missing field",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9059,
+            "release_point": 0.9
+          },
+          {
+            "case": "extra field",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9112,
+            "release_point": 0.9
+          },
+          {
+            "case": "bad JSON",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9048,
+            "release_point": 0.9
+          },
+          {
+            "case": "prompt too long",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.907,
+            "release_point": 0.9
+          },
+          {
+            "case": "body over 32 KiB",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9104,
+            "release_point": 0.9
+          },
+          {
+            "case": "bad run id",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.908,
+            "release_point": 0.9
+          },
+          {
+            "case": "unknown route",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9057,
+            "release_point": 0.9
+          },
+          {
+            "case": "wrong method",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9071,
+            "release_point": 0.9
+          },
+          {
+            "case": "bad token",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9036,
+            "release_point": 0.9
+          },
+          {
+            "case": "report (pending)",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.3339,
+            "release_point": 0.30000000000000004
+          }
+        ]
+      }
+    },
+    {
+      "attack": 4,
+      "name": "Error oracle (12 request kinds)",
+      "policy": "window_hard",
+      "result": "BLOCKED",
+      "summary": "1 response shape and 1 release time (0.9 s) across 12 cases",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {
+        "observations": [
+          {
+            "case": "valid allowed",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9137,
+            "release_point": 0.9
+          },
+          {
+            "case": "valid blocked",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9271,
+            "release_point": 0.9
+          },
+          {
+            "case": "missing field",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9058,
+            "release_point": 0.9
+          },
+          {
+            "case": "extra field",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9062,
+            "release_point": 0.9
+          },
+          {
+            "case": "bad JSON",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9062,
+            "release_point": 0.9
+          },
+          {
+            "case": "prompt too long",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9056,
+            "release_point": 0.9
+          },
+          {
+            "case": "body over 32 KiB",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9062,
+            "release_point": 0.9
+          },
+          {
+            "case": "bad run id",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9061,
+            "release_point": 0.9
+          },
+          {
+            "case": "unknown route",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9056,
+            "release_point": 0.9
+          },
+          {
+            "case": "wrong method",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.903,
+            "release_point": 0.9
+          },
+          {
+            "case": "bad token",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9054,
+            "release_point": 0.9
+          },
+          {
+            "case": "report (pending)",
+            "shape": [
+              202,
+              [
+                [
+                  "content-length",
+                  "64"
+                ],
+                [
+                  "content-type",
+                  "application/json"
+                ]
+              ],
+              64
+            ],
+            "body": "{\"status\":\"pending\"}",
+            "elapsed": 0.9127,
+            "release_point": 0.9
+          }
+        ]
+      }
+    },
+    {
+      "attack": 9,
+      "name": "Noisy neighbor: Red burst (32 workers) vs Blue's release times",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "summary": "median shift +133.5 ms, p95 910 -> 1400 ms, KS D=1.00 p=0.000 (n=60/60)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": 9,
+      "name": "Noisy neighbor: Red burst (32 workers) vs Blue's release times",
+      "policy": "window_hard",
+      "result": "LEAKED",
+      "summary": "median shift +84.0 ms, p95 911 -> 1811 ms, KS D=0.92 p=0.000 (n=60/60)",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": "9b",
+      "name": "Release slip under host CPU load (all cores busy)",
+      "policy": "bucket_hard",
+      "result": "LEAKED",
+      "summary": "late >5 ms: idle 60/60, loaded 60/60; late >20 ms: idle 2/60, loaded 2/60; max lateness idle 315 ms, loaded 308 ms",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {
+        "idle": [
+          0.6149151000008715,
+          0.31394819999968604,
+          0.3121472000002541,
+          0.3111918999993577,
+          0.30751170000075945,
+          0.30809169999974984,
+          0.3160588999999163,
+          0.30772499999966385,
+          0.31685010000001057,
+          0.314220899999782,
+          0.30732110000008106,
+          0.3101409999999305,
+          0.3110092999995686,
+          0.31242440000005445,
+          0.3149271000002045,
+          0.3082851999997729,
+          0.30857800000012503,
+          0.30768329999955313,
+          0.3099443999999494,
+          0.3150333999992654,
+          0.31487139999990177,
+          0.31102950000058627,
+          0.30837530000007973,
+          0.3093221999997695,
+          0.307912899999792,
+          0.30812169999990147,
+          0.31261219999942114,
+          0.31597229999988485,
+          0.30835509999997157,
+          0.30695059999925434,
+          0.3096199000001434,
+          0.30836269999963406,
+          0.3122674000005645,
+          0.33376070000031177,
+          0.31166549999943527,
+          0.31431720000000496,
+          0.30825089999962074,
+          0.3092745999992985,
+          0.3096356999994896,
+          0.31144879999919794,
+          0.30922279999958846,
+          0.3088216999994984,
+          0.3110991000003196,
+          0.31590289999985544,
+          0.3081244000004517,
+          0.3104433999997127,
+          0.3100043000004007,
+          0.3073140999995303,
+          0.3097531000003073,
+          0.3069237999998222,
+          0.30837659999997413,
+          0.3104134000004706,
+          0.31091209999976854,
+          0.3074016999999003,
+          0.30880550000074436,
+          0.30761880000045494,
+          0.30979110000043875,
+          0.31372210000063205,
+          0.3145719000003737,
+          0.3118026000001919
+        ],
+        "loaded": [
+          0.3092844000002515,
+          0.30738389999987703,
+          0.3134426999995412,
+          0.3091349000005721,
+          0.3069900999998936,
+          0.30806610000036017,
+          0.3073227999993833,
+          0.31419610000011744,
+          0.3073936999999205,
+          0.31807279999975435,
+          0.3085470999994868,
+          0.30751579999923706,
+          0.30707729999994626,
+          0.3075701999996454,
+          0.3083181000001787,
+          0.3071506000005684,
+          0.30695469999955094,
+          0.3075388999995994,
+          0.3072242999996888,
+          0.3070465000000695,
+          0.30694560000029014,
+          0.30705010000019684,
+          0.3136936999999307,
+          0.6084628999997221,
+          0.30720300000029965,
+          0.3122078000005786,
+          0.3081179000000702,
+          0.3163533999995707,
+          0.3146875000002183,
+          0.307382900000448,
+          0.31263529999978346,
+          0.3081043000001955,
+          0.3070809000000736,
+          0.30742689999988215,
+          0.307614299999841,
+          0.3078982000006363,
+          0.30762460000005376,
+          0.30779080000047543,
+          0.30721340000036435,
+          0.31237460000011197,
+          0.3072072000004482,
+          0.3068708000000697,
+          0.30730819999917003,
+          0.31264759999976377,
+          0.3074755000006917,
+          0.3514582000007067,
+          0.3059644000004482,
+          0.30818270000054326,
+          0.3092178999995667,
+          0.30694670000048063,
+          0.30770250000023225,
+          0.30629599999974744,
+          0.31195630000001984,
+          0.30710389999967447,
+          0.30649739999989833,
+          0.3079311000001326,
+          0.31133560000034777,
+          0.30784029999995255,
+          0.307383999999729,
+          0.30719739999949525
+        ],
+        "target": 0.30000000000000004
+      }
+    },
+    {
+      "attack": "9b",
+      "name": "Release slip under host CPU load (all cores busy)",
+      "policy": "window_hard",
+      "result": "LEAKED",
+      "summary": "late >5 ms: idle 60/60, loaded 60/60; late >20 ms: idle 0/60, loaded 32/60; max lateness idle 19 ms, loaded 51 ms",
+      "label": "live gateway, mock model, local run",
+      "audit_mode": "on",
+      "details": {
+        "idle": [
+          0.9109241999994993,
+          0.9176914999998189,
+          0.9148543999999674,
+          0.918464700000186,
+          0.9069574999994074,
+          0.9062936999998783,
+          0.9083858999993026,
+          0.90965050000068,
+          0.9081712000006519,
+          0.9068116000007649,
+          0.9084475999998176,
+          0.9099511000003986,
+          0.9084156999997504,
+          0.9081939999996393,
+          0.9096177000001262,
+          0.9111482999996952,
+          0.9099811000005502,
+          0.9099140999996962,
+          0.9092360999993616,
+          0.910164299999451,
+          0.9083679999994274,
+          0.9070815999994011,
+          0.9062583000004452,
+          0.9087420000005295,
+          0.9079587000005631,
+          0.9091290999995181,
+          0.9091629999993529,
+          0.9082171000000017,
+          0.9097071000005599,
+          0.907672399999683,
+          0.909460300000319,
+          0.9096477000002778,
+          0.9090757000003578,
+          0.9094380000005913,
+          0.9187670999999682,
+          0.9087963000001764,
+          0.9083197999998447,
+          0.9090206999999282,
+          0.9116507999997339,
+          0.9073433000003206,
+          0.914140399999269,
+          0.9088018000002194,
+          0.9069468999996388,
+          0.9076369999993403,
+          0.9088432000007742,
+          0.9072160000005169,
+          0.9061447000003682,
+          0.908161199999995,
+          0.9082377000004271,
+          0.9101363999998284,
+          0.9099630999999135,
+          0.9055580000003829,
+          0.9063705999997183,
+          0.9127385000001595,
+          0.9179569999996602,
+          0.9138260999998238,
+          0.9085872999994535,
+          0.9086260000003676,
+          0.9149637000000439,
+          0.9067151999997805
+        ],
+        "loaded": [
+          0.9277500999996846,
+          0.9100122999998348,
+          0.925734200000079,
+          0.9407447999992655,
+          0.9162317999998777,
+          0.9304513999995834,
+          0.9436356000005617,
+          0.9177569999992556,
+          0.9265816999995877,
+          0.931631200000993,
+          0.9171666000002006,
+          0.9251875000009022,
+          0.9314573999999993,
+          0.912035499999547,
+          0.9273872999983723,
+          0.9259502000004431,
+          0.9079287999993539,
+          0.9395008999999845,
+          0.9095549000012397,
+          0.9514749000009033,
+          0.9261415000000852,
+          0.9282271000010951,
+          0.9120538000006491,
+          0.9431297999999515,
+          0.93612419999954,
+          0.9274927000005846,
+          0.9280104000008578,
+          0.9370833000011771,
+          0.9086633000006259,
+          0.9075560000001133,
+          0.9176226999989012,
+          0.9270875000001979,
+          0.9272932000003493,
+          0.9119341999994504,
+          0.9259886999989249,
+          0.909227699999974,
+          0.9083071000004566,
+          0.9153186999992613,
+          0.9085881000009977,
+          0.9083934000009322,
+          0.9104149999984656,
+          0.9165475999998307,
+          0.9331446999985928,
+          0.9225055999995675,
+          0.9201195999994525,
+          0.9167300999997678,
+          0.9301237999989098,
+          0.9133045999988099,
+          0.9321933999999601,
+          0.9261750999994547,
+          0.9106558000003133,
+          0.9285786000000371,
+          0.9102132000007259,
+          0.910169799999494,
+          0.9072708000003331,
+          0.9088779000012437,
+          0.9137434999993275,
+          0.9107872000004136,
+          0.9300148000002082,
+          0.9251056000011886
+        ],
+        "target": 0.9
+      }
+    }
+  ]
+}

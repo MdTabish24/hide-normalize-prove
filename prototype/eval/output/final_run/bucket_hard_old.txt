@@ -1,0 +1,81 @@
+live gateway with mock model, local run: bucket_hard_old 20/200 runs
+live gateway with mock model, local run: bucket_hard_old 40/200 runs
+live gateway with mock model, local run: bucket_hard_old 60/200 runs
+live gateway with mock model, local run: bucket_hard_old 80/200 runs
+live gateway with mock model, local run: bucket_hard_old 100/200 runs
+live gateway with mock model, local run: bucket_hard_old 120/200 runs
+live gateway with mock model, local run: bucket_hard_old 140/200 runs
+live gateway with mock model, local run: bucket_hard_old 160/200 runs
+live gateway with mock model, local run: bucket_hard_old 180/200 runs
+live gateway with mock model, local run: bucket_hard_old 200/200 runs
+{
+ "cell": "bucket_hard_old",
+ "policy": "bucket_hard",
+ "window_continue": false,
+ "audit": true,
+ "params_version": 7,
+ "seed": 20261201,
+ "real_model": false,
+ "window_seconds": null,
+ "flood_workers": 12,
+ "observer_probes": 6,
+ "scale": 0.1,
+ "train_runs": 100,
+ "test_runs": 100,
+ "accuracy": 0.85,
+ "wilson_95": [
+  0.7671644040916763,
+  0.9069401471634337
+ ],
+ "train_accuracy": 0.9,
+ "verdict": "LEAKED",
+ "observer_release_seconds": {
+  "median": 0.3555,
+  "p95": 1.2383,
+  "max": 3.4486
+ },
+ "mean_observer_attempts_recorded": 6,
+ "observer_cancelled": 47,
+ "mean_flood_requests_per_run": 83.6,
+ "audit_queue_after_drain": [
+  {
+   "world": 0,
+   "pending_after_drain": 0,
+   "dead_letters": 1
+  },
+  {
+   "world": 1,
+   "pending_after_drain": 0,
+   "dead_letters": 0
+  }
+ ],
+ "dead_servers": [],
+ "minutes": 19.5,
+ "audit_batch": null,
+ "max_outbox_sampled": {
+  "0": 1029,
+  "1": 276
+ },
+ "throughput_check": {
+  "passed": false,
+  "rule": "max sampled pending < 10000, 0 dead letters, 0 pending after the 20 s drain, no dead server (PARAMS v3 addendum)"
+ },
+ "records": {
+  "requests": 17926,
+  "joined_with_evaluator": 17926,
+  "runs": 2600,
+  "runs_unavailable": 0,
+  "runs_with_count_mismatch": 0,
+  "answers": 6398,
+  "public_file": null,
+  "private_file": null
+ },
+ "permutation_check": {
+  "repetitions": 500,
+  "observed_test_accuracy": 0.85,
+  "swapped_split_accuracy": 0.82,
+  "null_mean": 0.498,
+  "null_sd": 0.044,
+  "two_sided_p": 0.002
+ }
+}

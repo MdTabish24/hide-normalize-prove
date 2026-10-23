@@ -1,0 +1,17 @@
+[4] Error oracle (12 request kinds) | bucket_hard | BOUNDED LEAK | 1 response shape; 3 release times [0.30000000000000004, 0.6000000000000001, 0.9]: Red can tell its own malformed/unauthorized requests from processed ones by time (not shown to carry Blue's secret)
+[4] Error oracle (12 request kinds) | window_hard | BLOCKED | 1 response shape and 1 release time (0.9 s) across 12 cases
+    (attack_error_oracle took 31 s)
+[9] Noisy neighbor: Red burst (32 workers) vs Blue's release times | bucket_hard | LEAKED | median shift +133.5 ms, p95 910 -> 1400 ms, KS D=1.00 p=0.000 (n=60/60)
+[9] Noisy neighbor: Red burst (32 workers) vs Blue's release times | window_hard | LEAKED | median shift +84.0 ms, p95 911 -> 1811 ms, KS D=0.92 p=0.000 (n=60/60)
+    (attack_noisy_neighbor took 262 s)
+[9b] Release slip under host CPU load (all cores busy) | bucket_hard | LEAKED | late >5 ms: idle 60/60, loaded 60/60; late >20 ms: idle 2/60, loaded 2/60; max lateness idle 315 ms, loaded 308 ms
+[9b] Release slip under host CPU load (all cores busy) | window_hard | LEAKED | late >5 ms: idle 60/60, loaded 60/60; late >20 ms: idle 0/60, loaded 32/60; max lateness idle 19 ms, loaded 51 ms
+    (attack_cpu_slip took 160 s)
+
+#   Attack                                                         Policy       Result        Key number
+4   Error oracle (12 request kinds)                                bucket_hard  BOUNDED LEAK  1 response shape; 3 release times [0.30000000000000004, 0.6000000000000001, 0.9]: Red can tell its own malformed/unauthorized requests from processed 
+4   Error oracle (12 request kinds)                                window_hard  BLOCKED       1 response shape and 1 release time (0.9 s) across 12 cases
+9   Noisy neighbor: Red burst (32 workers) vs Blue's release times bucket_hard  LEAKED        median shift +133.5 ms, p95 910 -> 1400 ms, KS D=1.00 p=0.000 (n=60/60)
+9   Noisy neighbor: Red burst (32 workers) vs Blue's release times window_hard  LEAKED        median shift +84.0 ms, p95 911 -> 1811 ms, KS D=0.92 p=0.000 (n=60/60)
+9b  Release slip under host CPU load (all cores busy)              bucket_hard  LEAKED        late >5 ms: idle 60/60, loaded 60/60; late >20 ms: idle 2/60, loaded 2/60; max lateness idle 315 ms, loaded 308 ms
+9b  Release slip under host CPU load (all cores busy)              window_hard  LEAKED        late >5 ms: idle 60/60, loaded 60/60; late >20 ms: idle 0/60, loaded 32/60; max lateness idle 19 ms, loaded 51 ms

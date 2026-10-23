@@ -1,0 +1,158 @@
+{
+  "world": 1,
+  "outbox": 2002,
+  "wall": "22:02:05",
+  "by_path": [
+    [
+      "/append",
+      2002
+    ]
+  ],
+  "distinct_runs": 156,
+  "dead": [
+    [
+      "collector unreachable",
+      135,
+      8276,
+      8410
+    ]
+  ],
+  "head_ids": [
+    [
+      8411,
+      "obs-window_continue_batch50_s2-98-f1",
+      "/append",
+      224
+    ],
+    [
+      8412,
+      "obs-window_continue_batch50_s2-98-f7",
+      "/append",
+      223
+    ],
+    [
+      8413,
+      "obs-window_continue_batch50_s2-98-f9",
+      "/append",
+      223
+    ],
+    [
+      8414,
+      "obs-window_continue_batch50_s2-98-f6",
+      "/append",
+      222
+    ],
+    [
+      8415,
+      "obs-window_continue_batch50_s2-98-f8",
+      "/append",
+      223
+    ]
+  ],
+  "tail_ids": [
+    [
+      10413
+    ],
+    [
+      10412
+    ],
+    [
+      10411
+    ]
+  ],
+  "direct_collector_tests": {
+    "single": {
+      "status": 200,
+      "body": "{\"ok\":true}",
+      "seconds": 0.022,
+      "events": 1
+    },
+    "batch": {
+      "status": 200,
+      "body": "{\"ok\":true}",
+      "seconds": 0.198,
+      "events": 50
+    }
+  },
+  "collector_log_files": null,
+  "server_alive": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "error_types": [
+    [
+      [
+        "batch",
+        "PoolTimeout",
+        1.1
+      ],
+      151
+    ],
+    [
+      [
+        "batch",
+        "TimeoutError",
+        1.002
+      ],
+      1
+    ],
+    [
+      [
+        "batch",
+        "PoolTimeout",
+        1.048
+      ],
+      1
+    ]
+  ],
+  "first_errors": [
+    {
+      "t": 1792772930.682,
+      "where": "batch",
+      "error": "TimeoutError",
+      "timeout": 1.002,
+      "events": 1
+    },
+    {
+      "t": 1792772932.449,
+      "where": "batch",
+      "error": "PoolTimeout",
+      "timeout": 1.048,
+      "events": 24
+    },
+    {
+      "t": 1792772933.772,
+      "where": "batch",
+      "error": "PoolTimeout",
+      "timeout": 1.1,
+      "events": 50
+    }
+  ],
+  "last_errors": [
+    {
+      "t": 1792773122.439,
+      "where": "batch",
+      "error": "PoolTimeout",
+      "timeout": 1.1,
+      "events": 50
+    },
+    {
+      "t": 1792773123.695,
+      "where": "batch",
+      "error": "PoolTimeout",
+      "timeout": 1.1,
+      "events": 50
+    },
+    {
+      "t": 1792773124.922,
+      "where": "batch",
+      "error": "PoolTimeout",
+      "timeout": 1.1,
+      "events": 50
+    }
+  ]
+}
