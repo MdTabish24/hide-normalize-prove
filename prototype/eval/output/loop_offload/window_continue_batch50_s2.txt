@@ -1,0 +1,81 @@
+live gateway with mock model, local run: window_continue_batch50_s2 20/200 runs
+live gateway with mock model, local run: window_continue_batch50_s2 40/200 runs
+live gateway with mock model, local run: window_continue_batch50_s2 60/200 runs
+live gateway with mock model, local run: window_continue_batch50_s2 80/200 runs
+live gateway with mock model, local run: window_continue_batch50_s2 100/200 runs
+live gateway with mock model, local run: window_continue_batch50_s2 120/200 runs
+live gateway with mock model, local run: window_continue_batch50_s2 140/200 runs
+live gateway with mock model, local run: window_continue_batch50_s2 160/200 runs
+live gateway with mock model, local run: window_continue_batch50_s2 180/200 runs
+live gateway with mock model, local run: window_continue_batch50_s2 200/200 runs
+{
+ "cell": "window_continue_batch50_s2",
+ "policy": "window_hard",
+ "window_continue": true,
+ "audit": true,
+ "params_version": 7,
+ "seed": 20261101,
+ "real_model": false,
+ "window_seconds": null,
+ "flood_workers": 12,
+ "observer_probes": 6,
+ "scale": 0.1,
+ "train_runs": 100,
+ "test_runs": 100,
+ "accuracy": 0.57,
+ "wilson_95": [
+  0.47215389549212305,
+  0.6626670147588988
+ ],
+ "train_accuracy": 0.77,
+ "verdict": "BOUNDED LEAK",
+ "observer_release_seconds": {
+  "median": 1.0543,
+  "p95": 1.6056,
+  "max": 5.4942
+ },
+ "mean_observer_attempts_recorded": 5.805,
+ "observer_cancelled": 9,
+ "mean_flood_requests_per_run": 83.6,
+ "audit_queue_after_drain": [
+  {
+   "world": 0,
+   "pending_after_drain": 9982,
+   "dead_letters": 1224
+  },
+  {
+   "world": 1,
+   "pending_after_drain": 0,
+   "dead_letters": 0
+  }
+ ],
+ "dead_servers": [],
+ "minutes": 40.6,
+ "audit_batch": "50",
+ "max_outbox_sampled": {
+  "0": 10000,
+  "1": 56
+ },
+ "throughput_check": {
+  "passed": false,
+  "rule": "max sampled pending < 10000, 0 dead letters, 0 pending after the 20 s drain, no dead server (PARAMS v3 addendum)"
+ },
+ "records": {
+  "requests": 17928,
+  "joined_with_evaluator": 15314,
+  "runs": 2600,
+  "runs_unavailable": 11,
+  "runs_with_count_mismatch": 367,
+  "answers": 8141,
+  "public_file": null,
+  "private_file": null
+ },
+ "permutation_check": {
+  "repetitions": 500,
+  "observed_test_accuracy": 0.57,
+  "swapped_split_accuracy": 0.61,
+  "null_mean": 0.502,
+  "null_sd": 0.046,
+  "two_sided_p": 0.15
+ }
+}

@@ -1,0 +1,12 @@
+[9] Noisy neighbor: Red burst (32 workers) vs Blue's release times | bucket_hard | BOUNDED LEAK | median shift -2.4 ms, p95 930 -> 955 ms, KS D=0.15 p=0.477 (n=60/60)
+[9] Noisy neighbor: Red burst (32 workers) vs Blue's release times | window_hard | LEAKED | median shift +24.8 ms, p95 928 -> 1059 ms, KS D=0.68 p=0.000 (n=60/60)
+    (attack_noisy_neighbor took 242 s)
+[9b] Release slip under host CPU load (all cores busy) | bucket_hard | LEAKED | late >5 ms: idle 60/60, loaded 60/60; late >20 ms: idle 59/60, loaded 58/60; max lateness idle 656 ms, loaded 340 ms
+[9b] Release slip under host CPU load (all cores busy) | window_hard | LEAKED | late >5 ms: idle 60/60, loaded 39/60; late >20 ms: idle 19/60, loaded 4/60; max lateness idle 31 ms, loaded 26 ms
+    (attack_cpu_slip took 195 s)
+
+#   Attack                                                         Policy       Result        Key number
+9   Noisy neighbor: Red burst (32 workers) vs Blue's release times bucket_hard  BOUNDED LEAK  median shift -2.4 ms, p95 930 -> 955 ms, KS D=0.15 p=0.477 (n=60/60)
+9   Noisy neighbor: Red burst (32 workers) vs Blue's release times window_hard  LEAKED        median shift +24.8 ms, p95 928 -> 1059 ms, KS D=0.68 p=0.000 (n=60/60)
+9b  Release slip under host CPU load (all cores busy)              bucket_hard  LEAKED        late >5 ms: idle 60/60, loaded 60/60; late >20 ms: idle 59/60, loaded 58/60; max lateness idle 656 ms, loaded 340 ms
+9b  Release slip under host CPU load (all cores busy)              window_hard  LEAKED        late >5 ms: idle 60/60, loaded 39/60; late >20 ms: idle 19/60, loaded 4/60; max lateness idle 31 ms, loaded 26 ms
