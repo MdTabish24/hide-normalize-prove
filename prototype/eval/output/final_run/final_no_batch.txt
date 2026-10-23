@@ -1,0 +1,81 @@
+live gateway with mock model, local run: final_no_batch 20/200 runs
+live gateway with mock model, local run: final_no_batch 40/200 runs
+live gateway with mock model, local run: final_no_batch 60/200 runs
+live gateway with mock model, local run: final_no_batch 80/200 runs
+live gateway with mock model, local run: final_no_batch 100/200 runs
+live gateway with mock model, local run: final_no_batch 120/200 runs
+live gateway with mock model, local run: final_no_batch 140/200 runs
+live gateway with mock model, local run: final_no_batch 160/200 runs
+live gateway with mock model, local run: final_no_batch 180/200 runs
+live gateway with mock model, local run: final_no_batch 200/200 runs
+{
+ "cell": "final_no_batch",
+ "policy": "window_hard",
+ "window_continue": true,
+ "audit": true,
+ "params_version": 7,
+ "seed": 20261201,
+ "real_model": false,
+ "window_seconds": null,
+ "flood_workers": 12,
+ "observer_probes": 6,
+ "scale": 0.1,
+ "train_runs": 100,
+ "test_runs": 100,
+ "accuracy": 0.6,
+ "wilson_95": [
+  0.5020025867910618,
+  0.6905987135675411
+ ],
+ "train_accuracy": 0.79,
+ "verdict": "BOUNDED LEAK",
+ "observer_release_seconds": {
+  "median": 0.9051,
+  "p95": 0.9191,
+  "max": 11.2855
+ },
+ "mean_observer_attempts_recorded": 5.855,
+ "observer_cancelled": 4,
+ "mean_flood_requests_per_run": 83.9,
+ "audit_queue_after_drain": [
+  {
+   "world": 0,
+   "pending_after_drain": 0,
+   "dead_letters": 0
+  },
+  {
+   "world": 1,
+   "pending_after_drain": 0,
+   "dead_letters": 0
+  }
+ ],
+ "dead_servers": [],
+ "minutes": 33.4,
+ "audit_batch": null,
+ "max_outbox_sampled": {
+  "0": 287,
+  "1": 453
+ },
+ "throughput_check": {
+  "passed": true,
+  "rule": "max sampled pending < 10000, 0 dead letters, 0 pending after the 20 s drain, no dead server (PARAMS v3 addendum)"
+ },
+ "records": {
+  "requests": 17977,
+  "joined_with_evaluator": 16159,
+  "runs": 2600,
+  "runs_unavailable": 13,
+  "runs_with_count_mismatch": 251,
+  "answers": 8656,
+  "public_file": null,
+  "private_file": null
+ },
+ "permutation_check": {
+  "repetitions": 500,
+  "observed_test_accuracy": 0.59,
+  "swapped_split_accuracy": 0.58,
+  "null_mean": 0.494,
+  "null_sd": 0.047,
+  "two_sided_p": 0.078
+ }
+}
