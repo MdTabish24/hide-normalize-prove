@@ -29,6 +29,7 @@ class Forwarder:
         # Opt-in diagnosis (EVAL_MODE=1 and AUDIT_ERROR_LOG=1): exception TYPE names only (no payload, token or message) of failed deliveries.
         self.error_log = config.get("DATA_DIR", "") + "/audit-errors.jsonl" if config.get("EVAL_MODE") == "1" and config.get("AUDIT_ERROR_LOG") == "1" else None
         self.last_error_write = 0.0
+        self.closing = set()  # old clients being closed in the background
         self.offload = config.get("LOOP_OFFLOAD") == "1"  # Opt-in: enqueue in a worker thread instead of on the event loop.
         self.wakeup = asyncio.Event()
         self.task = self.client = None
@@ -36,10 +37,21 @@ class Forwarder:
     def start(self):
         if self.enabled:
             # Own connection pool: audit traffic cannot starve Blue/model calls.
-            self.client = httpx.AsyncClient(transport=self.transport, trust_env=False,
-                                            limits=httpx.Limits(max_connections=1))
+            self.client = self._new_client()
             self.wakeup.set()  # Resume persisted deliveries on startup.
             self.task = asyncio.create_task(self.worker())
+
+    def _new_client(self):
+        return httpx.AsyncClient(transport=self.transport, trust_env=False, limits=httpx.Limits(max_connections=1))
+
+    def _reset_client(self):
+        """After ANY failed delivery use a fresh connection pool. Measured (PARAMS v7 forensic): after one timeout every later attempt of the same
+        client failed with PoolTimeout for minutes while the collector answered a direct request in 8-54 ms, so the whole audit queue stalled."""
+        old, self.client = self.client, self._new_client()
+        if old is not None:
+            task = asyncio.create_task(old.aclose())
+            self.closing.add(task)
+            task.add_done_callback(lambda done: (self.closing.discard(done), done.cancelled() or done.exception()))
 
     def _queued(self, row):
         if row is not None:
@@ -80,6 +92,7 @@ class Forwarder:
         except Exception as error:
             # No exception details, credentials or payloads are logged or returned.
             self._note(error, "single", self.timeout, 1)
+            self._reset_client()
             return False
 
     def _note(self, error, where, timeout, events):
@@ -114,6 +127,7 @@ class Forwarder:
                 return 0
         except Exception as error:
             self._note(error, "batch", timeout, len(batch))
+            self._reset_client()
             return 0
         await asyncio.to_thread(self.queue.ack_many, [r[0] for r in batch])
         for row in batch:
