@@ -1,5 +1,24 @@
 # Hide, Normalize, Prove
 
+## Round 2: working prototype is in [`prototype/`](prototype/)
+
+Everything below this section is the **Round 1** proof of concept (kept for history). The Round 2 prototype (Docker sandbox with isolated Red, Blue and model services,
+a gateway that gives Red one fixed reply, timing policies, a signed hash-chain audit, an evaluation harness, a live dashboard) lives in [`prototype/`](prototype/README.md).
+
+**What is measured (labels matter: L = live gateway with a mock model, R = real DeepSeek, small sample, S = simulation; all local):**
+- Isolation and token checks: 10/10 and 11/11 (also from inside the Docker `red-client`, with the real model); audit tamper 7/7 detected.
+- Timing leak without a defense: an attacker tells Blue's rule A from B 95-100% of the time (L and R). With the fixed-window policy plus continued compute: about 42-47% on ordinary real-model runs (50% = could not tell; this is not proof of no leak).
+- Still open and reported as such: bounded leaks with long answers (57.5%, R) and under a flood (48.3%, R); shared-load channels; report extremes; audit delivery under a flood. See [`FINAL_REPORT.md`](prototype/FINAL_REPORT.md).
+
+**Where to look:** [`FINAL_REPORT.md`](prototype/FINAL_REPORT.md) (open problems and what is established), [`REAL_MODEL_REPORT.md`](prototype/REAL_MODEL_REPORT.md) (every real-model table, generated from saved files),
+[`PARAMS.md`](prototype/PARAMS.md) (test parameters fixed before each run), [`SYSTEM_IN_PLAIN_WORDS.md`](prototype/SYSTEM_IN_PLAIN_WORDS.md), [`JUDGE_QA.md`](prototype/JUDGE_QA.md), [`DEMO_SCRIPT.md`](prototype/DEMO_SCRIPT.md).
+Run it: `cd prototype`, then follow [`prototype/README.md`](prototype/README.md) (`docker compose up --build -d`; the default policy is `window_hard` with continued compute and batched audit).
+
+We make no claim of "secure" or "zero leakage": every number is a small measured sample with its interval, and the residual risks are listed.
+
+---
+
+# Round 1 proof of concept
 A local proof of concept for Bayora's **Securing Adversarial AI Safety Testing
 Infrastructure** challenge. We test whether shared observations expose a
 defender's secret, then measure how gateway policies change those observations.
