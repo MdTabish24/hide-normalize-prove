@@ -18,7 +18,7 @@ class Store:
     def __init__(self, directory, key, *, range_seed_mode="run", range_generator=generate_range, range_randbelow=None,
                  audit_queue_max=10000, wal=False):
         self.wal = wal
-        if range_seed_mode not in {"run", "probeset"}:
+        if range_seed_mode not in {"run", "probeset", "coarse"}:
             raise ValueError("Invalid RANGE_SEED_MODE")
         self.range_seed_mode, self.range_generator = range_seed_mode, range_generator
         self.range_key, self.range_randbelow = key, range_randbelow
