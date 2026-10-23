@@ -88,8 +88,7 @@ class Forwarder:
         self.last_error_write = time.monotonic()
         try:
             with open(self.error_log, "a", encoding="utf-8") as stream:
-                stream.write(json.dumps(dict(t=round(time.time(), 3), where=where, error=type(error).__name__, timeout=timeout, events=events)) + "
-")
+                stream.write(json.dumps(dict(t=round(time.time(), 3), where=where, error=type(error).__name__, timeout=timeout, events=events)) + "\n")
         except OSError:
             pass
 
