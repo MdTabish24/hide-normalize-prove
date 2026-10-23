@@ -33,6 +33,7 @@ SEED = 20261023
 FLOOD_WORKERS, OBSERVER_PROBES, WARMUP_SECONDS = 12, 6, 0.3
 SCALE, WINDOW = 0.1, 0.9
 FLOOD_KEYWORD = "pineapple"  # world 0 blocks it (cheap path), world 1 allows it (model call)
+FINAL_FLAGS = {"AUDIT_BATCH": "50", "LOOP_OFFLOAD": "1", "BLUE_INLINE": "1", "RANGE_SEED_MODE": "coarse"}  # PARAMS v10 final profile
 CELLS = {
     "bucket_hard": dict(policy="bucket_hard", window_continue=False),
     "window_continue": dict(policy="window_hard", window_continue=True),
@@ -45,6 +46,13 @@ CELLS = {
     "window_continue_batch50_s2": dict(policy="window_hard", window_continue=True, extra_env={"AUDIT_BATCH": "50"}, seed=20261101),
     "window_continue_offload": dict(policy="window_hard", window_continue=True, extra_env={"AUDIT_BATCH": "50", "LOOP_OFFLOAD": "1"}, seed=20261101),
     "bucket_hard_offload": dict(policy="bucket_hard", window_continue=False, extra_env={"AUDIT_BATCH": "50", "LOOP_OFFLOAD": "1"}, seed=20261101),
+    # PARAMS v10: final profile vs old default, with leave-one-out cells; seed 20261201.
+    "final_profile": dict(policy="window_hard", window_continue=True, extra_env=dict(FINAL_FLAGS), seed=20261201),
+    "bucket_hard_old": dict(policy="bucket_hard", window_continue=False, seed=20261201),
+    "final_no_offload": dict(policy="window_hard", window_continue=True, extra_env={k: v for k, v in FINAL_FLAGS.items() if k != "LOOP_OFFLOAD"}, seed=20261201),
+    "final_no_batch": dict(policy="window_hard", window_continue=True, extra_env={k: v for k, v in FINAL_FLAGS.items() if k != "AUDIT_BATCH"}, seed=20261201),
+    "final_no_inline": dict(policy="window_hard", window_continue=True, extra_env={k: v for k, v in FINAL_FLAGS.items() if k != "BLUE_INLINE"}, seed=20261201),
+    "real_final": dict(policy="window_hard", window_continue=True, extra_env=dict(FINAL_FLAGS), real=True),
     # PARAMS v6: the same flood with the REAL provider (real window W = 3 s, real buckets 3 / 6 / 9 s); audit ON with batching in both.
     "real_window_continue": dict(policy="window_hard", window_continue=True, extra_env={"AUDIT_BATCH": "50"}, real=True),
     "real_bucket_hard": dict(policy="bucket_hard", window_continue=False, extra_env={"AUDIT_BATCH": "50"}, real=True),

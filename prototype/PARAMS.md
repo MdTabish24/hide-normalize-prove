@@ -203,3 +203,25 @@ The Red-visible report shape stays `{"status","safe_range"}` in a 64-byte envelo
 Question: do `LOOP_OFFLOAD=1`, `WINDOW_CONTINUE=1` and `AUDIT_BATCH=50` change the two shared-load measurements of the attack suite? Attack 9 = Blue's `/v1/defense` release times, 60 quiet vs 60 under a 32-worker Red burst; attack 9b = release slip with all host cores busy (60 requests idle, 60 loaded).
 Run twice with the unchanged measurement code of `attack_suite.py`: (a) baseline flags, (b) `ATTACK_EXTRA_ENV={"LOOP_OFFLOAD":"1","WINDOW_CONTINUE":"1","AUDIT_BATCH":"50"}`, each policy of the attack (`bucket_hard`, `window_hard`); results in `eval/output/loop_offload/attack9_baseline.json` and `attack9_offload.json`. Label: live gateway, mock model, local run; the laptop must be idle.
 Decision rule (before running): an attack counts as "no shift found" only if the KS test gives p >= 0.05 AND the under-load p95 is at most 1.5 times the quiet p95 (attack 9), or the share of requests released more than 20 ms late under load is at most 1.5 times the idle share (attack 9b); otherwise it stays as measured (LEAKED / BOUNDED LEAK). A lower number with the flags on that does not meet this rule is reported as "reduced", not as closed. One run per cell; no parameter is changed after seeing a result. Not covered: Docker (attack 9c), real model.
+
+---
+
+# PARAMS (version 10: final profile vs old default, with leave-one-out cells; fixed BEFORE the cells are added or run; versions 1-9 are unchanged)
+
+Forensic finding that precedes it (PARAMS v7 forensic dumps, `eval/output/loop_offload/audit_forensic*.json`): in the flood cell the audit outbox of one world fills because, after one delivery timeout, every later attempt of the shipper's HTTP client fails with `PoolTimeout` for minutes while the collector answers a direct request in 8-54 ms. Fix added before this version: a fresh HTTP client after any failed delivery (`audit_forwarder.py`). Not yet shown to remove the backlog; the cells below measure it.
+Final profile (all opt-in flags together): `window_hard` + `WINDOW_CONTINUE=1` + `AUDIT_BATCH=50` + `LOOP_OFFLOAD=1` + `BLUE_INLINE=1` + `RANGE_SEED_MODE=coarse`.
+Label: live gateway, mock model, local run (scale 0.1, W = 0.9 s, audit ON); load observer of version 2 (12 flood workers, 6 observer probes, 100 train + 100 unseen test runs, depth-3 tree, 95% Wilson), seed 20261201 in every cell, one run per cell.
+
+| Cell | Policy | Flags |
+|---|---|---|
+| F1 `final_profile` | window_hard + continue | AUDIT_BATCH=50, LOOP_OFFLOAD=1, BLUE_INLINE=1, RANGE_SEED_MODE=coarse |
+| F2 `bucket_hard_old` | bucket_hard | none (the old default) |
+| F3 `final_no_offload` | window_hard + continue | F1 without LOOP_OFFLOAD |
+| F4 `final_no_batch` | window_hard + continue | F1 without AUDIT_BATCH |
+| F5 `final_no_inline` | window_hard + continue | F1 without BLUE_INLINE |
+| R1 `real_final` (needs the user's key; run separately) | window_hard + continue, real DeepSeek, W = 3 s | same flags as F1; 60 + 60 runs as in version 6 |
+
+Also: attacks 4, 9 and 9b of `attack_suite.py` with `ATTACK_EXTRA_ENV` = the F1 flags and once without flags (output `attack_final_*.json`), one run each. Attack 7 is covered by the version-8 simulation, not re-run.
+Decision rules (before any run): (1) "final profile is better than the old default" only if the F1 interval lies entirely below the F2 interval (upper bound of F1 < lower bound of F2) AND F1's audit throughput check passes (max sampled outbox < 10000, 0 pending after the 20 s drain, dead servers none); otherwise "no proven difference" or, if F1 is worse, "worse".
+(2) A leave-one-out cell shows that a flag "contributes" only if removing it makes accuracy higher with non-overlapping intervals (lower bound of the cell > upper bound of F1) or makes the throughput check fail while F1 passes; otherwise "no proven contribution". Flags that do not act in the flood (`RANGE_SEED_MODE`) are judged by their own measurements (version 8); `BLUE_INLINE` also by its unit test.
+(3) Attack 9/9b rules are those of version 9. Report every number, including audit outbox maximum and dead letters. No parameter is changed after seeing a result. Not covered: Docker, other seeds, more than one run per cell.
