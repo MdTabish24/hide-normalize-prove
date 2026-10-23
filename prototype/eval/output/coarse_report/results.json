@@ -1,0 +1,64 @@
+{
+  "label": "simulated (Monte Carlo, production generate_range)",
+  "params_version": 8,
+  "total": 16,
+  "draws_per_count": 4000,
+  "seed": 20261102,
+  "results": [
+    {
+      "mode": "run",
+      "exact_recovery_overall": 0.196,
+      "exact_recovery_count_0": 1.0,
+      "exact_recovery_count_16": 1.0,
+      "truth_inside_range": 1.0,
+      "distinct_ranges": 5,
+      "per_count": {
+        "0": 1.0,
+        "1": 0.487,
+        "2": 0.0,
+        "3": 0.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0,
+        "8": 0.0,
+        "9": 0.0,
+        "10": 0.0,
+        "11": 0.0,
+        "12": 0.0,
+        "13": 0.0,
+        "14": 0.334,
+        "15": 0.506,
+        "16": 1.0
+      }
+    },
+    {
+      "mode": "coarse",
+      "exact_recovery_overall": 0.133,
+      "exact_recovery_count_0": 0.24,
+      "exact_recovery_count_16": 0.468,
+      "truth_inside_range": 1.0,
+      "distinct_ranges": 29,
+      "per_count": {
+        "0": 0.24,
+        "1": 0.156,
+        "2": 0.154,
+        "3": 0.152,
+        "4": 0.152,
+        "5": 0.0,
+        "6": 0.151,
+        "7": 0.084,
+        "8": 0.073,
+        "9": 0.08,
+        "10": 0.0,
+        "11": 0.085,
+        "12": 0.232,
+        "13": 0.155,
+        "14": 0.0,
+        "15": 0.081,
+        "16": 0.468
+      }
+    }
+  ],
+  "coarse_same_probes_distinct_outputs": 1
+}
