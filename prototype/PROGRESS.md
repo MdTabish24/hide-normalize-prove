@@ -575,3 +575,8 @@ Steps A1-A3 (window_continue, ordinary x2 + real_long) and B1/B2 (real-model flo
 Results (R): A1 41.7%, A2 46.7% (no leak found), A3 57.5% (bounded); B1 48.3% (bounded, 21/720 slipped), B2 66.7% (bounded, 44/720 slipped, max release 9.909 s, audit 1305 dead letters). See FINAL_REPORT.md P1/P4/P5/P6/P11 and section 4.
 Problems found while running: the laptop went to sleep after B1's traffic (step took 482 min instead of ~45; keep-awake call ineffective); `eval/real_report.py` crashed on flood cells (audit is a bool there) - fixed, REAL_MODEL_REPORT.md generated from the saved files.
 A key was pasted into the terminal and chat during the session; the user was told to revoke it. NOT done: LOOP_OFFLOAD / FAIR_ADMIT / other proposed fixes; causes of the audit loss in the bucket_hard flood and of the 9 unexplained slips.
+
+### 2026-10-22/23 follow-up work (details: FINAL_REPORT.md section 5)
+Built: `BLUE_INLINE`, compose default `window_hard`+continue+batch50, `LOOP_OFFLOAD` (+ test), `RANGE_SEED_MODE=coarse` (branch `report-coarse`), `eval/gateway_internal_time.py`, PARAMS v7 (offload flood cells), v8 (coarse simulation), v9 (attacks 9/9b with flags), `ATTACK_EXTRA_ENV`.
+Results so far: coarse simulation (reduced, not closed); PARAMS v7 cell C1 = 57.0% bounded with the audit outbox full (so the 47% of version 3 was not stable). C2 (`LOOP_OFFLOAD`) was running; C3 not started (stopped on purpose to fit the time; to run later). Attacks 9/9b re-run not done yet.
+A first attempt of the v7 cells died when the laptop was shut down and was restarted from scratch. Two full-suite timing tests failed once under machine load and passed when rerun.
