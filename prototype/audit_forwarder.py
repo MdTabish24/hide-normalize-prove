@@ -26,6 +26,9 @@ class Forwarder:
         # Opt-in: deliver up to this many consecutive /append events per HTTP round trip (0 or 1 = one event per request).
         self.batch = max(0, min(200, int(config.get("AUDIT_BATCH") or 0)))
         self.first_seen = {}  # row id -> monotonic time this process first saw it
+        # Opt-in diagnosis (EVAL_MODE=1 and AUDIT_ERROR_LOG=1): exception TYPE names only (no payload, token or message) of failed deliveries.
+        self.error_log = config.get("DATA_DIR", "") + "/audit-errors.jsonl" if config.get("EVAL_MODE") == "1" and config.get("AUDIT_ERROR_LOG") == "1" else None
+        self.last_error_write = 0.0
         self.offload = config.get("LOOP_OFFLOAD") == "1"  # Opt-in: enqueue in a worker thread instead of on the event loop.
         self.wakeup = asyncio.Event()
         self.task = self.client = None
@@ -74,9 +77,21 @@ class Forwarder:
                                                   headers={"authorization": "Bearer " + self.token})
             response.raise_for_status()
             return response.json() == {"ok": True}
-        except Exception:
+        except Exception as error:
             # No exception details, credentials or payloads are logged or returned.
+            self._note(error, "single", self.timeout, 1)
             return False
+
+    def _note(self, error, where, timeout, events):
+        if self.error_log is None or time.monotonic() - self.last_error_write < 0.2:
+            return
+        self.last_error_write = time.monotonic()
+        try:
+            with open(self.error_log, "a", encoding="utf-8") as stream:
+                stream.write(json.dumps(dict(t=round(time.time(), 3), where=where, error=type(error).__name__, timeout=timeout, events=events)) + "
+")
+        except OSError:
+            pass
 
     async def deliver_batch(self):
         """Ship the leading run of /append entries in one request. Returns how many were acknowledged (0 on failure)."""
@@ -98,7 +113,8 @@ class Forwarder:
             response.raise_for_status()
             if response.json() != {"ok": True}:
                 return 0
-        except Exception:
+        except Exception as error:
+            self._note(error, "batch", timeout, len(batch))
             return 0
         await asyncio.to_thread(self.queue.ack_many, [r[0] for r in batch])
         for row in batch:
