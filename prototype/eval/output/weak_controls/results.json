@@ -1,0 +1,37 @@
+{
+  "label": "deliberately weak setups, local",
+  "params_version": 14,
+  "results": [
+    {
+      "attack": 1,
+      "weak_setup": "red-client attached to every service network",
+      "result": "LEAKED",
+      "detected_by_our_test": true,
+      "summary": "4/10 targets blocked; isolation demo exit 1; reachable: ['172.23.0.2:8000', '172.24.0.2:8000', '172.22.0.2:8000', 'blue-defense:8000', 'model-mock:8000', 'audit-collector:8000']",
+      "label": "local Docker stack (Docker Desktop)"
+    },
+    {
+      "attack": 2,
+      "weak_setup": "secrets in red-client's environment and the data volume mounted",
+      "result": "LEAKED",
+      "detected_by_our_test": true,
+      "summary": "docker.sock=False, defense.enc visible=True, secret env=['BLUE_TOKEN', 'GATEWAY_KEY'], mounts=[{\"Type\":\"volume\",\"Name\":\"hide-normalize-prove_gateway-data\",\"Source\":\"/var/lib/docker/volumes/hide-normalize-prove_gateway-data/_data\",\"Destination\":\"/data\",\"Driver\":\"local\",\"Mode\":\"rw\",\"RW\":true,\"Propagation\":\"\"}], read-only root=True, uid=10001",
+      "label": "local Docker stack (Docker Desktop)"
+    },
+    {
+      "attack": 8,
+      "weak_setup": "Blue service logs every prompt and the rule",
+      "result": "LEAKED",
+      "detected_by_our_test": true,
+      "summary": "19 files scanned; hits: {'canary trigger': ['naive-blue.log'], 'raw prompt marker': ['naive-blue.log']} (prompt SHA-256 hashes are stored and dictionary-guessable)",
+      "label": "live gateway, mock model, local run"
+    },
+    {
+      "attack": 3,
+      "weak_setup": "none built",
+      "result": "NOT RUN",
+      "detected_by_our_test": null,
+      "summary": "No positive control: it would need a gateway that ignores roles."
+    }
+  ]
+}
