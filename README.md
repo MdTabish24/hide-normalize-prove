@@ -53,24 +53,11 @@ Real DeepSeek runs (optional, your own key, costs tokens) and every other comman
 
 **7 of 11 stopped, 4 reduced but not closed, 1 more group out of scope.** Labels: *mock* = fake model, *real* = DeepSeek small sample, *sim* = simulation, *weak setup* = a deliberately weakened copy, built to prove our test can see a leak. "50%" = Red is only guessing.
 
-![Scoreboard: 7 of 11 stopped, 4 reduced, 1 out of scope](prototype/docs/charts/5_scoreboard.png)
-
-### How much Red learns, without vs with our solution
 ![Without vs with our solution: how often Red guesses Blue's secret](prototype/docs/charts/1_guess_rates.png)
 
-### Direct doors, flood and audit
-![Direct doors: weak setup vs our setup](prototype/docs/charts/2_direct_doors.png)
+*Red bar = without our solution, green = with it, amber = with it but still above guessing (50%). Drawn from the saved result files by `python -m eval.make_charts`.*
 
-![Flood: how much slower Blue's replies get](prototype/docs/charts/3_flood_slowdown.png)
-
-![Audit queue under a flood](prototype/docs/charts/4_audit_queue.png)
-
-### The price of protection: Red's feedback
-![Red's feedback trade-off](prototype/docs/charts/6_feedback_tradeoff.png)
-
-*All charts are drawn from the saved result files by `python -m eval.make_charts`. Red bars = without our solution, green = with it, amber = with it but still above guessing level.*
-
-### The same results as a table
+### All 11 attacks in one table
 | # | Attack | Without our solution | With our solution | Result | Reproduce |
 |---|---|---|---|---|---|
 | 1 | Open a direct door (network) | weak setup: 6 of 10 targets reachable | 10 of 10 blocked | **Stopped** | `attack_suite.py --only 1` (Docker) |
