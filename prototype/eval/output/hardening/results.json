@@ -1,0 +1,100 @@
+{
+  "label": "local Docker stack (Docker Desktop)",
+  "params_version": 11,
+  "containers": 5,
+  "per_container": {
+    "hide-normalize-prove-gateway-1": {
+      "privileged": true,
+      "cap_drop_all": true,
+      "no_new_privileges": true,
+      "read_only_rootfs": true,
+      "non_root_user": true,
+      "no_docker_socket": true,
+      "no_host_pid_or_net": true,
+      "memory_limited": true,
+      "pids_limited": true,
+      "cpu_limited": true,
+      "no_published_ports_except_localhost": true
+    },
+    "hide-normalize-prove-blue-defense-1": {
+      "privileged": true,
+      "cap_drop_all": true,
+      "no_new_privileges": true,
+      "read_only_rootfs": true,
+      "non_root_user": true,
+      "no_docker_socket": true,
+      "no_host_pid_or_net": true,
+      "memory_limited": true,
+      "pids_limited": true,
+      "cpu_limited": true,
+      "no_published_ports_except_localhost": true
+    },
+    "hide-normalize-prove-model-mock-1": {
+      "privileged": true,
+      "cap_drop_all": true,
+      "no_new_privileges": true,
+      "read_only_rootfs": true,
+      "non_root_user": true,
+      "no_docker_socket": true,
+      "no_host_pid_or_net": true,
+      "memory_limited": true,
+      "pids_limited": true,
+      "cpu_limited": true,
+      "no_published_ports_except_localhost": true
+    },
+    "hide-normalize-prove-red-client-1": {
+      "privileged": true,
+      "cap_drop_all": true,
+      "no_new_privileges": true,
+      "read_only_rootfs": true,
+      "non_root_user": true,
+      "no_docker_socket": true,
+      "no_host_pid_or_net": true,
+      "memory_limited": true,
+      "pids_limited": true,
+      "cpu_limited": true,
+      "no_published_ports_except_localhost": true
+    },
+    "hide-normalize-prove-audit-collector-1": {
+      "privileged": true,
+      "cap_drop_all": true,
+      "no_new_privileges": true,
+      "read_only_rootfs": true,
+      "non_root_user": true,
+      "no_docker_socket": true,
+      "no_host_pid_or_net": true,
+      "memory_limited": true,
+      "pids_limited": true,
+      "cpu_limited": true,
+      "no_published_ports_except_localhost": true
+    }
+  },
+  "networks": {
+    "hide-normalize-prove_audit-net": {
+      "internal": true
+    },
+    "hide-normalize-prove_blue-net": {
+      "internal": true
+    },
+    "hide-normalize-prove_model-net": {
+      "internal": true
+    },
+    "hide-normalize-prove_red-net": {
+      "internal": true
+    }
+  },
+  "passed_per_check": {
+    "privileged": 5,
+    "cap_drop_all": 5,
+    "no_new_privileges": 5,
+    "read_only_rootfs": 5,
+    "non_root_user": 5,
+    "no_docker_socket": 5,
+    "no_host_pid_or_net": 5,
+    "memory_limited": 5,
+    "pids_limited": 5,
+    "cpu_limited": 5,
+    "no_published_ports_except_localhost": 5
+  },
+  "not_tested": "kernel and container-runtime exploits, hypervisor/hardware and shared-GPU side channels, a compromised gateway or collector"
+}

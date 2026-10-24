@@ -1,0 +1,11 @@
+[9c] Noisy neighbor inside Docker (Red flood from its own container, 32 workers), no pinning | bucket_hard | LEAKED | median shift +210.2 ms, p95 914 -> 2897 ms, KS D=0.58 p=0.000 (n=45/45)
+[9c] Noisy neighbor inside Docker (Red flood from its own container, 32 workers), no pinning | window_hard | LEAKED | median shift +38.0 ms, p95 915 -> 2519 ms, KS D=0.64 p=0.000 (n=45/45)
+[9c] Noisy neighbor inside Docker (Red flood from its own container, 32 workers), CPU pinned | bucket_hard | BOUNDED LEAK | median shift +1.3 ms, p95 912 -> 7308 ms, KS D=0.31 p=0.020 (n=45/45)
+[9c] Noisy neighbor inside Docker (Red flood from its own container, 32 workers), CPU pinned | window_hard | LEAKED | median shift +111.6 ms, p95 912 -> 1115 ms, KS D=0.78 p=0.000 (n=45/45)
+    (attack_noisy_docker took 613 s)
+
+#   Attack                                                         Policy       Result        Key number
+9c  Noisy neighbor inside Docker (Red flood from its own container bucket_hard  LEAKED        median shift +210.2 ms, p95 914 -> 2897 ms, KS D=0.58 p=0.000 (n=45/45)
+9c  Noisy neighbor inside Docker (Red flood from its own container window_hard  LEAKED        median shift +38.0 ms, p95 915 -> 2519 ms, KS D=0.64 p=0.000 (n=45/45)
+9c  Noisy neighbor inside Docker (Red flood from its own container bucket_hard  BOUNDED LEAK  median shift +1.3 ms, p95 912 -> 7308 ms, KS D=0.31 p=0.020 (n=45/45)
+9c  Noisy neighbor inside Docker (Red flood from its own container window_hard  LEAKED        median shift +111.6 ms, p95 912 -> 1115 ms, KS D=0.78 p=0.000 (n=45/45)
