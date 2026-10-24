@@ -1,6 +1,6 @@
 # Demo video transcript (about 5 minutes, easy English)
 
-Team: **Ctrl Alt**. Project: **Hide, Normalize, Prove**. Show the dashboard page `/room` while you talk. Say the numbers exactly as written.
+Team: **Ctrl Alt**. Project: **Hide, Normalize, Prove**. While you talk, play the dashboard page `/play` (seven animated scenes, one per section below, with the same timings: 25, 30, 35, 105, 35, 40 and 20 seconds; Play runs them in order, Space pauses). The page `/room` has the detailed cards if a judge asks about one attack. Say the numbers exactly as written.
 
 ## 1. Intro (0:00 - 0:25)
 *On screen: the Room page, attack 1.*
