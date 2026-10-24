@@ -24,7 +24,7 @@ const A = [
  without:"With no timing protection Red guesses right 98 to 100 percent of the time (mock) and 100 percent with the real model.",
  fix:"A fixed window: every reply comes at the same moment. Slow work keeps running in the background instead of being cancelled early.",
  other:[["Long answers from the model","Work continues, the reply still comes at the window."],["Many requests at once (flood)","Per-user limit; audit and database work moved off the main loop."],["Bucket edges (3, 6, 9 seconds)","No buckets any more, just one window."]],
- badge:"REDUCED", result:"Real model: 41.7% and 46.7% on normal prompts, 57.5% on long answers, 58.3% in a flood. The upper ends of the long and flood cases are above 60%, so we call it bounded, NOT proven safe.", src:"REAL_MODEL_REPORT.md; FINAL_REPORT.md"},
+ badge:"REDUCED", result:"Real model, normal prompts in four runs: 33.3%, 43.3%, 41.7% and 46.7%. Long answers 57.5%, flood 58.3%. The upper ends of the long and flood cases are above 60%, so we call it bounded, NOT proven safe.", src:"REAL_MODEL_REPORT.md; FINAL_REPORT.md"},
 {doors:["b-red","b-model"], title:"Use the model's memory", attack:"A prompt the model has seen before is answered faster. Red uses that to learn what Blue let through.",
  without:"With a shared cache Red guesses right 95% of the time.",
  fix:"Every run gets its own cache area, and the fixed window hides speed differences.",

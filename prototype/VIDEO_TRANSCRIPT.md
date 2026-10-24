@@ -53,7 +53,7 @@ First, the direct doors: network, files and secrets, fake tokens, and error mess
 **4b. Timing (about 30 seconds)**
 *Screen: **5 Timing** -> Run. Point at the left bars (0.07 s against 1.0 s), then at the right bars (both 3.0 s).*
 
-"Next, timing. Without protection, Red guesses Blue's secret rule 98 to 100 percent of the time, even with the real DeepSeek model. With our fixed-window design, on normal prompts Red gets only 42 to 47 percent. Fifty percent means Red is just guessing. But with long answers it is 57.5 percent, and under a flood of requests it is 58.3 percent. So we call this bounded, not safe."
+"Next, timing. Without protection, Red guesses Blue's secret rule 98 to 100 percent of the time, even with the real DeepSeek model. With our fixed-window design, on normal prompts Red gets only 33 to 47 percent across four runs. Fifty percent means Red is just guessing. But with long answers it is 57.5 percent, and under a flood of requests it is 58.3 percent. So we call this bounded, not safe."
 
 **4c. Cache and logs (about 20 seconds)**
 *Screen: **6 Cache** -> Run. Then **8 Logs** -> Run.*

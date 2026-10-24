@@ -59,7 +59,7 @@ Real DeepSeek runs (optional, your own key, costs tokens) and every other comman
 | 2 | Read files and secrets | weak setup: token, key and sealed rule file found | nothing found | **Stopped** | `--only 2` (Docker) |
 | 3 | Fake tokens (10 tricks) | not measured (no weak gateway built) | 10 of 10 no effect | **Stopped** (no positive control) | `--only 3` |
 | 4 | Error messages (12 kinds) | old policy: 3 different reply times | 1 reply, 1 time | **Stopped** | `--only 4` |
-| 5 | Timing (real DeepSeek) | Red guesses 98 to 100% | normal prompts 42 to 47%, long answers 57.5%, flood 58.3% | **Reduced** (bounded, not proven safe) | `REAL_MODEL_REPORT.md`; `python -m eval.real_suite` |
+| 5 | Timing (real DeepSeek) | Red guesses 98 to 100% | normal prompts 33 to 47% (4 runs), long answers 45% and 57.5%, flood 58.3% | **Reduced** (bounded, not proven safe) | `REAL_MODEL_REPORT.md`; `python -m eval.real_suite` |
 | 6 | Model cache | shared cache: 95% | own cache per run: 45 to 48% | **Stopped** | `--only 6` |
 | 7 | Report extremes (sim) | exact guess at 0 and 16: 100% | coarse mode: 24% and 47% | **Reduced** | `python -m eval.coarse_report` |
 | 8 | Log and file search | careless Blue: rule and prompt found | 18 files: only hashes | **Stopped** | `--only 8`; `python -m eval.weak_controls --only 8` |
@@ -74,6 +74,30 @@ Real DeepSeek runs (optional, your own key, costs tokens) and every other comman
 - **CPU-load slip and Docker flood:** the measurements change from run to run, so we do not call them closed.
 - **Red's feedback:** hiding more means weaker attacks. Exact feedback finds a planted bypass in 7 probes, our opt-in meter needs about 60. The default report was not measured.
 
+## Timing evidence (Round 2)
+
+How often Red guesses Blue's secret rule (A or B) from the reply time alone. 50% means Red is only guessing.
+
+**Mock model, live gateway, 200 unseen runs per case**
+
+| Case | No protection | Old policy (buckets) | Our policy (fixed window) |
+|---|---:|---:|---:|
+| Ordinary | 98% | 58% | **52%** |
+| Reply near a bucket edge | 100% | 98% | **58%** |
+| Very slow replies | 99% | 100% | **55%** |
+| Deadline near | not measured | 100% | **49%** |
+| Deadline far | not measured | 98% | **51%** |
+
+**Real DeepSeek model, 40 to 60 unseen runs per case**
+
+| Case | No protection | Old default policy | Our policy (fixed window, compute continues) |
+|---|---:|---:|---:|
+| Ordinary prompts | 100% (2 runs) | not measured | **33.3%, 43.3%, 41.7%, 46.7%** (4 runs) |
+| Long answers | 95.0% | not measured | **45.0%, 57.5%** (2 runs) |
+| Flood of requests | not measured | 66.7% | **58.3%** |
+
+Our policy takes almost every case close to guessing. Not all: the bucket-edge case (58%), long answers (57.5%) and the real flood (58.3%) stay a little above 50%, and with 40 to 60 test runs the intervals are about 12 points wide each way. So this is a measured reduction, not a proof that nothing leaks. Details: [`REAL_MODEL_REPORT.md`](prototype/REAL_MODEL_REPORT.md), [`FINAL_REPORT.md`](prototype/FINAL_REPORT.md). The Round 1 timing table is gone from this page (it described the old bucket simulation): see [`ROUND1_README.md`](ROUND1_README.md).
+
 Full evidence: [`FINAL_REPORT.md`](prototype/FINAL_REPORT.md) (open problems), [`REAL_MODEL_REPORT.md`](prototype/REAL_MODEL_REPORT.md) (real-model tables), [`PARAMS.md`](prototype/PARAMS.md) (settings fixed before each run), [`VIDEO_TRANSCRIPT.md`](prototype/VIDEO_TRANSCRIPT.md).
 
 ## Team Ctrl Alt Elite
@@ -85,105 +109,3 @@ Full evidence: [`FINAL_REPORT.md`](prototype/FINAL_REPORT.md) (open problems), [
 | **Backend Developer** | Imran | [@Imran65545](https://github.com/Imran65545) |
 
 Built together by all three of us.
-
----
-
-# Round 1 proof of concept (kept for history)
-A local proof of concept for Bayora's **Securing Adversarial AI Safety Testing
-Infrastructure** challenge. We test whether shared observations expose a
-defender's secret, then measure how gateway policies change those observations.
-
-This repository contains a simulated control demo and saved evidence from a
-small real DeepSeek model run. It does not implement a deployed sandbox.
-
-## Two-minute local demo
-
-```powershell
-python -m pip install -r requirements.txt
-python experiment.py
-python verify_audit.py
-python verify_audit.py --log demo_audit/edited.jsonl
-python -m unittest test_experiment.py
-```
-
-The original recorded audit is `AUDIT VALID`. An edited line, deleted tail,
-reordered records or changed checkpoint count returns `AUDIT INVALID`.
-`INVALID` exits with code 1 intentionally. The signing private key is ephemeral
-and never committed. Public key/checkpoint files are local demonstration fixtures,
-not an independently protected witness.
-
-To edit a line yourself without changing the original:
-
-```powershell
-$demoText = Get-Content -LiteralPath demo_audit/events.jsonl -Raw
-$demoText.Replace('pending', 'changed') | Set-Content -LiteralPath demo_audit/manual_edit.jsonl -Encoding utf8
-python verify_audit.py --log demo_audit/manual_edit.jsonl
-```
-
-The simulation makes no API calls. Rerunning it refreshes local audit fixtures
-and heuristic ranges. Timing datasets/classifier results use fixed seeds.
-
-## Timing evidence
-
-**Simulated, local PoC. 200 unseen runs per case, separate training runs.**
-
-| Case | Raw accuracy | Bucketed accuracy |
-|---|---:|---:|
-| Ordinary | 100% | 50% |
-| 3s boundary | 93% | 95% |
-| Above 9s | 100% | 100% |
-
-An additional simulated overflow comparison releases every late observation
-at exactly 9s with the same generic envelope. Its unseen accuracy is **50%**,
-but **100% of this overflow cohort times out**. This is a deadline model,
-not a real inference cancellation implementation. The 256 output-token cap
-does not establish a wall-clock runtime bound. Boundary leakage remains.
-
-## Real-model evidence
-
-**Real model run, small sample (DeepSeek), n=150 latency / n=20 extraction.**
-Model: `deepseek-flash`. p50/p95/p99: 1.18/1.64/2.12s. Offline bucket padding
-adds 1.82s on average. 149 releases map to 3s and one to 6s, overrun 0.7%.
-Exact-canary scan: 0/20 disclosures. Rule keywords: 2/20 raw outputs versus
-0/20 gateway, zero by design because the gateway withholds free text.
-
-No secret A/B or cache hit/miss labels exist for the real latency sample.
-Do not treat the simulated classifier results as production security guarantees.
-
-## Optional real experiment
-
-```powershell
-$env:DEEPSEEK_API_KEY = "YOUR_KEY_IN_YOUR_TERMINAL"
-python experiment_real.py
-```
-
-This makes 150 logical paid API requests, with at most 170 calls including
-retries, and overwrites the four real-result artifacts after a complete run.
-Never commit or share keys. API base URL: `https://api.deepseek.com`.
-
-To rescan saved outputs without any API calls:
-
-```powershell
-python experiment_real.py --reanalyze-leaks
-```
-
-## Implemented locally
-
-- Constant pending envelope and end-of-test asymmetric range feedback.
-- Memoized repeat-batch reports and SQLite identity/defense-version budget.
-- Mock cache session reset and role/run namespaces.
-- Hash-chained events and Ed25519-signed count/length/head checkpoint.
-- Run-wise train/test split, uncertainty and separately labeled pooled diagnostic.
-
-## Remaining limitations
-
-Ranges are heuristic protection, not formal differential privacy. Narrow ranges
-still distinguish extreme counts and related adaptive queries can leak.
-Actual-time overflow exposes timing. A fixed deadline does not protect mixed
-completion/timeout signals or bucket-boundary probes. Hosted DeepSeek KV reset
-is unavailable to this client. Vault, workload identity, live HTTP scheduling,
-real KV controls and an independent witness remain deployment work. A valid
-audit chain establishes recorded integrity, not completeness or universal safety.
-
-See [DESIGN_NOTES.md](DESIGN_NOTES.md) for scope and all decisions.
-The submission deck is [output/final_presentation.pptx](output/final_presentation.pptx).
