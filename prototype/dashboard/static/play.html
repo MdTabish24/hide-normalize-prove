@@ -3,18 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Play: the 7 scenes</title>
+<title>Play: attack by attack</title>
 <link rel="stylesheet" href="/static/play.css">
+<script src="/static/play.js" defer></script>
 </head>
 <body>
 <div class="wrap">
-<h1>Team Ctrl Alt: Hide, Normalize, Prove</h1>
-<p class="note">Seven scenes, one for each part of the talk. Use Play to run them in order, or click a scene. Numbers come from our saved test files (labels: mock = fake model, real = DeepSeek, small samples, one laptop).</p>
-<div class="bar" id="tabs"></div>
-<div class="bar"><button id="play">Pause</button><button id="prev">&larr;</button><button id="next">&rarr;</button><span class="note" id="clock"></span></div>
-<div class="stage" id="stage"></div>
-<div class="cap" id="cap"></div>
+  <h1>Team Ctrl Alt: Hide, Normalize, Prove</h1>
+  <p class="note">Pick an attack. Press <b>Run simulation</b> (or Space): both panels play at the same time. Press <b>Next</b> (or the right arrow) for the next attack. Numbers come from our saved test files (mock = fake model, real = DeepSeek, small samples, one laptop).</p>
+  <div class="nav" id="nav"></div>
+  <h2 id="title"></h2>
+  <p id="attack"></p>
+  <div class="ctrl"><button id="back">&larr; Back</button><button id="run" class="go">&#9654; Run simulation</button><button id="next">Next &rarr;</button></div>
+  <div class="panels" id="panels"></div>
+  <div class="blk" id="fix"></div>
+  <p id="result"></p>
+  <p class="note" id="src"></p>
 </div>
-<script src="/static/play.js" defer></script>
 </body>
 </html>

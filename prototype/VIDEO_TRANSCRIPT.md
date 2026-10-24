@@ -1,6 +1,6 @@
 # Demo video transcript (about 5 minutes, easy English)
 
-Team: **Ctrl Alt**. Project: **Hide, Normalize, Prove**. While you talk, play the dashboard page `/play` (seven animated scenes, one per section below, with the same timings: 25, 30, 35, 105, 35, 40 and 20 seconds; Play runs them in order, Space pauses). The page `/room` has the detailed cards if a judge asks about one attack. Say the numbers exactly as written.
+Team: **Ctrl Alt**. Project: **Hide, Normalize, Prove**. While you talk, use the dashboard page `/play`. You control it: every attack has its own button, each shows two panels ("Without our solution" and "With our solution"), the green button (or Space) runs both simulations together (about 5 seconds), and Next (or the right arrow) moves to the next attack. In section 4 click one attack per sentence; in sections 1-3 use "Overview", in section 5 "Feedback", in section 6 "Score". The page `/room` has the long text cards if a judge asks about one attack. Say the numbers exactly as written.
 
 ## 1. Intro (0:00 - 0:25)
 *On screen: the Room page, attack 1.*
