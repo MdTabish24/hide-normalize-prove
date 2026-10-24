@@ -1,0 +1,7 @@
+[9b] Release slip under host CPU load (all cores busy) | bucket_hard | LEAKED | late >5 ms: idle 60/60, loaded 14/60; late >20 ms: idle 19/60, loaded 5/60; max lateness idle 310 ms, loaded 314 ms
+[9b] Release slip under host CPU load (all cores busy) | window_hard | LEAKED | late >5 ms: idle 60/60, loaded 45/60; late >20 ms: idle 2/60, loaded 1/60; max lateness idle 21 ms, loaded 26 ms
+    (attack_cpu_slip took 168 s)
+
+#   Attack                                                         Policy       Result        Key number
+9b  Release slip under host CPU load (all cores busy)              bucket_hard  LEAKED        late >5 ms: idle 60/60, loaded 14/60; late >20 ms: idle 19/60, loaded 5/60; max lateness idle 310 ms, loaded 314 ms
+9b  Release slip under host CPU load (all cores busy)              window_hard  LEAKED        late >5 ms: idle 60/60, loaded 45/60; late >20 ms: idle 2/60, loaded 1/60; max lateness idle 21 ms, loaded 26 ms
