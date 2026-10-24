@@ -100,7 +100,7 @@ def guess_rates():
     from matplotlib.patches import Patch
     ax.legend(handles=[Patch(color=RED, label="Without our solution"), Patch(color=GREEN, label="With our solution"), Patch(color=AMBER, label="With our solution, still above guessing"),
                        Line2D([0], [0], color=MUTE, ls="--", lw=1.4, label="50% = Red is only guessing")], loc="upper right", ncol=2, frameon=False, fontsize=10.5)
-    save(fig, "1_guess_rates.png")
+    save(fig, "benchmark.png")
     return rows
 
 
@@ -191,10 +191,9 @@ def feedback():
 
 
 def main():
-    summary = dict(guess_rates=guess_rates(), direct_doors=leaks_found(), flood=[(g[0].replace("\n", " "), g[1]) for g in flood()], audit_queue=audit_queue())
-    scoreboard(); feedback()
-    print(json.dumps(summary, indent=1, default=str)[:1800])
-    print("wrote", sorted(p.name for p in OUT.glob("*.png")))
+    rows = guess_rates()
+    print(json.dumps(rows, indent=1, default=str))
+    print("wrote", OUT / "benchmark.png")
 
 
 if __name__ == "__main__":

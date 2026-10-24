@@ -53,7 +53,7 @@ Real DeepSeek runs (optional, your own key, costs tokens) and every other comman
 
 **7 of 11 stopped, 4 reduced but not closed, 1 more group out of scope.** Labels: *mock* = fake model, *real* = DeepSeek small sample, *sim* = simulation, *weak setup* = a deliberately weakened copy, built to prove our test can see a leak. "50%" = Red is only guessing.
 
-![Without vs with our solution: how often Red guesses Blue's secret](prototype/docs/charts/1_guess_rates.png)
+![Without vs with our solution: how often Red guesses Blue's secret](prototype/docs/charts/benchmark.png)
 
 *Red bar = without our solution, green = with it, amber = with it but still above guessing (50%). Drawn from the saved result files by `python -m eval.make_charts`.*
 

@@ -14,4 +14,4 @@ def test_charts_are_drawn_from_the_saved_files_and_match_the_documented_numbers(
     assert rows["Report, none allowed (simulation)"] == (100, 24.0)
     assert make_charts.audit_queue() == (10000, 35)
     assert [g[1] for g in make_charts.flood()] == [(911, 1811), (909, 910), (915, 2519), (912, 1697)]
-    assert sorted(p.name for p in tmp_path.glob("*.png")) == ["1_guess_rates.png", "3_flood_slowdown.png", "4_audit_queue.png"]
+    assert (tmp_path / "benchmark.png").exists()
