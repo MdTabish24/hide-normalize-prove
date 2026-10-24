@@ -1,0 +1,12 @@
+# DELIBERATELY WEAK setup for positive controls (PARAMS v14). NEVER use it for anything else.
+# It undoes two protections so we can check that our own attack tests really detect a leak:
+#   * red-client is also attached to the Blue, model and audit networks (a "flat network"),
+#   * red-client receives Blue's token and the gateway key in its environment and mounts the gateway data volume.
+services:
+  red-client:
+    networks: [red-net, blue-net, model-net, audit-net]
+    environment:
+      BLUE_TOKEN: ${BLUE_TOKEN}
+      GATEWAY_KEY: ${GATEWAY_KEY}
+    volumes:
+      - gateway-data:/data
