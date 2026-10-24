@@ -583,3 +583,6 @@ A first attempt of the v7 cells died when the laptop was shut down and was resta
 
 ### 2026-10-23/24 final run (PARAMS v10; details in FINAL_REPORT.md section 5)
 Found and fixed the audit-backlog cause (fresh HTTP client after any failed delivery). Final profile flood 52.0% (42.3-61.5%) BOUNDED, audit healthy; old default 85.0% LEAKED; attack 9 under window_hard no shift with the flags; leave-one-out cells show no proven single-flag contribution. Chain finished 01:08 and the raw results were pushed automatically. The planned shutdown did NOT happen (the Windows command was mangled by Git Bash and was never tested). Not run: `real_final` (needs the user's key), attack 9c in Docker.
+
+### 2026-10-24 real_final (PARAMS v10 R1)
+Real DeepSeek flood with the final profile: 58.3% (45.7-69.9%) BOUNDED; slips 3/720; audit outbox max 42/36, 0 dead, check passed (details FINAL_REPORT.md section 5). No proven accuracy gain over the earlier real floods (intervals overlap); delivery metrics clearly better. REAL_MODEL_REPORT.md regenerated.

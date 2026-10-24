@@ -15,6 +15,7 @@ Label: real model run, small sample, local (localhost processes; one Docker chec
 | real_overnight/ordinary-s20261027-window_continue | ordinary | window_hard | 41.7% (30.1-54.3%) | 80.0% | +38 pts | NO LEAK FOUND | 3.012 / 3.074 / 3.118 / 3.225 | 0 / 0 | 120/120 valid |
 | real_overnight/ordinary-s20261028-window_continue | ordinary | window_hard | 46.7% (34.6-59.1%) | 80.0% | +33 pts | NO LEAK FOUND | 3.044 / 3.09 / 3.129 / 3.167 | 0 / 0 | 120/120 valid |
 | real_overnight/real_bucket_hard | flood observer | bucket_hard | 66.7% (54.1-77.3%) | 78.3% | +12 pts | BOUNDED LEAK | 3.12 / 3.6233 / n/a / 9.9087 | n/a / 0 | world 0: 0 pending, 0 dead; world 1: 4090 pending, 1305 dead |
+| real_overnight/real_final | flood observer | window_hard + continue | 58.3% (45.7-69.9%) | 75.0% | +17 pts | BOUNDED LEAK | 3.008 / 3.0963 / n/a / 3.9197 | n/a / 0 | world 0: 0 pending, 0 dead; world 1: 0 pending, 0 dead |
 | real_overnight/real_long-s20261029-window_continue | real_long | window_hard | 57.5% (42.2-71.5%) | 80.0% | +23 pts | BOUNDED LEAK | 3.025 / 3.049 / 3.061 / 3.077 | 96 / 0 | 80/80 valid |
 | real_overnight/real_window_continue | flood observer | window_hard + continue | 48.3% (36.2-60.7%) | 83.3% | +35 pts | BOUNDED LEAK | 3.0661 / 3.407 / n/a / 3.7029 | n/a / 0 | world 0: 0 pending, 0 dead; world 1: 0 pending, 0 dead |
 
@@ -25,6 +26,8 @@ Label: real model run, small sample, local (localhost processes; one Docker chec
 **real_overnight/ordinary-s20261028-window_continue** (W = 3.0 s): 720 client-observed requests, 0 slipped (> W + 0.5 s); client release {'50': 3.044, '95': 3.09, '99': 3.129, 'max': 3.167, 'n': 720}; server-side lateness {'50': 0.006, '95': 0.025, '99': 0.046, 'max': 0.101, 'n': 720}; gateway-side late > 0.25 s: 0, > 1 s: 0; slipped requests overlapping a loop-lag event: 0; loop lag: 4 events, max 0.115 s, 0 over 1 s, max background tasks 0, max in-flight 0, max asyncio tasks 6. Reading: no request slipped.
 
 **real_overnight/real_bucket_hard** (W = 3.0 s): 720 client-observed requests, 44 slipped (> W + 0.5 s); client release {'50': 3.12, '95': 3.623, '99': 8.572, 'max': 9.909, 'n': 720}; server-side lateness {'50': 0.013, '95': 0.108, '99': 0.223, 'max': 1.801, 'n': 10913}; gateway-side late > 0.25 s: 83, > 1 s: 10; slipped requests overlapping a loop-lag event: 35; loop lag: 639 events, max 1.339 s, 2 over 1 s, max background tasks 0, max in-flight 0, max asyncio tasks 28. Reading: slips coincide with gateway-side lateness and/or loop stalls.
+
+**real_overnight/real_final** (W = 3.0 s): 720 client-observed requests, 3 slipped (> W + 0.5 s); client release {'50': 3.008, '95': 3.096, '99': 3.305, 'max': 3.92, 'n': 720}; server-side lateness {'50': 0.003, '95': 0.026, '99': 0.071, 'max': 0.908, 'n': 10617}; gateway-side late > 0.25 s: 2, > 1 s: 0; slipped requests overlapping a loop-lag event: 3; loop lag: 86 events, max 1.111 s, 1 over 1 s, max background tasks 16, max in-flight 16, max asyncio tasks 51. Reading: slips coincide with gateway-side lateness and/or loop stalls.
 
 **real_overnight/real_long-s20261029-window_continue** (W = 3.0 s): 480 client-observed requests, 0 slipped (> W + 0.5 s); client release {'50': 3.025, '95': 3.049, '99': 3.061, 'max': 3.077, 'n': 480}; server-side lateness {'50': 0.001, '95': 0.015, '99': 0.024, 'max': 0.032, 'n': 480}; gateway-side late > 0.25 s: 0, > 1 s: 0; slipped requests overlapping a loop-lag event: 0; loop lag: 0 events, max 0.0 s, 0 over 1 s, max background tasks 0, max in-flight 0, max asyncio tasks 0. Reading: no request slipped.
 
@@ -37,12 +40,14 @@ Label: real model run, small sample, local (localhost processes; one Docker chec
 | real_overnight/ordinary-s20261027-window_continue | 0.417 | 0.483 | 0.499 (0.061) | 0.23 |
 | real_overnight/ordinary-s20261028-window_continue | 0.467 | 0.567 | 0.501 (0.06) | 0.673 |
 | real_overnight/real_bucket_hard | 0.6 | 0.517 | 0.503 (0.06) | 0.134 |
+| real_overnight/real_final | 0.583 | 0.55 | 0.497 (0.059) | 0.214 |
 | real_overnight/real_long-s20261029-window_continue | 0.575 | 0.5 | 0.502 (0.073) | 0.389 |
 | real_overnight/real_window_continue | 0.433 | 0.483 | 0.499 (0.059) | 0.351 |
 
 ## 4. Flood with the real model: audit and load
 
 - **real_overnight/real_bucket_hard**: 84.9 flood requests per run, observer attempts recorded 6, observer cancelled 0, max sampled audit outbox {'0': 29, '1': 4146}, queue after drain [{'world': 0, 'pending_after_drain': 0, 'dead_letters': 0}, {'world': 1, 'pending_after_drain': 4090, 'dead_letters': 1305}], dead servers [], throughput check passed: False.
+- **real_overnight/real_final**: 83.5 flood requests per run, observer attempts recorded 5.917, observer cancelled 0, max sampled audit outbox {'0': 42, '1': 36}, queue after drain [{'world': 0, 'pending_after_drain': 0, 'dead_letters': 0}, {'world': 1, 'pending_after_drain': 0, 'dead_letters': 0}], dead servers [], throughput check passed: True.
 - **real_overnight/real_window_continue**: 83.7 flood requests per run, observer attempts recorded 6, observer cancelled 0, max sampled audit outbox {'0': 25, '1': 25}, queue after drain [{'world': 0, 'pending_after_drain': 0, 'dead_letters': 0}, {'world': 1, 'pending_after_drain': 0, 'dead_letters': 0}], dead servers [], throughput check passed: True.
 
 ## 5. Every request (what Red saw, what the evaluator knew)
@@ -68,6 +73,13 @@ Label: real model run, small sample, local (localhost processes; one Docker chec
 | flood | flood | 10193 | 3.073 / 3.459 / 6.183 / 9.139 | 4.3% | 49.1% | DeepSeek | 130 | 35 / 128 |
 | observer | allowed | 720 | 3.120 / 3.623 / 8.572 / 9.909 | 6.1% | 100.0% | DeepSeek | 51 | 18 / 128 |
 
+### `real_final.jsonl` (10741 requests, 5123 KiB)
+
+| role | case | requests | Red's release median / p95 / p99 / max (s) | share later than W + 0.5 s | Blue allowed | backend | answer chars median | completion tokens mean / max |
+|---|---|---:|---|---:|---:|---|---:|---|
+| flood | flood | 10021 | 3.028 / 3.122 / 3.357 / 4.691 | 0.5% | 49.7% | DeepSeek | 128 | 35 / 128 |
+| observer | allowed | 720 | 3.008 / 3.096 / 3.305 / 3.920 | 0.4% | 100.0% | DeepSeek | 64.0 | 16 / 107 |
+
 ### `real_long-s20261029-window_continue.jsonl` (480 requests, 259 KiB)
 
 | role | case | requests | Red's release median / p95 / p99 / max (s) | share later than W + 0.5 s | Blue allowed | backend | answer chars median | completion tokens mean / max |
@@ -82,7 +94,7 @@ Label: real model run, small sample, local (localhost processes; one Docker chec
 | flood | flood | 10038 | 3.067 / 3.296 / 3.555 / 6.291 | 1.3% | 49.9% | DeepSeek | 132 | 35 / 128 |
 | observer | allowed | 720 | 3.066 / 3.407 / 3.586 / 3.703 | 2.9% | 100.0% | DeepSeek | 29.0 | 12 / 99 |
 
-Total request records: 23591; completion tokens recorded: 458302. The private answer texts are in `dashboard/runtime/private/real_overnight/` (git-ignored).
+Total request records: 34332; completion tokens recorded: 631563. The private answer texts are in `dashboard/runtime/private/real_overnight/` (git-ignored).
 
 ## 6. Docker check with the real model
 
@@ -137,10 +149,12 @@ Total request records: 23591; completion tokens recorded: 458302. The private an
 - `real_overnight/ordinary-s20261027-window_continue.json`
 - `real_overnight/ordinary-s20261028-window_continue.json`
 - `real_overnight/real_bucket_hard.json`
+- `real_overnight/real_final.json`
 - `real_overnight/real_long-s20261029-window_continue.json`
 - `real_overnight/real_window_continue.json`
 - `eval/output/real_overnight/requests/ordinary-s20261027-window_continue.jsonl`
 - `eval/output/real_overnight/requests/ordinary-s20261028-window_continue.jsonl`
 - `eval/output/real_overnight/requests/real_bucket_hard.jsonl`
+- `eval/output/real_overnight/requests/real_final.jsonl`
 - `eval/output/real_overnight/requests/real_long-s20261029-window_continue.jsonl`
 - `eval/output/real_overnight/requests/real_window_continue.jsonl`
