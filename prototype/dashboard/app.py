@@ -90,6 +90,10 @@ def create_app(saved=None, runtime=None, audit=None, eval_mode=None):
     async def why_page():
         return FileResponse(HERE / "static/why.html")
 
+    @app.get("/room")
+    async def room_page():
+        return FileResponse(HERE / "static/room.html")
+
     @app.get("/api/why")
     async def why_data():
         return await asyncio.to_thread(why.snapshot, saved)
