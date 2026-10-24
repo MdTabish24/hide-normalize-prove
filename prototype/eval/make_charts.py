@@ -76,23 +76,30 @@ def guess_rates():
         ("Report, none allowed (simulation)", 100, pct(coarse["exact_recovery_count_0"]), None),
         ("Report, all allowed (simulation)", 100, pct(coarse["exact_recovery_count_16"]), None),
     ]
-    fig, ax = plt.subplots(figsize=(11, 6.2))
-    h, ys = 0.36, range(len(rows))
-    for i, (label, a, b, rng) in zip(ys, rows):
-        ax.barh(i - h / 2, a, h, color=RED)
+    short = ["Timing|mock|ordinary", "Timing|mock|bucket edge", "Timing|mock|slow replies", "Timing|REAL|ordinary", "Timing|REAL|long answers",
+             "Timing|REAL|flood", "Model|cache|mock", "Report|none allowed|(simulation)", "Report|all allowed|(simulation)"]
+    fig, ax = plt.subplots(figsize=(14, 6.6))
+    w, xs = 0.38, range(len(rows))
+    BG = dict(facecolor="white", edgecolor="none", pad=1.5)
+    for i, (label, a, b, rng) in zip(xs, rows):
         colour = GREEN if b <= 55 else AMBER
-        ax.barh(i + h / 2, b, h, color=colour)
-        ax.text(a + 1, i - h / 2, f"{a:g}%", va="center", color=RED, fontweight="bold", bbox=dict(facecolor="white", edgecolor="none", pad=1.2))
-        ax.text((rng[1] if rng else b) + 1.5, i + h / 2, f"{b:g}%" + (f"  (runs {rng[0]:g} to {rng[1]:g}%)" if rng else ""), va="center", color=colour, fontweight="bold", bbox=dict(facecolor="white", edgecolor="none", pad=1.2))
+        ax.bar(i - w / 2, a, w, color=RED)
+        ax.bar(i + w / 2, b, w, color=colour)
+        ax.text(i - w / 2, a + 1.5, f"{a:g}%", ha="center", color=RED, fontweight="bold", fontsize=10.5, bbox=BG)
         if rng:
-            ax.plot(rng, [i + h / 2] * 2, color=INK, lw=1.6)
-    ax.axvline(50, color=MUTE, ls="--", lw=1.4)
-    ax.text(50.8, len(rows) - 0.42, "50% = Red is only guessing", color=MUTE, fontsize=9.5)
-    ax.set_yticks(list(ys), [r[0] for r in rows]); ax.set_ylim(len(rows) - 0.25, -0.6); ax.set_xlim(0, 118); ax.set_xlabel("How often Red guesses Blue's secret rule (%)  -  lower is better")
-    ax.set_title("Without vs with our solution: how much Red learns", loc="left", fontweight="bold", fontsize=13)
+            ax.plot([i + w / 2] * 2, rng, color=INK, lw=2); ax.plot([i + w / 2 - 0.06, i + w / 2 + 0.06], [rng[0]] * 2, color=INK, lw=2); ax.plot([i + w / 2 - 0.06, i + w / 2 + 0.06], [rng[1]] * 2, color=INK, lw=2)
+            ax.text(i + w / 2, rng[1] + 1.5, f"{b:g}%" + chr(10) + f"({rng[0]:g}-{rng[1]:g})", ha="center", va="bottom", color=colour, fontweight="bold", fontsize=10, bbox=BG)
+        else:
+            ax.text(i + w / 2, b + 1.5, f"{b:g}%", ha="center", color=colour, fontweight="bold", fontsize=10.5, bbox=BG)
+    ax.axhline(50, color=MUTE, ls="--", lw=1.4)
+    ax.set_xticks(list(xs), [s.replace("|", chr(10)) for s in short], fontsize=10)
+    ax.set_ylim(0, 128); ax.set_yticks(range(0, 101, 20)); ax.yaxis.grid(True, color="#e6eaf0"); ax.set_axisbelow(True)
+    ax.set_ylabel("How often Red guesses Blue's secret rule (%)" + chr(10) + "lower is better")
+    ax.set_title("Without vs with our solution: how much Red learns", loc="left", fontweight="bold", fontsize=14)
+    from matplotlib.lines import Line2D
     from matplotlib.patches import Patch
-    ax.legend(handles=[Patch(color=RED, label="Without our solution"), Patch(color=GREEN, label="With our solution"), Patch(color=AMBER, label="With our solution, still above guessing")],
-              loc="upper center", bbox_to_anchor=(0.4, -0.1), ncol=3, frameon=False, fontsize=9.5)
+    ax.legend(handles=[Patch(color=RED, label="Without our solution"), Patch(color=GREEN, label="With our solution"), Patch(color=AMBER, label="With our solution, still above guessing"),
+                       Line2D([0], [0], color=MUTE, ls="--", lw=1.4, label="50% = Red is only guessing")], loc="upper right", ncol=2, frameon=False, fontsize=10.5)
     save(fig, "1_guess_rates.png")
     return rows
 
