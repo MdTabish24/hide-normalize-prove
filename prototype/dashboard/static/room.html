@@ -120,6 +120,16 @@ const A = [
  other:[["Small host with few cores","The plan scales down, or switches itself off below 4 cores."]],
  badge:"REDUCED", result:"The result changes from run to run: the same setup was 'leaking' once (912 to 1697 ms) and 'no shift' once (909 to 913 ms). We cannot call it closed.", src:"FINAL_REPORT.md (PARAMS v11 and v13)"}
 ];
+// The other half of the job: a defence that hides everything is useless, Red must still learn something it can use.
+const U={title:"Does Red still get useful feedback?",
+ why:"Hiding the secret is only half of the job. Safety testing only works if Red can still find real weak spots in Blue's rule, so Red's attacks must stay strong.",
+ default_:"What Red gets by default: one noisy range at the end of a run (how many of its prompts Blue allowed, as a range 12 wide), read at most twice. We have NOT measured how useful this is for finding a real bypass.",
+ meter:[["No protection (exact feedback after every prompt)","A scripted attacker finds the planted bypass with a median of 7 probes (simulation). This is the best case for Red and the worst for the secret."],
+  ["Our opt-in meter, no noise","The attacker finds the bypass in 100% of trials but needs a median of 60 probes (8 to 9 times more), and it can still tell rule A from B perfectly (100%)."],
+  ["Our opt-in meter, 15% noise","Finds the bypass in 68.7% of trials within 150 probes, but still tells rule A from B 89% of the time."],
+  ["Random guessing","About 1 in 12 (there are 12 candidate families)."]],
+ honest:"So there is a real trade-off: more protection means weaker attacks, and our meter is not a fix for it. The planted-bypass test was run only for the opt-in meter, in simulation with a mock model. For the default report it was not run at all. A different design (exact feedback from a reference model that has no Blue rule) is an idea we did not build.",
+ src:"FINAL_REPORT.md (problems P2 and P7); PARAMS.md (Evaluation 2); eval/meter_eval.py"};
 const nav=document.getElementById("nav"), card=document.getElementById("card");
 let i=0;
 const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
@@ -135,19 +145,25 @@ function show(n){
     <div class="blk fix"><h3>What our solution does</h3>${esc(a.fix)}</div>
     <div class="blk oth"><h3>Could it leak another way? What stops that?</h3>${items(a.other)}</div>
     <p><span class="badge ${a.badge}">${a.badge}</span> ${esc(a.result)}</p><p class="src">Source: ${esc(a.src)}</p>`;
+  } else if(n===A.length){
+    card.innerHTML=`<h2>${esc(U.title)}</h2><p>${esc(U.why)}</p>
+    <div class="blk oth"><h3>What Red gets</h3>${esc(U.default_)}</div>
+    <div class="blk fix"><h3>Strength of Red's attacks vs protection (planted-bypass test, simulation)</h3>${items(U.meter)}</div>
+    <div class="blk bad"><h3>The honest part</h3>${esc(U.honest)}</div><p class="src">Source: ${esc(U.src)}</p>`;
   } else {
     const stopped=A.filter(a=>a.badge==="STOPPED").length, reduced=A.length-stopped;
     card.innerHTML=`<h2>Scoreboard</h2><div class="score"><div><b>${stopped}</b>stopped</div><div><b>${reduced}</b>reduced, not closed</div><div><b>1</b>out of scope</div></div>
     <div class="blk fix"><h3>What we can say</h3>Of 11 tested attack groups, ${stopped} were stopped and ${reduced} were reduced but not closed. These are single runs on one laptop, mostly with a mock model.</div>
-    <div class="blk bad"><h3>What is still open</h3><ul><li>Timing with long answers and floods is bounded (about 58% with the real model), not proven safe.</li><li>Report extremes: reduced in simulation only.</li><li>CPU-load slip and Docker flood: the measurements are not stable, so we do not call them closed.</li></ul></div>
+    <div class="blk bad"><h3>What is still open</h3><ul><li>Timing with long answers and floods is bounded (about 58% with the real model), not proven safe.</li><li>Report extremes: reduced in simulation only.</li><li>Red's feedback: how useful the default report is for finding a real bypass was not measured (see the Feedback card).</li><li>CPU-load slip and Docker flood: the measurements are not stable, so we do not call them closed.</li></ul></div>
     <div class="blk oth"><h3>Out of scope (not tested, stated as risk)</h3>Kernel or container-runtime escape, hardware and shared-GPU side channels, and a compromised gateway. What we did check: the Red container is not privileged, has no capabilities, a read-only disk, no Docker socket and CPU, memory and process limits (5 of 5 containers).</div>
     <p class="src">Sources: FINAL_REPORT.md, REAL_MODEL_REPORT.md, PARAMS.md (test settings written before each run).</p>`;
   }
 }
-A.concat([{badge:"END"}]).forEach((a,k)=>{const b=document.createElement("button");b.textContent=k<A.length?String(k+1):"Score";if(k<A.length)b.className=a.badge==="STOPPED"?"s":"r";b.onclick=()=>show(k);nav.appendChild(b)});
+const LAST=A.length+1;
+A.concat([{badge:"UTIL"},{badge:"END"}]).forEach((a,k)=>{const b=document.createElement("button");b.textContent=k<A.length?String(k+1):(k===A.length?"Feedback":"Score");if(k<A.length)b.className=a.badge==="STOPPED"?"s":"r";b.onclick=()=>show(k);nav.appendChild(b)});
 document.getElementById("prev").onclick=()=>show(Math.max(0,i-1));
-document.getElementById("next").onclick=()=>show(Math.min(A.length,i+1));
-document.addEventListener("keydown",e=>{if(e.key==="ArrowRight")show(Math.min(A.length,i+1));if(e.key==="ArrowLeft")show(Math.max(0,i-1))});
+document.getElementById("next").onclick=()=>show(Math.min(LAST,i+1));
+document.addEventListener("keydown",e=>{if(e.key==="ArrowRight")show(Math.min(LAST,i+1));if(e.key==="ArrowLeft")show(Math.max(0,i-1))});
 show(0);
 </script>
 </body>
