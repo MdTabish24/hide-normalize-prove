@@ -1,6 +1,6 @@
 # Demo video transcript with screen plan (about 5 minutes, easy English)
 
-Team: **Ctrl Alt**. Project: **Hide, Normalize, Prove**.
+Team: **Ctrl Alt Elite**. Project: **Hide, Normalize, Prove**.
 
 ## Before you record
 1. Start the dashboard from the `prototype` folder: `python -m uvicorn dashboard.app:app --host 127.0.0.1 --port 8090 --no-access-log`
@@ -25,7 +25,7 @@ Team: **Ctrl Alt**. Project: **Hide, Normalize, Prove**.
 ## 1. Intro (0:00 - 0:25)
 *Screen: **Overview**. Do not click Run yet.*
 
-"Hi, we are Team Ctrl Alt. Our project is called Hide, Normalize, Prove. It answers Bayora's challenge: how can a Red team, a Blue team and a client LLM share one sandbox, without anyone leaking secrets to anyone else?"
+"Hi, we are Team Ctrl Alt Elite. Our project is called Hide, Normalize, Prove. It answers Bayora's challenge: how can a Red team, a Blue team and a client LLM share one sandbox, without anyone leaking secrets to anyone else?"
 
 ## 2. The problem (0:25 - 0:55)
 *Screen: **Overview**. Press **Run** as you start the first sentence. Point at the LEFT panel: Red's six arrows (network, timing, errors, cache, load, logs) go to the secret rule.*
@@ -80,7 +80,7 @@ These are small tests, mostly with a mock model, on one laptop. We wrote every t
 ## 7. Close (4:30 - 4:50)
 *Screen: stay on **Score**.*
 
-"That was Hide, Normalize, Prove, by Team Ctrl Alt. The code, the test files and all results are on our GitHub, in the prototype folder. Thank you."
+"That was Hide, Normalize, Prove, by Team Ctrl Alt Elite. The code, the test files and all results are on our GitHub, in the prototype folder. Thank you."
 
 ---
 ## Do say / do not say

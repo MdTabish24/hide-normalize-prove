@@ -16,7 +16,7 @@ def test_play_page_has_no_inline_code_and_its_files_are_served(tmp_path):
     c = client(tmp_path)
     page, script = c.get("/play"), c.get("/static/play.js")
     assert page.status_code == 200 and script.status_code == 200 and c.get("/static/play.css").status_code == 200
-    assert "Team Ctrl Alt" in page.text and 'id="run"' in page.text and 'id="next"' in page.text
+    assert "Team Ctrl Alt Elite" in page.text and 'id="run"' in page.text and 'id="next"' in page.text
     assert "<style" not in page.text and not re.search(r"<script(?![^>]*src=)", page.text)
     assert "https://" not in page.text + script.text and not re.search(r"sk-[0-9a-f]{20}", script.text)
 

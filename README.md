@@ -2,6 +2,8 @@
 
 ## Round 2: working prototype is in [`prototype/`](prototype/)
 
+**Team Ctrl Alt Elite**
+
 Everything below this section is the **Round 1** proof of concept (kept for history). The Round 2 prototype (Docker sandbox with isolated Red, Blue and model services,
 a gateway that gives Red one fixed reply, timing policies, a signed hash-chain audit, an evaluation harness, a live dashboard) lives in [`prototype/`](prototype/README.md).
 
