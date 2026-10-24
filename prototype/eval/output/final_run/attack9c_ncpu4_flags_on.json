@@ -1,0 +1,46 @@
+{
+  "generated": "2026-10-24T15:21:31+0530",
+  "extra_env": {},
+  "results": [
+    {
+      "attack": "9c",
+      "name": "Noisy neighbor inside Docker (Red flood from its own container, 32 workers), no pinning",
+      "policy": "bucket_hard",
+      "result": "BOUNDED LEAK",
+      "summary": "median shift -0.7 ms, p95 911 -> 909 ms, KS D=0.27 p=0.067 (n=45/45)",
+      "label": "local Docker stack (Docker Desktop)",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": "9c",
+      "name": "Noisy neighbor inside Docker (Red flood from its own container, 32 workers), no pinning",
+      "policy": "window_hard",
+      "result": "BOUNDED LEAK",
+      "summary": "median shift +0.7 ms, p95 909 -> 913 ms, KS D=0.16 p=0.610 (n=45/45)",
+      "label": "local Docker stack (Docker Desktop)",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": "9c",
+      "name": "Noisy neighbor inside Docker (Red flood from its own container, 32 workers), CPU pinned",
+      "policy": "bucket_hard",
+      "result": "BOUNDED LEAK",
+      "summary": "median shift -0.7 ms, p95 910 -> 914 ms, KS D=0.24 p=0.115 (n=45/45)",
+      "label": "local Docker stack (Docker Desktop) + cpuset",
+      "audit_mode": "on",
+      "details": {}
+    },
+    {
+      "attack": "9c",
+      "name": "Noisy neighbor inside Docker (Red flood from its own container, 32 workers), CPU pinned",
+      "policy": "window_hard",
+      "result": "BOUNDED LEAK",
+      "summary": "median shift +0.9 ms, p95 908 -> 912 ms, KS D=0.29 p=0.037 (n=45/45)",
+      "label": "local Docker stack (Docker Desktop) + cpuset",
+      "audit_mode": "on",
+      "details": {}
+    }
+  ]
+}
