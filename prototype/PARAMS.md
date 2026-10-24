@@ -246,3 +246,12 @@ Run: `attack_suite.py --only 9b` three times in a row (separate processes, same 
 New rule (per run, policy `window_hard`): the share of requests released more than 20 ms late under load minus the same share when idle is at most 10 percentage points AND a two-sided Fisher exact test of loaded vs idle late counts (60 vs 60) gives p >= 0.05. "No shift found" only if ALL THREE flagged runs meet it; two of three = "reduced, not stable"; fewer = unchanged finding (LEAKED). The no-flags run is expected not to meet it (version 10: 0/60 idle vs 32/60 loaded).
 Mock model, live gateway as local processes, one machine. Not covered: Docker, real model, other core counts. This changes the definition of "closed" for 9b only; the version-9 rule for attacks 9 and 9c is untouched.
 Container pinning (`docker-compose.pinned.yml`) stays an opt-in overlay: it assumes at least 8 CPUs visible to Docker and would stop containers from starting on smaller hosts, so it is NOT made the default.
+
+---
+
+# PARAMS (version 13: attack 9c with a portable CPU plan for a 4-CPU host, fixed BEFORE it is run; versions 1-12 are unchanged)
+
+Question: does the CPU plan of `pin_cpus.py` for a SMALL host (4 CPUs: Red alone on core 0, gateway alone on core 1, everything else on cores 2-3) keep the Docker noisy-neighbour shift of attack 9c away, so that the opt-in pinning does not need an 8-CPU host?
+Run on this 12-CPU laptop with `ATTACK_PIN_NCPU=4` (the plan only uses cores 0-3; the other cores stay idle, so this is a layout test, not a test on a real 4-CPU machine). `attack_suite.py --only 9c`, unchanged measurement code of version 11 (45 quiet vs 45 flooded requests; both policies; unpinned and pinned conditions), twice: flags OFF (`LOOP_OFFLOAD=0`, `BLUE_INLINE=0`) and flags ON (`LOOP_OFFLOAD=1`, `BLUE_INLINE=1`).
+Outputs `eval/output/final_run/attack9c_ncpu4_flags_off.json` and `attack9c_ncpu4_flags_on.json`. Rule: that of version 9 for the PINNED `window_hard` row of the flags-ON run: "no shift found" only if the KS test gives p >= 0.05 AND the flooded p95 is at most 1.5 times the quiet p95; otherwise the pinning plan is reported as not sufficient on a 4-CPU layout. The other three rows are reported as measured. One run per condition.
+Not covered: a real small machine, other CPU counts, the real model. The plan is opt-in (`python pin_cpus.py --up`); the default compose file is unchanged.

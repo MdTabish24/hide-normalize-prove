@@ -430,7 +430,11 @@ async def attack_noisy_docker(base, n=45):
     blue = {"authorization": "Bearer " + env["BLUE_TOKEN"]}
     red = {"authorization": "Bearer " + env["RED_TOKEN"]}
     for pinned in (False, True):
-        files = ["docker-compose.yml"] + (["docker-compose.pinned.yml"] if pinned else [])
+        if pinned:  # PARAMS v13: the overlay is generated for this host (ATTACK_PIN_NCPU plans for a smaller host on the same machine).
+            import pin_cpus
+            ncpu = int(os.environ["ATTACK_PIN_NCPU"]) if os.environ.get("ATTACK_PIN_NCPU") else None
+            pin_cpus.write(ncpu or pin_cpus.docker_cpus())
+        files = ["docker-compose.yml"] + (["docker-compose.pinned.auto.yml"] if pinned else [])
         for policy in ("bucket_hard", "window_hard"):
             up = compose_env(files, policy, "up", "-d", "--force-recreate", "--no-build")
             if up.returncode:
