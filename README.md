@@ -103,7 +103,7 @@ How often Red guesses Blue's secret rule (A or B) from the reply time alone. 50%
 
 Our policy takes almost every case close to guessing. Not all: the bucket-edge case (58%), long answers (57.5%) and the real flood (58.3%) stay a little above 50%, and with 40 to 60 test runs the intervals are about 12 points wide each way. So this is a measured reduction, not a proof that nothing leaks. Details: [`REAL_MODEL_REPORT.md`](prototype/REAL_MODEL_REPORT.md), [`FINAL_REPORT.md`](prototype/FINAL_REPORT.md). The Round 1 timing table is gone from this page (it described the old bucket simulation): see [`ROUND1_README.md`](ROUND1_README.md).
 
-Full evidence: [`FINAL_REPORT.md`](prototype/FINAL_REPORT.md) (open problems), [`REAL_MODEL_REPORT.md`](prototype/REAL_MODEL_REPORT.md) (real-model tables), [`PARAMS.md`](prototype/PARAMS.md) (settings fixed before each run), [`VIDEO_TRANSCRIPT.md`](prototype/VIDEO_TRANSCRIPT.md).
+Full evidence: [`FINAL_REPORT.md`](prototype/FINAL_REPORT.md) (open problems), [`REAL_MODEL_REPORT.md`](prototype/REAL_MODEL_REPORT.md) (real-model tables), [`PARAMS.md`](prototype/PARAMS.md) (settings fixed before each run).
 
 ## Team Ctrl Alt Elite
 

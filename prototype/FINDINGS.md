@@ -2,7 +2,7 @@
 
 Everything here is read from saved files in this repo. Labels: **L** = live gateway, mock model, local run (scaled 0.1 timings);
 **R** = real model run, small sample, local; **S** = simulated (production code). "50% = this attacker could not tell Blue's rule A from B"
-(it is not proof of no leak). Sources: `eval/output/round2*/`, `attack_suite_results.json`, `evidence/`, `PROGRESS.md`.
+(it is not proof of no leak). Sources: `eval/output/round2*/`, `attack_suite_results.json`, `evidence/`.
 
 ## 1. Timing leak: Red tells Blue's secret A from B by response time (L, 200 unseen runs per cell, 95% Wilson)
 | Policy | ordinary | boundary | overflow | deadline_near | deadline_far |

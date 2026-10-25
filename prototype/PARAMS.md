@@ -219,7 +219,7 @@ Label: live gateway, mock model, local run (scale 0.1, W = 0.9 s, audit ON); loa
 | F3 `final_no_offload` | window_hard + continue | F1 without LOOP_OFFLOAD |
 | F4 `final_no_batch` | window_hard + continue | F1 without AUDIT_BATCH |
 | F5 `final_no_inline` | window_hard + continue | F1 without BLUE_INLINE |
-| R1 `real_final` (needs the user's key; run separately) | window_hard + continue, real DeepSeek, W = 3 s | same flags as F1; 60 + 60 runs as in version 6 |
+| R1 `real_final` (needs a DeepSeek key; run separately) | window_hard + continue, real DeepSeek, W = 3 s | same flags as F1; 60 + 60 runs as in version 6 |
 
 Also: attacks 4, 9 and 9b of `attack_suite.py` with `ATTACK_EXTRA_ENV` = the F1 flags and once without flags (output `attack_final_*.json`), one run each. Attack 7 is covered by the version-8 simulation, not re-run.
 Decision rules (before any run): (1) "final profile is better than the old default" only if the F1 interval lies entirely below the F2 interval (upper bound of F1 < lower bound of F2) AND F1's audit throughput check passes (max sampled outbox < 10000, 0 pending after the 20 s drain, dead servers none); otherwise "no proven difference" or, if F1 is worse, "worse".
